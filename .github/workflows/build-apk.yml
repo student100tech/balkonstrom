@@ -139,26 +139,32 @@ jobs:
 
             <div class="flow">
               <svg viewBox="0 0 400 330">
+                <!-- Leitungen -->
                 <path id="wSolar" class="wire" d="M200 82 V150"/>
                 <path id="wGrid" class="wire" d="M92 175 H175"/>
                 <path id="wHome" class="wire" d="M225 175 H308"/>
                 <path id="wBat" class="wire" d="M200 200 V250"/>
+                <!-- Mitte -->
                 <circle cx="200" cy="175" r="25" fill="var(--card2)" stroke="var(--line)"/>
                 <path d="M204 160 l-12 18 h9 l-4 13 l12-18 h-9z" fill="var(--text)"/>
+                <!-- Solar -->
                 <circle cx="200" cy="48" r="34" fill="var(--card)" stroke="var(--solar)" stroke-width="2"/>
                 <g fill="none" stroke="var(--solar)" stroke-width="2"><path d="M184 40 h32 l-4 16 h-32z"/><path d="M182 48 h32 M193 40 l-3 16 M205 40 l-3 16"/></g>
                 <text class="node-label" x="135" y="34" text-anchor="end">Solar</text>
                 <text class="node-val" x="135" y="60" text-anchor="end" id="tSolar">– W</text>
                 <text class="node-sub" x="248" y="40" id="tPv1">PV1 – W</text>
                 <text class="node-sub" x="248" y="60" id="tPv2">PV2 – W</text>
+                <!-- Netz -->
                 <circle cx="62" cy="175" r="30" fill="var(--card)" stroke="var(--grid)" stroke-width="2"/>
                 <g fill="none" stroke="var(--grid)" stroke-width="2"><path d="M62 158 l-9 34 M62 158 l9 34 M52 167 h20 M55 178 h14"/></g>
                 <text class="node-label" x="62" y="225" text-anchor="middle">Netz → Akku</text>
                 <text class="node-val" x="62" y="250" text-anchor="middle" id="tGrid">– W</text>
+                <!-- Haus -->
                 <circle cx="338" cy="175" r="30" fill="var(--card)" stroke="var(--home)" stroke-width="2"/>
                 <path d="M324 180 v12 h28 v-12 M320 182 l18-16 l18 16" fill="none" stroke="var(--home)" stroke-width="2"/>
                 <text class="node-label" x="338" y="225" text-anchor="middle">Ins Haus</text>
                 <text class="node-val" x="338" y="250" text-anchor="middle" id="tHome">– W</text>
+                <!-- Akku -->
                 <circle cx="200" cy="285" r="34" fill="var(--card)" stroke="var(--line)" stroke-width="5"/>
                 <circle id="socRing" cx="200" cy="285" r="34" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round"
                         transform="rotate(-90 200 285)" stroke-dasharray="0 214"/>
@@ -204,8 +210,8 @@ jobs:
 
           <script>
           (() => {
-            const LAT = 51.2277, LON = 6.7735;
-            const NBSP = '\u00a0';
+            // ---------- Einstellungen ----------
+            const LAT = 51.2277, LON = 6.7735; // Düsseldorf (für Sonnenbogen)
             const store = {
               get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
               set(k, v){ try { localStorage.setItem(k, v); } catch {} }
@@ -221,11 +227,13 @@ jobs:
             const fmtW = w => (w == null || isNaN(w)) ? '– W' : `${Math.round(w)} W`;
             const fmtKwh = wh => (wh/1000).toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
 
+            // ---------- Daten holen ----------
             async function fetchReport(){
               if (demo) return demoData();
               const ctrl = new AbortController();
               const t = setTimeout(() => ctrl.abort(), 4000);
               try {
+                // Über den PC-Helfer (balkonstrom_server.py) geladen → Daten über ihn holen (kein CORS-Problem)
                 const viaHelper = !window.Capacitor && location.protocol === 'http:';
                 const url = viaHelper ? `/api/report?ip=${encodeURIComponent(cfg.ip)}` : `http://${cfg.ip}/properties/report`;
                 const r = await fetch(url, {signal: ctrl.signal, cache: 'no-store'});
@@ -248,6 +256,7 @@ jobs:
                 packData:[{maxTemp:2891}]};
             }
 
+            // ---------- Anzeige ----------
             function setWire(id, watts, reverse){
               const el = $(id), on = watts > 2;
               el.classList.toggle('on', on);
@@ -266,8 +275,8 @@ jobs:
               const solar = p.solarInputPower ?? 0;
               const home = p.outputHomePower ?? 0;
               const grid = p.gridInputPower ?? 0;
-              const charge = p.outputPackPower ?? 0;
-              const discharge = p.packInputPower ?? 0;
+              const charge = p.outputPackPower ?? 0;     // in den Akku
+              const discharge = p.packInputPower ?? 0;   // aus dem Akku
               const soc = p.electricLevel ?? 0;
 
               $('devname').textContent = d.product === 'solarFlow800Plus' ? 'SolarFlow 800 Plus' : (d.product || 'SolarFlow');
@@ -291,6 +300,7 @@ jobs:
               setWire('wGrid', grid);
               setWire('wBat', batW, batRev);
 
+              // Akku-Karte
               const wh = cfg.cap * soc / 100;
               $('cEnergy').textContent = `${fmtKwh(wh)} von ${fmtKwh(cfg.cap)} kWh`;
               const min = (p.minSoc ?? 100) / 10, max = (p.socSet ?? 1000) / 10;
@@ -304,7 +314,7 @@ jobs:
                 const hh = Math.floor(p.remainOutTime/60), mm = p.remainOutTime % 60;
                 remain = `reicht noch ca. ${hh} h ${mm} min (bis ${end.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})})`;
               } else if (charge > 0) remain = `lädt mit ${fmtW(charge)}`;
-              $('cRemain').textContent = remain || NBSP;
+              $('cRemain').textContent = remain || ' ';
 
               $('cOutLimit').textContent = fmtW(p.outputLimit);
               $('cMax').textContent = `max. ${fmtW(p.inverseMaxPower)} Einspeisung`;
@@ -312,9 +322,9 @@ jobs:
               $('cInLimit').textContent = p.acMode === 1 ? `Ladelimit ${fmtW(p.inputLimit)}` : `Laden max. ${fmtW(p.chargeMaxLimit)}`;
               const t = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
               $('cTemp').textContent = t == null ? '– °C' : `${t.toFixed(1).replace('.', ',')} °C`;
-              $('cPackTemp').textContent = tp == null ? NBSP : `Akku ${tp.toFixed(1).replace('.', ',')} °C`;
+              $('cPackTemp').textContent = tp == null ? ' ' : `Akku ${tp.toFixed(1).replace('.', ',')} °C`;
               $('cRssi').textContent = p.rssi ? `${p.rssi} dBm` : '– dBm';
-              $('cVolt').textContent = p.BatVolt ? `Akku ${(p.BatVolt/100).toFixed(1).replace('.', ',')} V` : NBSP;
+              $('cVolt').textContent = p.BatVolt ? `Akku ${(p.BatVolt/100).toFixed(1).replace('.', ',')} V` : ' ';
             }
 
             function setStatus(kind, text){
@@ -351,10 +361,91 @@ jobs:
               timer = setInterval(tick, cfg.interval * 1000);
             }
 
+            // Pausieren, wenn die App im Hintergrund ist
             document.addEventListener('visibilitychange', () => {
               if (document.hidden) clearInterval(timer); else start();
             });
 
+            // ---------- Einstellungen-Dialog ----------
             const dlg = $('dlg');
             $('btnSettings').onclick = () => {
-              $('inIp').value = cfg.ip; $('inC
+              $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
+              dlg.showModal();
+            };
+            $('btnCancel').onclick = () => dlg.close();
+            $('btnSave').onclick = () => {
+              cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
+              cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
+              cfg.interval = Math.max(3, Number($('inInt').value) || 5);
+              store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('interval', cfg.interval);
+              demo = false; dlg.close(); start();
+            };
+            $('btnDemo').onclick = () => { demo = true; dlg.close(); start(); };
+
+            // ---------- Sonnenbogen ----------
+            function sunTimes(date){
+              // vereinfachte NOAA-Formel, Genauigkeit ± wenige Minuten
+              const rad = Math.PI/180;
+              const start = new Date(date.getFullYear(), 0, 0);
+              const n = Math.floor((date - start) / 864e5);
+              const g = 2*Math.PI/365 * (n - 1);
+              const eqt = 229.18*(0.000075 + 0.001868*Math.cos(g) - 0.032077*Math.sin(g) - 0.014615*Math.cos(2*g) - 0.040849*Math.sin(2*g));
+              const decl = 0.006918 - 0.399912*Math.cos(g) + 0.070257*Math.sin(g) - 0.006758*Math.cos(2*g) + 0.000907*Math.sin(2*g) - 0.002697*Math.cos(3*g) + 0.00148*Math.sin(3*g);
+              const ha = Math.acos(Math.cos(90.833*rad)/(Math.cos(LAT*rad)*Math.cos(decl)) - Math.tan(LAT*rad)*Math.tan(decl)) / rad;
+              const noonUtcMin = 720 - 4*LON - eqt;
+              const mid = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+              return {
+                rise: new Date(mid.getTime() + (noonUtcMin - 4*ha) * 60000),
+                set:  new Date(mid.getTime() + (noonUtcMin + 4*ha) * 60000)
+              };
+            }
+            function drawSun(){
+              const now = new Date(), {rise, set} = sunTimes(now);
+              const x0 = 30, x1 = 370, base = 105, top = 14;
+              const pt = f => { const x = x0 + (x1-x0)*f; const y = base - (base-top)*Math.sin(Math.PI*f); return [x, y]; };
+              let d = ''; for (let i = 0; i <= 40; i++) { const [x, y] = pt(i/40); d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
+              $('sunArc').setAttribute('d', d);
+              const f = (now - rise) / (set - rise);
+              const dot = $('sunDot');
+              if (f >= 0 && f <= 1) { const [x, y] = pt(f); dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('opacity', 1); }
+              else dot.setAttribute('opacity', 0);
+              const hm = t => t.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+              $('sunrise').textContent = 'Aufgang ' + hm(rise);
+              $('sunset').textContent = 'Untergang ' + hm(set);
+              if (f > 0 && f < 1) { const left = Math.round((set - now)/60000); $('daylight').textContent = `noch ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} h Tageslicht`; }
+              else $('daylight').textContent = '';
+            }
+            drawSun(); setInterval(drawSun, 60000);
+
+            // Demo per URL (?demo) – praktisch zum Anschauen am PC
+            if (location.search.includes('demo')) demo = true;
+            // Außerhalb der Android-App auf einer https-Seite (Vorschau) geht kein Gerätezugriff → Demo
+            if (!window.Capacitor && location.protocol === 'https:') demo = true;
+            start();
+          })();
+          </script>
+          </body>
+          </html>
+          EOF_HTML
+
+      - name: Android-Projekt erzeugen
+        run: |
+          npm install
+          npx cap add android
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          npx cap sync android
+
+      - name: APK bauen
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Balkonstrom-Live.apk
+
+      - name: Als Release veroeffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Balkonstrom Live (Build ${{ github.run_number }})
+          files: Balkonstrom-Live.apk
+          make_latest: true
