@@ -15,15 +15,16 @@
   html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
   body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 84px)}
   .wrap{max-width:480px;margin:0 auto;padding:14px 14px 20px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
-  .brand{display:flex;align-items:center;gap:10px}
-  .brand svg{width:40px;height:40px;border-radius:11px;flex:none}
-  h1{font-size:19px;font-weight:700;letter-spacing:.3px}
-  h1 small{display:block;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:1px}
-  .pill{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .hdr-right{display:flex;gap:6px;align-items:center;flex:none}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0}
+  .brand svg{width:36px;height:36px;border-radius:10px;flex:none}
+  h1{font-size:18px;font-weight:700;letter-spacing:.2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  h1 small{display:block;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:400;color:var(--muted);margin-top:1px}
+  .pill{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
   .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
-  .iconbtn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;flex:none}
+  .iconbtn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:36px;height:36px;font-size:17px;cursor:pointer;flex:none}
   .view{display:none} .view.active{display:block}
   h2.sec{font-size:17px;margin:14px 2px 10px}
   .sun svg{width:100%;height:auto;display:block}
@@ -113,7 +114,7 @@
       </svg>
       <h1>Balkonstrom<small id="devname">SolarFlow 800 Plus</small></h1>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div class="hdr-right">
       <div class="pill"><span class="dot" id="dot"></span><span id="status">Verbinde…</span></div>
       <button class="iconbtn" id="btnSettings" aria-label="Einstellungen">⚙</button>
     </div>
@@ -438,10 +439,10 @@
       render(await fetchReport());
       fails = 0; showMsg('');
       lastOk = new Date();
-      setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : 'Live ') + lastOk.toLocaleTimeString('de-DE'));
+      setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : '') + lastOk.toLocaleTimeString('de-DE'));
       $('foot').textContent = (demo ? 'Demo-Daten – keine Verbindung zum Gerät' : `Daten direkt vom Gerät (${cfg.ip}) · alle ${cfg.interval} s`) + ' · __APPVERSION__';
     } catch (e) {
-      fails++; setStatus('err', lastOk ? 'Offline · ' + lastOk.toLocaleTimeString('de-DE') : 'Offline');
+      fails++; setStatus('err', lastOk ? 'Offline ' + lastOk.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) : 'Offline');
       if (fails >= 2) showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Stimmt die IP-Adresse (⚙)?`);
     }
   }
