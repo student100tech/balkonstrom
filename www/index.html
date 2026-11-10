@@ -165,7 +165,7 @@
 
     <div class="cards">
       <div class="card wide">
-        <h3><span>Heute</span><span id="todayInfo"></span></h3>
+        <h3><span>Heute <span id="todayInfo" style="font-weight:400"></span></span><button class="btn" id="btnToday" style="padding:4px 10px;font-size:12.5px">↻ Statistik laden</button></h3>
         <div class="today">
           <div><div class="k">Solar</div><div class="n" id="tdSolar" style="color:var(--solar)">–</div></div>
           <div><div class="k">Ins Haus</div><div class="n" id="tdHome" style="color:var(--home)">–</div></div>
@@ -315,7 +315,7 @@
     cap: Number(store.get('cap', 1920)),
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
-  let demo = false, timer = null, fails = 0, last = null, editing = {};
+  let demo = false, timer = null, fails = 0, last = null, editing = {}, lastOk = null;
   const $ = id => document.getElementById(id);
   const fmtW = w => (w == null || isNaN(w)) ? '– W' : `${Math.round(w)} W`;
   const kwh = (wh, dig = 2) => (wh/1000).toLocaleString('de-DE', {minimumFractionDigits:dig, maximumFractionDigits:dig});
@@ -327,7 +327,7 @@
   document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
     document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === b.dataset.v));
-    if (b.dataset.v === 'vStats') loadStats(false);
+    if (b.dataset.v === 'vStats') showStats();
     if (b.dataset.v === 'vCtl') syncControls(true);
     window.scrollTo(0, 0);
   });
@@ -433,15 +433,16 @@
     try {
       render(await fetchReport());
       fails = 0; showMsg('');
-      setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : 'Live ') + new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}));
+      lastOk = new Date();
+      setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : 'Live ') + lastOk.toLocaleTimeString('de-DE'));
       $('foot').textContent = (demo ? 'Demo-Daten – keine Verbindung zum Gerät' : `Daten direkt vom Gerät (${cfg.ip}) · alle ${cfg.interval} s`) + ' · __APPVERSION__';
     } catch (e) {
-      fails++; setStatus('err', 'Offline');
+      fails++; setStatus('err', lastOk ? 'Offline · ' + lastOk.toLocaleTimeString('de-DE') : 'Offline');
       if (fails >= 2) showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Stimmt die IP-Adresse (⚙)?`);
     }
   }
   function start(){ clearInterval(timer); tick(); timer = setInterval(tick, cfg.interval * 1000); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else { start(); loadToday(); } });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
   // ---------- Steuerung ----------
   const ctl = {
@@ -528,44 +529,49 @@
 
   function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3)); return {solar:s, home:s*0.85, batteryOutput:s*0.45, batteryInput:s*0.38}; }
 
-  let todayAt = 0;
-  async function loadToday(){
-    if (Date.now() - todayAt < 4*60*1000) return;
-    const has = demo || (cloud.mail && cloud.pw);
-    if (!has) { $('todayInfo').textContent = 'Zendure-Login fehlt (⚙)'; return; }
-    try {
-      const d = demo ? demoDay(0) : (await ensureCloud(), await energy(iso(new Date())));
-      $('tdSolar').textContent = kwh(d.solar || 0); $('tdHome').textContent = kwh(d.home || 0);
-      $('tdIn').textContent = kwh(d.batteryOutput || 0); $('tdOut').textContent = kwh(d.batteryInput || 0);
-      $('todayInfo').textContent = `kWh · Stand ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}`;
-      todayAt = Date.now();
-    } catch (e) { $('todayInfo').textContent = 'Cloud: ' + e.message; }
+  // Statistik wird NUR auf Knopfdruck aus der Cloud geladen und auf dem Handy zwischengespeichert.
+  let stats = null, metric = 'solar', loading = false;
+  function loadCache(){
+    try { const c = JSON.parse(store.get('zStats', 'null')); if (!c) return;
+      c.days.forEach(x => x.date = new Date(x.date)); c.at = new Date(c.at); stats = c; } catch {}
   }
-
-  let stats = null, metric = 'solar', statsAt = 0;
-  async function loadStats(force){
-    const has = demo || (cloud.mail && cloud.pw);
-    $('statsLogin').style.display = has ? 'none' : 'block';
-    $('statsBody').style.display = has ? 'block' : 'none';
-    if (!has || (!force && stats && Date.now() - statsAt < 10*60*1000)) { if (stats) drawStats(); return; }
-    $('statsInfo').textContent = 'lädt…';
+  const hasLogin = () => demo || (cloud.mail && cloud.pw);
+  function showToday(){
+    const t = stats?.days?.[6];
+    const isToday = t && iso(t.date) === iso(new Date());
+    const d = isToday ? t.d : null;
+    $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
+    $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
+    $('todayInfo').textContent = !hasLogin() ? '· Login fehlt (⚙)' : (stats && isToday ? `· kWh, Stand ${stats.at.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}` : '· noch nicht geladen');
+  }
+  function showStats(){
+    $('statsLogin').style.display = hasLogin() ? 'none' : 'block';
+    $('statsBody').style.display = hasLogin() ? 'block' : 'none';
+    $('statsInfo').textContent = stats ? `Stand ${stats.at.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` : 'noch nicht geladen';
+    drawStats();
+  }
+  async function refreshStats(){
+    if (loading) return;
+    if (!hasLogin()) { toast('Bitte zuerst den Zendure-Login unter ⚙ eintragen'); return; }
+    loading = true; $('btnToday').disabled = $('btnReloadStats').disabled = true;
+    $('statsInfo').textContent = 'lädt…'; $('todayInfo').textContent = '· lädt…';
     try {
       if (!demo) await ensureCloud();
       const days = [], raws = {};
       for (let i = 6; i >= 0; i--) {
-        const dt = new Date(); dt.setDate(dt.getDate() - i);
-        const key = iso(dt);
-        const d = demo ? demoDay(i) : await energy(key);
+        const dt = new Date(); dt.setHours(12, 0, 0, 0); dt.setDate(dt.getDate() - i);
+        const d = demo ? demoDay(i) : await energy(iso(dt));
         if (i === 0) raws.heute = d;
         days.push({date: dt, d});
       }
       const life = demo ? {solar:48210, home:41022, batteryOutput:20130, batteryInput:17702} : await energy(null);
       raws.gesamt = life;
-      stats = {days, life}; statsAt = Date.now();
+      stats = {days, life, at: new Date()};
+      if (!demo) store.set('zStats', JSON.stringify(stats));
       $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
-      drawStats();
-      $('statsInfo').textContent = 'kWh';
-    } catch (e) { $('statsInfo').textContent = 'Fehler'; toast('Statistik: ' + e.message, 4500); }
+      toast('Statistik aktualisiert');
+    } catch (e) { toast('Statistik: ' + e.message, 4500); }
+    finally { loading = false; $('btnToday').disabled = $('btnReloadStats').disabled = false; showToday(); showStats(); }
   }
   function drawStats(){
     if (!stats) return;
@@ -590,7 +596,8 @@
   document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
     metric = b.dataset.k; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b)); drawStats();
   });
-  $('btnReloadStats').onclick = () => { todayAt = 0; loadToday(); loadStats(true); };
+  $('btnReloadStats').onclick = refreshStats;
+  $('btnToday').onclick = refreshStats;
 
   // ---------- Einstellungen ----------
   const dlg = $('dlg');
@@ -611,17 +618,17 @@
     if (pw) { cloud.pw = pw; store.set('zPw', pw); }
     demo = false; dlg.close(); start();
     if (changed && cloud.mail && cloud.pw) {
-      try { await cloudLogin(); toast('Zendure-Login erfolgreich'); todayAt = 0; stats = null; loadToday(); }
+      try { await cloudLogin(); toast('Zendure-Login erfolgreich – Statistik über „↻ Statistik laden“'); showToday(); }
       catch (e) { toast('Zendure-Login fehlgeschlagen: ' + e.message, 5000); }
     }
   };
   $('btnLogout').onclick = () => {
     ['zMail','zPw','zToken','zNode','zDev'].forEach(store.del);
     Object.assign(cloud, {mail:'', pw:'', token:'', node:'', devId:''});
-    stats = null; todayAt = 0; dlg.close(); toast('Zendure-Login gelöscht');
-    ['tdSolar','tdHome','tdIn','tdOut'].forEach(id => $(id).textContent = '–'); loadToday();
+    stats = null; store.del('zStats'); dlg.close(); toast('Zendure-Login gelöscht');
+    showToday(); showStats();
   };
-  $('btnDemo').onclick = () => { demo = true; dlg.close(); start(); todayAt = 0; stats = null; loadToday(); };
+  $('btnDemo').onclick = () => { demo = true; dlg.close(); start(); stats = null; showToday(); };
 
   // ---------- Sonnenbogen ----------
   function sunTimes(date){
@@ -651,7 +658,7 @@
   if (location.search.includes('demo')) demo = true;
   if (!isApp && location.protocol === 'https:') demo = true;  // Vorschau
   start();
-  loadToday(); setInterval(loadToday, 5*60*1000);
+  loadCache(); showToday();
 })();
 </script>
 </body>
