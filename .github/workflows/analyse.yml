@@ -8,41 +8,41 @@ jobs:
   analyse:
     runs-on: ubuntu-latest
     steps:
-      - name: Zendure-App herunterladen
-        run: |
-          set +e
-          mkdir -p z && cd z
-          for pkg in com.zendure.app com.zendure.zendure com.zendure.smart com.zendure.supertank; do
-            for typ in XAPK APK; do
-              curl -sL -A "Mozilla/5.0 (Linux; Android 14)" -o app.bin "https://d.apkpure.com/b/$typ/$pkg?version=latest"
-              sz=$(stat -c %s app.bin 2>/dev/null || echo 0)
-              echo "$pkg $typ -> $sz Bytes, $(file -b app.bin | cut -c1-60)"
-              if [ "$sz" -gt 5000000 ] && file app.bin | grep -qi zip; then echo "PKG=$pkg" >> $GITHUB_ENV; break 2; fi
-            done
-          done
-          ls -la
-
-      - name: Entpacken
-        run: |
-          cd z
-          mkdir -p x && unzip -q -o app.bin -d x || true
-          # XAPK enthält einzelne APKs -> ebenfalls entpacken
-          for a in x/*.apk; do [ -f "$a" ] && mkdir -p "x/_$(basename $a)" && unzip -q -o "$a" -d "x/_$(basename $a)"; done
-          echo "Dateien: $(find x -type f | wc -l)"
-          find x -maxdepth 3 -type f \( -name '*.dex' -o -name '*.so' -o -name '*.js' -o -name '*.bundle' \) -printf '%s %p\n' | sort -rn | head -30
-
       - uses: actions/checkout@v4
         with:
           path: repo
 
+      - name: apkeep holen
+        run: |
+          curl -sL -o apkeep https://github.com/EFForg/apkeep/releases/latest/download/apkeep-x86_64-unknown-linux-gnu
+          chmod +x apkeep && ./apkeep --version
+
+      - name: Verfügbare Versionen
+        run: |
+          ./apkeep -a com.zendure.app -l -d apk-pure 2>&1 | tail -20 || true
+
+      - name: Neueste Version laden
+        run: |
+          mkdir -p dl && ./apkeep -a com.zendure.app -d apk-pure dl 2>&1 | tail -5 || true
+          ls -la dl
+
+      - name: Entpacken und Version bestimmen
+        run: |
+          set +e
+          f=$(ls dl/* | head -1); echo "Datei: $f"
+          mkdir -p x && unzip -q -o "$f" -d x
+          for a in x/*.apk; do [ -f "$a" ] && mkdir -p "x/_$(basename $a)" && unzip -q -o "$a" -d "x/_$(basename $a)"; done
+          AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)
+          base=$(ls x/*.apk 2>/dev/null | grep -i -E "base|com.zendure" | head -1); [ -z "$base" ] && base="$f"
+          $AAPT dump badging "$base" 2>/dev/null | grep -E "^package|sdkVersion" | head -3
+          cat x/manifest.json 2>/dev/null | head -c 400; echo
+          echo "dex-Dateien: $(find x -name '*.dex' | wc -l), so: $(find x -name '*.so' | wc -l)"
+          find x -name '*.so' -printf '%s %p\n' | sort -rn | head -15
+
       - name: Adressen suchen
         run: |
-          python3 repo/dexstrings.py z/x > z/endpunkte.txt 2>&1
-          wc -l z/endpunkte.txt
-          grep -iE 'meter|ct|phase|grid|energy|share|family|home|hems|statistic|electric|tdengine|power' z/endpunkte.txt | head -400
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: endpunkte
-          path: z/endpunkte.txt
-          retention-days: 3
+          python3 repo/dexstrings.py x > endpunkte.txt 2>&1
+          echo "Anzahl: $(wc -l < endpunkte.txt)"
+          grep -vE "^URL " endpunkte.txt | head -400
+          echo "== Treffer in .so/.js/sonstigen Dateien"
+          grep -rhaoE "(tdengine|productModule|panel|meter|smartMeter|hems|energy|grid|phase)/[A-Za-z0-9_/.-]{2,80}" x --include=*.so --include=*.js --include=*.json 2>/dev/null | sort | uniq -c | sort -rn | head -150
