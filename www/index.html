@@ -277,7 +277,11 @@
 
 <dialog id="dlg">
   <h2>Einstellungen</h2>
-  <div style="font-size:12px;color:var(--muted)">Version __APPVERSION__</div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
+    <span>Version __APPVERSION__</span>
+    <button class="btn" id="btnUpdate" style="padding:5px 10px;font-size:12.5px">Nach Update suchen</button>
+  </div>
+  <div id="updInfo" style="font-size:12.5px;margin-top:6px;display:none"></div>
   <h4>Gerät im WLAN</h4>
   <label for="inIp">IP-Adresse des SolarFlow</label>
   <input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx">
@@ -633,6 +637,25 @@
     showToday(); showStats();
   };
   $('btnDemo').onclick = () => { demo = true; dlg.close(); start(); stats = null; showToday(); };
+
+  // ---------- Update-Prüfung (GitHub-Releases, öffentlich) ----------
+  const BUILD = Number('__BUILDNR__') || 0;
+  $('btnUpdate').onclick = async () => {
+    const info = $('updInfo'), btn = $('btnUpdate');
+    info.style.display = 'block'; info.style.color = 'var(--muted)'; info.textContent = 'Prüfe…'; btn.disabled = true;
+    try {
+      const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest', {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
+      if (!r.ok) throw new Error('GitHub antwortet nicht (HTTP ' + r.status + ')');
+      const j = await r.json();
+      const nr = Number((j.tag_name || '').replace(/\D/g, '')) || 0;
+      const apk = (j.assets || []).find(a => a.name.endsWith('.apk'));
+      if (nr > BUILD && apk) {
+        info.style.color = 'var(--bat)';
+        info.innerHTML = `Neue Version: <b>Build ${nr}</b> (du hast Build ${BUILD}).<br><a href="${apk.browser_download_url}" style="color:var(--bat)">Jetzt herunterladen</a> – danach die Datei öffnen und installieren.`;
+      } else info.textContent = `Du hast die neueste Version (Build ${BUILD}).`;
+    } catch (e) { info.style.color = 'var(--warn)'; info.textContent = 'Update-Prüfung fehlgeschlagen: ' + e.message; }
+    finally { btn.disabled = false; }
+  };
 
   // ---------- Sonnenbogen ----------
   function sunTimes(date){

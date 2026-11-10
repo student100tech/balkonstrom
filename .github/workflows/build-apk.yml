@@ -29,6 +29,7 @@ jobs:
           echo "DATUM=$DATUM" >> $GITHUB_ENV
           echo "APKNAME=Balkonstrom-Live_${DATUM}_Build-${{ github.run_number }}.apk" >> $GITHUB_ENV
           sed -i "s/__APPVERSION__/2.${{ github.run_number }} · Build ${{ github.run_number }} · ${DATUM}/g" www/index.html
+          sed -i "s/__BUILDNR__/${{ github.run_number }}/g" www/index.html
 
       - name: Android-Projekt erzeugen
         run: |
