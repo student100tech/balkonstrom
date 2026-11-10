@@ -92,6 +92,20 @@
   label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
   input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
   .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+  .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .xbtn{background:none;border:0;color:var(--muted);font-size:20px;padding:4px 6px}
+  .dsec{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+  .dtitle{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+  .drow{font-size:12.5px;margin:4px 0 8px}
+  .muted{color:var(--muted)}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .btn.small{padding:4px 10px;font-size:12.5px}
+  .wide-btn{width:100%}
+  .btn.update{background:var(--bat);border-color:var(--bat);color:#06201c;font-weight:600}
+  .dfoot{display:flex;gap:8px;margin-top:18px}
+  .dfoot .btn{flex:1;padding:11px}
+  .iconbtn{position:relative}
+  .iconbtn.has-update::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--bat);border:2px solid var(--bg)}
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 96px);background:var(--card2);border:1px solid var(--line);
     padding:10px 14px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
   .toast.show{opacity:1}
@@ -279,27 +293,38 @@
 <div class="toast" id="toast"></div>
 
 <dialog id="dlg">
-  <h2>Einstellungen</h2>
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
-    <span>Version __APPVERSION__</span>
-    <button class="btn" id="btnUpdate" style="padding:5px 10px;font-size:12.5px">Nach Update suchen</button>
+  <div class="dhead"><h2>Einstellungen</h2><button class="xbtn" id="btnX" aria-label="Schließen">✕</button></div>
+
+  <div class="dsec">
+    <div class="dtitle">App</div>
+    <div class="drow"><span class="muted">Version __APPVERSION__</span></div>
+    <button class="btn wide-btn" id="btnUpdate">Nach Update suchen</button>
+    <div id="updInfo" class="hint" style="display:none"></div>
   </div>
-  <div id="updInfo" style="font-size:12.5px;margin-top:6px;display:none"></div>
-  <h4>Gerät im WLAN</h4>
-  <label for="inIp">IP-Adresse des SolarFlow</label>
-  <input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx">
-  <label for="inCap">Akku-Kapazität (Wh)</label>
-  <input id="inCap" inputmode="numeric" placeholder="1920">
-  <label for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
-  <input id="inInt" inputmode="numeric" placeholder="5">
-  <h4>Zendure-Konto (für Statistik)</h4>
-  <label for="inMail">E-Mail</label>
-  <input id="inMail" type="email" autocomplete="username" placeholder="name@beispiel.de">
-  <label for="inPw">Passwort</label>
-  <input id="inPw" type="password" autocomplete="current-password" placeholder="nur nötig beim ersten Mal">
-  <div class="s" style="font-size:11.5px;color:var(--muted);margin-top:6px">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
-  <div class="row">
-    <button class="btn" id="btnLogout">Abmelden</button>
+
+  <div class="dsec">
+    <div class="dtitle">Gerät im WLAN</div>
+    <label for="inIp">IP-Adresse des SolarFlow</label>
+    <input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx">
+    <label for="inCap">Akku-Kapazität (Wh)</label>
+    <input id="inCap" inputmode="numeric" placeholder="1920">
+    <label for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
+    <input id="inInt" inputmode="numeric" placeholder="5">
+  </div>
+
+  <div class="dsec">
+    <div class="dtitle" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Zendure-Konto (für Statistik)</span>
+      <button class="btn small" id="btnLogout">Abmelden</button>
+    </div>
+    <label for="inMail">E-Mail</label>
+    <input id="inMail" type="email" autocomplete="username" placeholder="name@beispiel.de">
+    <label for="inPw">Passwort</label>
+    <input id="inPw" type="password" autocomplete="current-password" placeholder="Passwort">
+    <div class="hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
+  </div>
+
+  <div class="dfoot">
     <button class="btn" id="btnCancel">Abbrechen</button>
     <button class="btn primary" id="btnSave">Speichern</button>
   </div>
@@ -616,6 +641,7 @@
     dlg.showModal();
   };
   $('btnCancel').onclick = () => dlg.close();
+  $('btnX').onclick = () => dlg.close();
   $('btnSave').onclick = async () => {
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
@@ -638,22 +664,51 @@
     showToday(); showStats();
   };
 
-  // ---------- Update-Prüfung (GitHub-Releases, öffentlich) ----------
+  // ---------- Updates (GitHub-Releases, öffentlich) ----------
   const BUILD = Number('__BUILDNR__') || 0;
+  let upd = null;   // {nr, url}
+  async function checkUpdate(){
+    const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest', {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
+    if (!r.ok) throw new Error('GitHub antwortet nicht (HTTP ' + r.status + ')');
+    const j = await r.json();
+    const nr = Number((j.tag_name || '').replace(/\D/g, '')) || 0;
+    const apk = (j.assets || []).find(a => a.name.endsWith('.apk'));
+    upd = (nr > BUILD && apk) ? {nr, url: apk.browser_download_url} : null;
+    showUpdate();
+    return upd;
+  }
+  function showUpdate(){
+    const btn = $('btnUpdate');
+    $('btnSettings').classList.toggle('has-update', !!upd);
+    btn.classList.toggle('update', !!upd);
+    btn.textContent = upd ? `Jetzt updaten auf Build ${upd.nr}` : 'Nach Update suchen';
+  }
+  async function installUpdate(){
+    const info = $('updInfo');
+    info.style.display = 'block'; info.style.color = 'var(--muted)';
+    info.textContent = 'Lade Build ' + upd.nr + ' herunter… (ca. 11 MB)';
+    const cap = window.Capacitor;
+    try {
+      if (!isApp) throw new Error('nur in der App möglich');
+      const plug = cap.Plugins?.Updater;
+      if (plug?.downloadAndInstall) await plug.downloadAndInstall({url: upd.url});
+      else if (cap.nativePromise) await cap.nativePromise('Updater', 'downloadAndInstall', {url: upd.url});
+      else throw new Error('Updater fehlt');
+      info.textContent = 'Fertig geladen – bitte im Android-Fenster auf „Installieren“ tippen.';
+    } catch (e) {
+      // Rückfall: Download im Browser öffnen
+      const m = String(e?.message || e);
+      info.style.color = 'var(--warn)';
+      info.innerHTML = /zulassen/.test(m) ? m
+        : `Automatisches Update ging nicht (${m}).<br><a href="${upd.url}" style="color:var(--bat)">Hier herunterladen</a> und die Datei öffnen.`;
+    }
+  }
   $('btnUpdate').onclick = async () => {
     const info = $('updInfo'), btn = $('btnUpdate');
+    if (upd) return installUpdate();
     info.style.display = 'block'; info.style.color = 'var(--muted)'; info.textContent = 'Prüfe…'; btn.disabled = true;
-    try {
-      const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest', {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
-      if (!r.ok) throw new Error('GitHub antwortet nicht (HTTP ' + r.status + ')');
-      const j = await r.json();
-      const nr = Number((j.tag_name || '').replace(/\D/g, '')) || 0;
-      const apk = (j.assets || []).find(a => a.name.endsWith('.apk'));
-      if (nr > BUILD && apk) {
-        info.style.color = 'var(--bat)';
-        info.innerHTML = `Neue Version: <b>Build ${nr}</b> (du hast Build ${BUILD}).<br><a href="${apk.browser_download_url}" style="color:var(--bat)">Jetzt herunterladen</a> – danach die Datei öffnen und installieren.`;
-      } else info.textContent = `Du hast die neueste Version (Build ${BUILD}).`;
-    } catch (e) { info.style.color = 'var(--warn)'; info.textContent = 'Update-Prüfung fehlgeschlagen: ' + e.message; }
+    try { info.textContent = (await checkUpdate()) ? `Build ${upd.nr} ist verfügbar (du hast Build ${BUILD}).` : `Du hast die neueste Version (Build ${BUILD}).`; }
+    catch (e) { info.style.color = 'var(--warn)'; info.textContent = 'Update-Prüfung fehlgeschlagen: ' + e.message; }
     finally { btn.disabled = false; }
   };
 
@@ -687,6 +742,7 @@
   start();
   loadCache(); showToday();
   if (!cfg.ip && !demo) setTimeout(() => $('btnSettings').click(), 400);
+  if (isApp) setTimeout(() => checkUpdate().catch(() => {}), 3000);   // still im Hintergrund, Punkt am ⚙ bei neuer Version
 })();
 </script>
 </body>
