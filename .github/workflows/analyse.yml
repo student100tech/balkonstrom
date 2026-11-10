@@ -17,13 +17,11 @@ jobs:
           curl -sL -o apkeep https://github.com/EFForg/apkeep/releases/latest/download/apkeep-x86_64-unknown-linux-gnu
           chmod +x apkeep && ./apkeep --version
 
-      - name: Verfügbare Versionen
+      - name: Neueste Version laden (Huawei AppGallery)
         run: |
-          ./apkeep -a com.zendure.app -l -d apk-pure 2>&1 | tail -20 || true
-
-      - name: Neueste Version laden
-        run: |
-          mkdir -p dl && ./apkeep -a com.zendure.app -d apk-pure dl 2>&1 | tail -5 || true
+          set +e
+          ./apkeep -a com.zendure.app -l -d huawei-app-gallery 2>&1 | tail -5
+          mkdir -p dl && ./apkeep -a com.zendure.app -d huawei-app-gallery dl 2>&1 | tail -5
           ls -la dl
 
       - name: Entpacken und Version bestimmen
