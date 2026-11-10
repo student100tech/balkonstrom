@@ -36,12 +36,18 @@ jobs:
           cd z
           {
             echo "== Paket: $PKG"
-            echo "== Pfade (tdengine/productModule/api/...)"
-            find x -type f -print0 | xargs -0 strings -n 6 2>/dev/null | grep -oE '/?(tdengine|productModule|device|meter|smartMeter|energy|share|family|home|hems|statistic|statistics|electric|ct)/[A-Za-z0-9_/.-]{2,80}' | sort | uniq -c | sort -rn | head -400
-            echo "== Server"
-            find x -type f -print0 | xargs -0 strings -n 6 2>/dev/null | grep -oE 'https?://[A-Za-z0-9._-]*zendure[A-Za-z0-9._/-]*' | sort -u | head -80
+            echo "== Große Dateien"
+            find x -type f -size +300k -printf '%s %p\n' | sort -rn | head -40
+            echo "== Ordner assets"
+            find x/assets -maxdepth 3 | head -60
+            echo "== Treffer für Schlüsselwörter (Datei: Anzahl)"
+            for k in tdengine productModule Blade-Auth queryDeviceList zen-iot app.zendure.tech; do
+              echo "-- $k"; grep -rlaF "$k" x 2>/dev/null | head -10
+            done
+            echo "== Pfade"
+            grep -rhaoE '"?/?(tdengine|productModule|api|device|meter|smartMeter|share|family|home|hems|statistic|statistics|electric|energy)/[A-Za-z0-9_/.-]{2,80}' x 2>/dev/null | tr -d '"' | sort | uniq -c | sort -rn | head -500
           } > endpunkte.txt
-          wc -l endpunkte.txt; head -60 endpunkte.txt
+          wc -l endpunkte.txt; cat endpunkte.txt | head -300
 
       - uses: actions/upload-artifact@v4
         with:
