@@ -28,6 +28,13 @@ jobs:
           mkdir -p ~/.android
           cp android-debug.keystore ~/.android/debug.keystore
 
+      - name: Version festlegen
+        run: |
+          DATUM=$(TZ=Europe/Berlin date +%F)
+          echo "DATUM=$DATUM" >> $GITHUB_ENV
+          echo "APKNAME=Balkonstrom-Live_${DATUM}_Build-${{ github.run_number }}.apk" >> $GITHUB_ENV
+          sed -i "s/__APPVERSION__/2.${{ github.run_number }} · Build ${{ github.run_number }} · ${DATUM}/g" www/index.html
+
       - name: Android-Projekt erzeugen
         run: |
           npm install
@@ -42,15 +49,15 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../Balkonstrom-Live.apk
+          cp app/build/outputs/apk/debug/app-debug.apk "../$APKNAME"
 
       - name: Als Release veröffentlichen
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Balkonstrom Live (Build ${{ github.run_number }})
+          name: Balkonstrom Live – Build ${{ github.run_number }} (${{ env.DATUM }})
           body: |
             Live-Anzeige, Statistik (Zendure-Cloud) und Steuerung für den SolarFlow 800 Plus.
             Installation: APK herunterladen, öffnen, installieren.
-          files: Balkonstrom-Live.apk
+          files: ${{ env.APKNAME }}
           make_latest: true
