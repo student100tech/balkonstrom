@@ -1,0 +1,14 @@
+{
+  "name": "balkonstrom-live",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Live-Anzeige und Steuerung für den Zendure SolarFlow 800 Plus",
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "latest",
+    "@capacitor/cli": "latest"
+  }
+}

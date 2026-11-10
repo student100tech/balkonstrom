@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <g transform="translate(512 512) scale(0.92) translate(-512 -512)">
+  <!-- Sonnenstrahlen -->
+  <g stroke="#f5a524" stroke-width="34" stroke-linecap="round">
+    <line x1="512" y1="250" x2="512" y2="310"/>
+    <line x1="356" y1="314" x2="392" y2="356"/>
+    <line x1="668" y1="314" x2="632" y2="356"/>
+    <line x1="290" y1="452" x2="345" y2="465"/>
+    <line x1="734" y1="452" x2="679" y2="465"/>
+  </g>
+  <!-- Sonne (halb, über Horizont) -->
+  <path d="M392 520 A120 120 0 0 1 632 520 Z" fill="#f5a524"/>
+  <!-- Horizont -->
+  <rect x="300" y="534" width="424" height="22" rx="11" fill="#f5a524" opacity=".55"/>
+  <!-- Akku -->
+  <rect x="352" y="590" width="300" height="150" rx="34" fill="none" stroke="#2dd4bf" stroke-width="30"/>
+  <rect x="664" y="634" width="30" height="62" rx="10" fill="#2dd4bf"/>
+  <!-- Blitz -->
+  <path d="M528 608 L462 676 H512 L492 724 L560 652 H508 Z" fill="#2dd4bf"/>
+  </g>
+</svg>
