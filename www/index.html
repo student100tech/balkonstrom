@@ -280,7 +280,7 @@
   <div style="font-size:12px;color:var(--muted)">Version __APPVERSION__</div>
   <h4>Gerät im WLAN</h4>
   <label for="inIp">IP-Adresse des SolarFlow</label>
-  <input id="inIp" inputmode="decimal" placeholder="192.168.178.51">
+  <input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx">
   <label for="inCap">Akku-Kapazität (Wh)</label>
   <input id="inCap" inputmode="numeric" placeholder="1920">
   <label for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
@@ -311,7 +311,7 @@
     del(k){ try { localStorage.removeItem(k); } catch {} }
   };
   let cfg = {
-    ip: store.get('ip', '192.168.178.51'),
+    ip: store.get('ip', ''),
     cap: Number(store.get('cap', 1920)),
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
@@ -441,7 +441,11 @@
       if (fails >= 2) showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Stimmt die IP-Adresse (⚙)?`);
     }
   }
-  function start(){ clearInterval(timer); tick(); timer = setInterval(tick, cfg.interval * 1000); }
+  function start(){
+    clearInterval(timer);
+    if (!cfg.ip && !demo) { setStatus('err', 'IP fehlt'); showMsg('Bitte unter ⚙ die IP-Adresse deines SolarFlow eintragen. Sie wird nur auf diesem Handy gespeichert.'); return; }
+    tick(); timer = setInterval(tick, cfg.interval * 1000);
+  }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
   // ---------- Steuerung ----------
@@ -659,6 +663,7 @@
   if (!isApp && location.protocol === 'https:') demo = true;  // Vorschau
   start();
   loadCache(); showToday();
+  if (!cfg.ip && !demo) setTimeout(() => $('btnSettings').click(), 400);
 })();
 </script>
 </body>
