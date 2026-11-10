@@ -31,23 +31,15 @@ jobs:
           echo "Dateien: $(find x -type f | wc -l)"
           find x -maxdepth 3 -type f \( -name '*.dex' -o -name '*.so' -o -name '*.js' -o -name '*.bundle' \) -printf '%s %p\n' | sort -rn | head -30
 
+      - uses: actions/checkout@v4
+        with:
+          path: repo
+
       - name: Adressen suchen
         run: |
-          cd z
-          {
-            echo "== Paket: $PKG"
-            echo "== Große Dateien"
-            find x -type f -size +300k -printf '%s %p\n' | sort -rn | head -40
-            echo "== Ordner assets"
-            find x/assets -maxdepth 3 | head -60
-            echo "== Treffer für Schlüsselwörter (Datei: Anzahl)"
-            for k in tdengine productModule Blade-Auth queryDeviceList zen-iot app.zendure.tech; do
-              echo "-- $k"; grep -rlaF "$k" x 2>/dev/null | head -10
-            done
-            echo "== Pfade"
-            grep -rhaoE '"?/?(tdengine|productModule|api|device|meter|smartMeter|share|family|home|hems|statistic|statistics|electric|energy)/[A-Za-z0-9_/.-]{2,80}' x 2>/dev/null | tr -d '"' | sort | uniq -c | sort -rn | head -500
-          } > endpunkte.txt
-          wc -l endpunkte.txt; cat endpunkte.txt | head -300
+          python3 repo/dexstrings.py z/x > z/endpunkte.txt 2>&1
+          wc -l z/endpunkte.txt
+          grep -iE 'meter|ct|phase|grid|energy|share|family|home|hems|statistic|electric|tdengine|power' z/endpunkte.txt | head -400
 
       - uses: actions/upload-artifact@v4
         with:
