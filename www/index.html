@@ -183,7 +183,7 @@
       </div>
       <div class="card"><h3>Ausgangslimit</h3><div class="v" id="cOutLimit">– W</div><div class="s" id="cMax">&nbsp;</div></div>
       <div class="card"><h3>Modus</h3><div class="v" id="cMode" style="font-size:17px">–</div><div class="s" id="cInLimit">&nbsp;</div></div>
-      <div class="card"><h3>Temperatur</h3><div class="v" id="cTemp">– °C</div><div class="s" id="cPackTemp">&nbsp;</div></div>
+      <div class="card"><h3>Gerätetemperatur</h3><div class="v" id="cTemp">– °C</div><div class="s" id="cPackTemp">&nbsp;</div></div>
       <div class="card"><h3>WLAN</h3><div class="v" id="cRssi">– dBm</div><div class="s" id="cVolt">&nbsp;</div></div>
     </div>
   </section>
@@ -425,7 +425,7 @@
     $('cInLimit').textContent = p.acMode === 1 ? `Ladeleistung ${fmtW(p.inputLimit)}` : `Laden max. ${fmtW(p.chargeMaxLimit)}`;
     const t = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
     $('cTemp').textContent = t == null ? '– °C' : `${de1(t)} °C`;
-    $('cPackTemp').textContent = tp == null ? NBSP : `Akku ${de1(tp)} °C`;
+    $('cPackTemp').textContent = tp == null ? NBSP : `Akkutemperatur ${de1(tp)} °C`;
     $('cRssi').textContent = p.rssi ? `${p.rssi} dBm` : '– dBm';
     $('cVolt').textContent = p.BatVolt ? `Akku ${de1(p.BatVolt/100)} V` : NBSP;
     syncControls(false);
