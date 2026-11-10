@@ -165,7 +165,7 @@
 
     <div class="cards">
       <div class="card wide">
-        <h3><span>Heute <span id="todayInfo" style="font-weight:400"></span></span><button class="btn" id="btnToday" style="padding:4px 10px;font-size:12.5px">↻ Statistik laden</button></h3>
+        <h3><span>Heute</span><span id="todayInfo" style="font-weight:400"></span></h3>
         <div class="today">
           <div><div class="k">Solar</div><div class="n" id="tdSolar" style="color:var(--solar)">–</div></div>
           <div><div class="k">Ins Haus</div><div class="n" id="tdHome" style="color:var(--home)">–</div></div>
@@ -550,7 +550,7 @@
     const d = isToday ? t.d : null;
     $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
     $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
-    $('todayInfo').textContent = !hasLogin() ? '· Login fehlt (⚙)' : (stats && isToday ? `· kWh, Stand ${stats.at.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}` : '· noch nicht geladen');
+    $('todayInfo').textContent = !hasLogin() ? 'Login fehlt (⚙)' : (stats && isToday ? `kWh · Stand ${stats.at.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}` : 'laden im Reiter Statistik');
   }
   function showStats(){
     $('statsLogin').style.display = hasLogin() ? 'none' : 'block';
@@ -561,8 +561,8 @@
   async function refreshStats(){
     if (loading) return;
     if (!hasLogin()) { toast('Bitte zuerst den Zendure-Login unter ⚙ eintragen'); return; }
-    loading = true; $('btnToday').disabled = $('btnReloadStats').disabled = true;
-    $('statsInfo').textContent = 'lädt…'; $('todayInfo').textContent = '· lädt…';
+    loading = true; $('btnReloadStats').disabled = true;
+    $('statsInfo').textContent = 'lädt…'; $('todayInfo').textContent = 'lädt…';
     try {
       if (!demo) await ensureCloud();
       const days = [], raws = {};
@@ -579,7 +579,7 @@
       $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
       toast('Statistik aktualisiert');
     } catch (e) { toast('Statistik: ' + e.message, 4500); }
-    finally { loading = false; $('btnToday').disabled = $('btnReloadStats').disabled = false; showToday(); showStats(); }
+    finally { loading = false; $('btnReloadStats').disabled = false; showToday(); showStats(); }
   }
   function drawStats(){
     if (!stats) return;
@@ -605,7 +605,6 @@
     metric = b.dataset.k; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b)); drawStats();
   });
   $('btnReloadStats').onclick = refreshStats;
-  $('btnToday').onclick = refreshStats;
 
   // ---------- Einstellungen ----------
   const dlg = $('dlg');
@@ -626,7 +625,7 @@
     if (pw) { cloud.pw = pw; store.set('zPw', pw); }
     demo = false; dlg.close(); start();
     if (changed && cloud.mail && cloud.pw) {
-      try { await cloudLogin(); toast('Zendure-Login erfolgreich – Statistik über „↻ Statistik laden“'); showToday(); }
+      try { await cloudLogin(); toast('Zendure-Login erfolgreich – Statistik im Reiter „Statistik“ laden'); showToday(); }
       catch (e) { toast('Zendure-Login fehlgeschlagen: ' + e.message, 5000); }
     }
   };
