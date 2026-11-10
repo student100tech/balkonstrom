@@ -43,6 +43,8 @@
   .card .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
   .card .s{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
   .wide{grid-column:1/-1}
+  .trow{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);margin-top:4px}
+  .trow b{font-size:18px;color:var(--text);font-variant-numeric:tabular-nums}
   .bar{height:8px;border-radius:5px;background:var(--card2);overflow:hidden;margin-top:8px;position:relative}
   .bar i{display:block;height:100%;background:var(--bat);border-radius:5px;transition:width .6s}
   .bar b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--muted)}
@@ -183,7 +185,7 @@
       </div>
       <div class="card"><h3>Ausgangslimit</h3><div class="v" id="cOutLimit">– W</div><div class="s" id="cMax">&nbsp;</div></div>
       <div class="card"><h3>Modus</h3><div class="v" id="cMode" style="font-size:17px">–</div><div class="s" id="cInLimit">&nbsp;</div></div>
-      <div class="card"><h3>Gerätetemperatur</h3><div class="v" id="cTemp">– °C</div><div class="s" id="cPackTemp">&nbsp;</div></div>
+      <div class="card"><h3>Temperatur</h3><div class="trow"><span>Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span>Akku</span><b id="cPackTemp">– °C</b></div></div>
       <div class="card"><h3>WLAN</h3><div class="v" id="cRssi">– dBm</div><div class="s" id="cVolt">&nbsp;</div></div>
     </div>
   </section>
@@ -298,7 +300,6 @@
   <div class="s" style="font-size:11.5px;color:var(--muted);margin-top:6px">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
   <div class="row">
     <button class="btn" id="btnLogout">Abmelden</button>
-    <button class="btn" id="btnDemo">Demo</button>
     <button class="btn" id="btnCancel">Abbrechen</button>
     <button class="btn primary" id="btnSave">Speichern</button>
   </div>
@@ -424,8 +425,8 @@
     $('cMode').textContent = p.acMode === 1 ? 'Laden aus Netz' : (p.acMode === 2 ? 'Abgabe ins Haus' : '–');
     $('cInLimit').textContent = p.acMode === 1 ? `Ladeleistung ${fmtW(p.inputLimit)}` : `Laden max. ${fmtW(p.chargeMaxLimit)}`;
     const t = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
-    $('cTemp').textContent = t == null ? '– °C' : `${de1(t)} °C`;
-    $('cPackTemp').textContent = tp == null ? NBSP : `Akkutemperatur ${de1(tp)} °C`;
+    $('cTemp').textContent = t == null ? '– °C' : `${Math.round(t)} °C`;
+    $('cPackTemp').textContent = tp == null ? '– °C' : `${Math.round(tp)} °C`;
     $('cRssi').textContent = p.rssi ? `${p.rssi} dBm` : '– dBm';
     $('cVolt').textContent = p.BatVolt ? `Akku ${de1(p.BatVolt/100)} V` : NBSP;
     syncControls(false);
@@ -636,7 +637,6 @@
     stats = null; store.del('zStats'); dlg.close(); toast('Zendure-Login gelöscht');
     showToday(); showStats();
   };
-  $('btnDemo').onclick = () => { demo = true; dlg.close(); start(); stats = null; showToday(); };
 
   // ---------- Update-Prüfung (GitHub-Releases, öffentlich) ----------
   const BUILD = Number('__BUILDNR__') || 0;
