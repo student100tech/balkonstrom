@@ -200,8 +200,8 @@
         <div class="seg" id="seg">
           <button data-k="solar" class="on">Solar</button>
           <button data-k="home">Ins Haus</button>
-          <button data-k="batteryInput">Geladen</button>
-          <button data-k="batteryOutput">Entladen</button>
+          <button data-k="batteryOutput">Geladen</button>
+          <button data-k="batteryInput">Entladen</button>
         </div>
         <svg class="chart" id="chart" viewBox="0 0 360 190"></svg>
       </div>
@@ -487,6 +487,8 @@
   };
 
   // ---------- Zendure-Cloud (Statistik) ----------
+  // Hinweis: In der Cloud heißt Laden 'batteryOutput' und Entladen 'batteryInput'
+  // (abgeglichen mit der Zendure-App am 10.11.2026: Geladen 1,41 kWh / Entladen 593 Wh).
   const cloud = {
     mail: store.get('zMail', ''), pw: store.get('zPw', ''),
     token: store.get('zToken', ''), node: store.get('zNode', ''), devId: store.get('zDev', '')
@@ -523,7 +525,7 @@
   async function ensureCloud(){ if (!cloud.token || !cloud.devId || !cloud.node) await cloudLogin(); }
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-  function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3)); return {solar:s, home:s*0.85, batteryInput:s*0.45, batteryOutput:s*0.38}; }
+  function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3)); return {solar:s, home:s*0.85, batteryOutput:s*0.45, batteryInput:s*0.38}; }
 
   let todayAt = 0;
   async function loadToday(){
@@ -533,7 +535,7 @@
     try {
       const d = demo ? demoDay(0) : (await ensureCloud(), await energy(iso(new Date())));
       $('tdSolar').textContent = kwh(d.solar || 0); $('tdHome').textContent = kwh(d.home || 0);
-      $('tdIn').textContent = kwh(d.batteryInput || 0); $('tdOut').textContent = kwh(d.batteryOutput || 0);
+      $('tdIn').textContent = kwh(d.batteryOutput || 0); $('tdOut').textContent = kwh(d.batteryInput || 0);
       $('todayInfo').textContent = `kWh · Stand ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}`;
       todayAt = Date.now();
     } catch (e) { $('todayInfo').textContent = 'Cloud: ' + e.message; }
@@ -556,7 +558,7 @@
         if (i === 0) raws.heute = d;
         days.push({date: dt, d});
       }
-      const life = demo ? {solar:48210, home:41022, batteryInput:20130, batteryOutput:17702} : await energy(null);
+      const life = demo ? {solar:48210, home:41022, batteryOutput:20130, batteryInput:17702} : await energy(null);
       raws.gesamt = life;
       stats = {days, life}; statsAt = Date.now();
       $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
@@ -566,7 +568,7 @@
   }
   function drawStats(){
     if (!stats) return;
-    const col = {solar:'var(--solar)', home:'var(--home)', batteryInput:'var(--bat)', batteryOutput:'var(--grid)'}[metric];
+    const col = {solar:'var(--solar)', home:'var(--home)', batteryOutput:'var(--bat)', batteryInput:'var(--grid)'}[metric];
     const vals = stats.days.map(x => (x.d[metric] || 0) / 1000);
     const max = Math.max(0.5, ...vals) * 1.15;
     const W = 360, Hh = 190, pl = 6, pb = 26, pt = 18, bw = (W - pl*2) / 7;
@@ -579,10 +581,10 @@
     });
     $('chart').innerHTML = s;
     $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map(x =>
-      `<tr><td>${x.date.toLocaleDateString('de-DE',{weekday:'short', day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryInput||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td></tr>`).join('');
+      `<tr><td>${x.date.toLocaleDateString('de-DE',{weekday:'short', day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
     const l = stats.life;
     $('ltSolar').textContent = kwh(l.solar || 0, 1); $('ltHome').textContent = kwh(l.home || 0, 1);
-    $('ltIn').textContent = kwh(l.batteryInput || 0, 1); $('ltOut').textContent = kwh(l.batteryOutput || 0, 1);
+    $('ltIn').textContent = kwh(l.batteryOutput || 0, 1); $('ltOut').textContent = kwh(l.batteryInput || 0, 1);
   }
   document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
     metric = b.dataset.k; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b)); drawStats();
