@@ -1,0 +1,50 @@
+name: Zendure-App analysieren
+
+on:
+  push:
+    branches: [analyse]
+
+jobs:
+  analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Zendure-App herunterladen
+        run: |
+          set +e
+          mkdir -p z && cd z
+          for pkg in com.zendure.app com.zendure.zendure com.zendure.smart com.zendure.supertank; do
+            for typ in XAPK APK; do
+              curl -sL -A "Mozilla/5.0 (Linux; Android 14)" -o app.bin "https://d.apkpure.com/b/$typ/$pkg?version=latest"
+              sz=$(stat -c %s app.bin 2>/dev/null || echo 0)
+              echo "$pkg $typ -> $sz Bytes, $(file -b app.bin | cut -c1-60)"
+              if [ "$sz" -gt 5000000 ] && file app.bin | grep -qi zip; then echo "PKG=$pkg" >> $GITHUB_ENV; break 2; fi
+            done
+          done
+          ls -la
+
+      - name: Entpacken
+        run: |
+          cd z
+          mkdir -p x && unzip -q -o app.bin -d x || true
+          # XAPK enthält einzelne APKs -> ebenfalls entpacken
+          for a in x/*.apk; do [ -f "$a" ] && mkdir -p "x/_$(basename $a)" && unzip -q -o "$a" -d "x/_$(basename $a)"; done
+          echo "Dateien: $(find x -type f | wc -l)"
+          find x -maxdepth 3 -type f \( -name '*.dex' -o -name '*.so' -o -name '*.js' -o -name '*.bundle' \) -printf '%s %p\n' | sort -rn | head -30
+
+      - name: Adressen suchen
+        run: |
+          cd z
+          {
+            echo "== Paket: $PKG"
+            echo "== Pfade (tdengine/productModule/api/...)"
+            find x -type f -print0 | xargs -0 strings -n 6 2>/dev/null | grep -oE '/?(tdengine|productModule|device|meter|smartMeter|energy|share|family|home|hems|statistic|statistics|electric|ct)/[A-Za-z0-9_/.-]{2,80}' | sort | uniq -c | sort -rn | head -400
+            echo "== Server"
+            find x -type f -print0 | xargs -0 strings -n 6 2>/dev/null | grep -oE 'https?://[A-Za-z0-9._-]*zendure[A-Za-z0-9._/-]*' | sort -u | head -80
+          } > endpunkte.txt
+          wc -l endpunkte.txt; head -60 endpunkte.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: endpunkte
+          path: z/endpunkte.txt
+          retention-days: 3
