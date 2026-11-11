@@ -40,7 +40,10 @@ jobs:
           sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />#' android/app/src/main/AndroidManifest.xml
           grep -q REQUEST_INSTALL_PACKAGES android/app/src/main/AndroidManifest.xml
           grep -q 'fileprovider' android/app/src/main/AndroidManifest.xml
-          cp android-src/MainActivity.java android-src/UpdaterPlugin.java android/app/src/main/java/de/elektroautonews/balkonstrom/
+          # Gerätesuche im WLAN (mDNS + Netz absuchen): Netzwerk-/WLAN-Status lesen, Multicast empfangen
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />\n    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />#' android/app/src/main/AndroidManifest.xml
+          grep -q CHANGE_WIFI_MULTICAST_STATE android/app/src/main/AndroidManifest.xml
+          cp android-src/MainActivity.java android-src/UpdaterPlugin.java android-src/DiscoveryPlugin.java android/app/src/main/java/de/elektroautonews/balkonstrom/
           cp android-src/file_paths.xml android/app/src/main/res/xml/file_paths.xml
           sed -i 's/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName "1.0"/versionName "2.${{ github.run_number }}"/' android/app/build.gradle
           npx @capacitor/assets generate --android --iconBackgroundColor '#0f1420' --iconBackgroundColorDark '#0f1420' --splashBackgroundColor '#0f1420' --splashBackgroundColorDark '#0f1420'

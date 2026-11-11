@@ -3,136 +3,252 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1420">
+<meta name="theme-color" content="#0A0C11">
 <title>Balkonstrom Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<!-- Icons „solar-panel“ und „house-plug“: Lucide (https://lucide.dev), ISC License, © Lucide Contributors -->
 <style>
   :root{
-    --bg:#0f1420; --card:#181f2e; --card2:#1f2839; --line:#2a3447;
-    --text:#e8edf6; --muted:#8b96ab;
-    --solar:#f5a524; --home:#8b7cf6; --bat:#2dd4bf; --grid:#94a3b8; --warn:#f87171; --ok:#22c55e;
+    --bg:#0A0C11; --card:#13161E; --card2:#1B1F2A; --card3:#181C26; --line:#252A36; --line2:#1F2430; --line3:#2A3040;
+    --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
+    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#8E9AAF; --warn:#F87171; --ok:#4ADE80;
+    --num:"Space Grotesk",Inter,system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 84px)}
-  .wrap{max-width:480px;margin:0 auto;padding:14px 14px 20px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-  .hdr-right{display:flex;gap:6px;align-items:center;flex:none}
-  .brand{display:flex;align-items:center;gap:9px;min-width:0}
-  .brand svg{width:36px;height:36px;border-radius:10px;flex:none}
-  h1{font-size:18px;font-weight:700;letter-spacing:.2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  h1 small{display:block;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:400;color:var(--muted);margin-top:1px}
-  .pill{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:6px 10px;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
-  .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
-  .iconbtn{background:var(--card);border:1px solid var(--line);color:var(--text);border-radius:50%;width:36px;height:36px;font-size:17px;cursor:pointer;flex:none}
-  .view{display:none} .view.active{display:block}
-  h2.sec{font-size:17px;margin:14px 2px 10px}
-  .sun svg{width:100%;height:auto;display:block}
-  .sunrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:-2px}
-  .flow svg{width:100%;height:auto;display:block;margin-top:6px}
-  .node-label{font-size:13px;fill:var(--muted)}
-  .node-val{font-size:22px;font-weight:700;fill:var(--text);font-variant-numeric:tabular-nums}
-  .node-sub{font-size:11.5px;fill:var(--muted)}
-  .wire{stroke:var(--line);stroke-width:4;fill:none;stroke-linecap:round}
-  .wire.on{stroke-dasharray:6 10;animation:flow 1s linear infinite}
-  .wire.rev{animation-direction:reverse}
-  @keyframes flow{to{stroke-dashoffset:-16}}
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 13px}
-  .card h3{font-size:12.5px;font-weight:500;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
-  .card .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
-  .card .s{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
-  .wide{grid-column:1/-1}
-  .trow{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);margin-top:4px}
-  .trow b{font-size:18px;color:var(--text);font-variant-numeric:tabular-nums}
-  .bar{height:8px;border-radius:5px;background:var(--card2);overflow:hidden;margin-top:8px;position:relative}
-  .bar i{display:block;height:100%;background:var(--bat);border-radius:5px;transition:width .6s}
-  .bar b{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--muted)}
-  .today{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
-  .today div{text-align:center}
-  .today .k{font-size:11px;color:var(--muted)} .today .n{font-size:16px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
-  .msg{background:#3a1f25;border:1px solid #6b2a33;color:#fecaca;border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px;display:none;line-height:1.4}
-  .note{background:var(--card2);border:1px solid var(--line);color:var(--muted);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45;margin-top:10px}
-  .btn{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:9px 12px;font-size:14px;cursor:pointer}
-  .btn.primary{background:var(--bat);border-color:var(--bat);color:#06201c;font-weight:600}
-  .btn:disabled{opacity:.5}
-  .ctl{margin-top:10px}
-  .ctl .top{display:flex;justify-content:space-between;align-items:baseline}
-  .ctl .val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
-  .ctl .now{font-size:12px;color:var(--muted)}
-  input[type=range]{width:100%;margin:12px 0 4px;accent-color:var(--bat);height:28px}
-  .ctl .row2{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px}
-  .presets{display:flex;gap:6px;flex-wrap:wrap}
-  .presets button{background:var(--card2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:5px 9px;font-size:13px}
-  .switch{position:relative;width:52px;height:30px;flex:none}
-  .switch input{opacity:0;width:0;height:0}
-  .switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line);border-radius:99px;transition:.2s}
-  .switch span::before{content:"";position:absolute;width:22px;height:22px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.2s}
-  .switch input:checked + span{background:var(--bat)}
-  .switch input:checked + span::before{transform:translateX(22px);background:#06201c}
-  .chart{width:100%;height:auto;display:block;margin-top:8px}
-  .seg{display:flex;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;margin-top:4px}
-  .seg button{flex:1;background:none;border:0;color:var(--muted);padding:7px 4px;border-radius:7px;font-size:12.5px}
-  .seg button.on{background:var(--card);color:var(--text);font-weight:600}
-  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;font-variant-numeric:tabular-nums}
-  td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
-  td:first-child,th:first-child{text-align:left}
-  th{color:var(--muted);font-weight:500}
-  details{margin-top:10px;font-size:12px;color:var(--muted)}
-  details pre{white-space:pre-wrap;word-break:break-all;background:var(--card2);padding:8px;border-radius:8px;margin-top:6px;max-height:260px;overflow:auto}
-  nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);width:min(94vw,452px);
-    display:flex;background:rgba(24,31,46,.92);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:6px;gap:4px;z-index:5}
-  nav.tabs button{flex:1;background:none;border:0;color:var(--muted);padding:10px 4px;border-radius:16px;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:3px}
-  nav.tabs button svg{width:20px;height:20px}
-  nav.tabs button.on{background:var(--card2);color:var(--text);font-weight:600}
-  dialog{margin:auto;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:18px;padding:18px;width:min(92vw,420px)}
-  dialog::backdrop{background:rgba(0,0,0,.6)}
-  dialog h2{font-size:17px;margin-bottom:6px}
-  dialog h4{font-size:13px;color:var(--text);margin:16px 0 0}
-  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 5px}
-  input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
-  .row{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
-  .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-  .xbtn{background:none;border:0;color:var(--muted);font-size:20px;padding:4px 6px}
-  .dsec{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
-  .dtitle{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
-  .drow{font-size:12.5px;margin:4px 0 8px}
+  html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
+  body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 96px)}
+  button{font-family:inherit}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 20px;display:flex;flex-direction:column;gap:12px}
+  .num{font-family:var(--num);font-weight:600;font-variant-numeric:tabular-nums}
+  .lbl{font-size:13px;color:var(--muted);font-weight:500}
   .muted{color:var(--muted)}
+
+  /* ---------- Kopf ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0 2px}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand svg{width:38px;height:38px;flex:none}
+  h1{font-family:var(--num);font-size:19px;font-weight:600;letter-spacing:-.2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  h1 small{display:block;overflow:hidden;text-overflow:ellipsis;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:2px;letter-spacing:0}
+  .hdr-right{display:flex;gap:8px;align-items:center;flex:none}
+  .pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
+  .iconbtn{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
+  .iconbtn svg{width:20px;height:20px}
+  .iconbtn.has-update::after{content:"";position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:var(--bat);border:2px solid var(--bg)}
+
+  .view{display:none;flex-direction:column;gap:12px} .view.active{display:flex}
+  .pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 4px 2px}
+  .pagehead h2{font-family:var(--num);font-size:30px;font-weight:600;letter-spacing:-.6px}
+  .pagehead .sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+
+  /* ---------- Karten ---------- */
+  .card{background:var(--card);border:1px solid var(--line2);border-radius:26px;padding:18px 20px}
+  .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .card-head .info{font-size:12px;color:var(--muted);text-align:right}
+  .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .tile{background:var(--card);border:1px solid var(--line2);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:6px}
+  .tile .t{font-size:12.5px;color:var(--muted)}
+  .tile .v{font-family:var(--num);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+  .tile .s{font-size:12px;color:var(--muted);line-height:1.35}
+  .trow{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--muted)}
+  .trow b{font-family:var(--num);font-size:18px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
+  .bars4{display:flex;align-items:flex-end;gap:3px;height:18px;padding-bottom:4px}
+  .bars4 i{display:block;width:4px;border-radius:2px;background:var(--line3)}
+  .bars4 i.on{background:var(--ok)}
+
+  /* ---------- Sonnenbogen ---------- */
+  .sun{padding:0 4px;display:flex;flex-direction:column;gap:4px}
+  .sun svg{width:100%;height:auto;display:block}
+  .sunrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .sunrow #daylight{color:var(--muted2)}
+
+  /* ---------- Energiefluss ---------- */
+  .flow{padding:16px 12px 10px}
+  .flow .card-head{padding:0 8px 4px}
+  .flow svg{width:100%;height:auto;display:block}
+  .node-label{font-size:12px;fill:var(--muted);font-family:Inter,system-ui,sans-serif}
+  .node-sub{font-size:12.5px;fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
+  .node-val{font-size:19px;font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
+  .node-val.small{font-size:17px}
+  .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
+  .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
+  .wire.on{stroke-dasharray:2 10;animation:flow 1.1s linear infinite}
+  .wire.rev{animation-direction:reverse}
+  @keyframes flow{to{stroke-dashoffset:-24}}
+
+  /* ---------- Akku ---------- */
+  .bat{display:flex;flex-direction:column;gap:14px}
+  .bat-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .bat-soc{display:flex;align-items:baseline;gap:4px;color:var(--bat);margin-top:4px}
+  .bat-soc .num{font-size:44px;letter-spacing:-1.2px;line-height:1}
+  .bat-soc span:last-child{font-family:var(--num);font-size:20px;font-weight:500}
+  .bat-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;text-align:right}
+  .bat-right .kwh{font-size:14px;color:var(--muted)}
+  .bat-right .kwh b{font-family:var(--num);font-size:20px;font-weight:600;color:var(--text)}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:rgba(61,219,176,.12);color:var(--batText);font-size:12px;font-weight:500}
+  .chip.idle{background:var(--card2);color:var(--muted2)}
+  .bar{height:10px;border-radius:99px;background:var(--card2);position:relative}
+  .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--bat);transition:width .6s}
+  .bar b{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:2px;background:var(--muted2)}
+  .barlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
+
+  /* ---------- Heute ---------- */
+  .today-card{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+  .four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .four > div{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .four .k{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .four .n{font-family:var(--num);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
+  i.d{display:inline-block;width:6px;height:6px;border-radius:50%;flex:none}
+
+  /* ---------- Hinweise ---------- */
+  .msg{background:#3a1f25;border:1px solid #6b2a33;color:#fecaca;border-radius:16px;padding:12px 14px;font-size:13.5px;display:none;line-height:1.4}
+  .note{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px;background:#12161F;border:1px solid var(--line2);font-size:12.5px;line-height:1.45;color:#A8AFBD}
+  .note svg{flex:none;width:18px;height:18px;margin-top:1px}
   .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
-  .btn.small{padding:4px 10px;font-size:12.5px}
+  .foot{font-size:12px;color:var(--dim);text-align:center;padding-top:4px}
+
+  /* ---------- Knöpfe ---------- */
+  .btn{height:44px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+  .btn svg{width:17px;height:17px}
+  .btn.primary{height:50px;border:0;border-radius:16px;background:var(--bat);color:#052219;font-size:15px;font-weight:600}
+  .btn.secondary{height:50px;border-radius:16px;border-color:var(--line3);background:var(--card2);font-size:15px;font-weight:600}
+  .btn.small{height:34px;padding:0 12px;font-size:12.5px;border-radius:10px}
+  .btn:disabled{opacity:.5}
   .wide-btn{width:100%}
-  .btn.update{background:var(--bat);border-color:var(--bat);color:#06201c;font-weight:600}
-  .dfoot{display:flex;gap:8px;margin-top:18px}
-  .dfoot .btn{flex:1;padding:11px}
-  .iconbtn{position:relative}
-  .iconbtn.has-update::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:var(--bat);border:2px solid var(--bg)}
-  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 96px);background:var(--card2);border:1px solid var(--line);
-    padding:10px 14px;border-radius:12px;font-size:14px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+  .btn.update{background:var(--bat);border-color:var(--bat);color:#052219;font-weight:600}
+
+  /* ---------- Statistik ---------- */
+  .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chips button{flex:none;height:40px;padding:0 16px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--muted2);font-size:13px;font-weight:500;white-space:nowrap;cursor:pointer}
+  .chips button.on{border-color:var(--c,var(--solar));background:color-mix(in srgb,var(--c,var(--solar)) 14%,transparent);color:var(--text);font-weight:600}
+  .sum{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .sum .big{display:flex;align-items:baseline;gap:6px;margin-top:4px}
+  .sum .big .num{font-size:44px;letter-spacing:-1.2px;line-height:1}
+  .sum .big span:last-child{font-size:16px;color:var(--muted)}
+  .sum .side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:12px;color:var(--muted)}
+  .sum .side b{color:var(--text);font-weight:600}
+  .bars{display:flex;gap:10px;margin-top:18px}
+  .bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+  .bw{height:170px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}
+  .bw i{display:block;width:100%;border-radius:10px 10px 4px 4px;opacity:.4}
+  .bw span{font-size:11px;color:var(--muted)}
+  .bc em{font-style:normal;font-size:11.5px;color:var(--muted)}
+  .bc.cur i{opacity:1} .bc.cur span,.bc.cur em{color:var(--text);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;margin-top:6px}
+  td,th{padding:11px 4px;border-top:1px solid var(--line2);text-align:right}
+  th{border-top:0;padding:8px 4px;font-size:11.5px;color:var(--muted);font-weight:400;white-space:nowrap}
+  th i.d{margin-right:5px;vertical-align:1px}
+  td:first-child,th:first-child{text-align:left;color:var(--muted2)}
+  tr.cur td{font-weight:600;color:var(--text)}
+  .life{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin-top:14px}
+  .life > div{display:flex;flex-direction:column;gap:4px}
+  .life .k{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+  .life .k i{display:block;width:8px;height:8px;border-radius:3px}
+  .life .n{font-family:var(--num);font-size:24px;font-weight:600}
+  .life .n small{font-family:Inter,sans-serif;font-size:13px;font-weight:400;color:var(--muted)}
+  details{border:1px dashed var(--line3);border-radius:16px;padding:0 18px;font-size:13px;color:var(--muted)}
+  details summary{height:48px;display:flex;align-items:center;cursor:pointer;list-style:none}
+  details summary::-webkit-details-marker{display:none}
+  details pre{white-space:pre-wrap;word-break:break-all;background:var(--card2);padding:10px;border-radius:10px;margin-bottom:14px;max-height:260px;overflow:auto;font-size:11.5px}
+
+  /* ---------- Steuerung ---------- */
+  .ctl{display:flex;flex-direction:column;gap:14px}
+  .bigval{display:flex;align-items:baseline;gap:6px}
+  .bigval .num{font-size:52px;letter-spacing:-1.5px;line-height:1}
+  .bigval .u{font-family:var(--num);font-size:20px;color:var(--muted)}
+  input[type=range]{width:100%;height:28px;margin:0;accent-color:var(--bat)}
+  .range-lbl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:-8px}
+  .presets{display:flex;gap:8px}
+  .presets button{flex:1;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card3);color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer}
+  .presets button.on{border-color:var(--bat);background:rgba(61,219,176,.14);color:var(--batText)}
+  .usable{position:relative;height:34px;border-radius:12px;background:var(--card2);overflow:hidden}
+  .usable i{position:absolute;top:0;bottom:0;background:rgba(61,219,176,.22);border-left:2px solid var(--bat);border-right:2px solid var(--bat)}
+  .usable span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted2)}
+  .lim{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .lim label{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:18px;background:var(--card3)}
+  .lim .t{font-size:12.5px;color:var(--muted)}
+  .lim .v{font-family:var(--num);font-size:26px;font-weight:600}
+  .lim .r{font-size:11px;color:var(--dim)}
+  .ac-head{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .ac-head .t{font-size:15px;font-weight:600}
+  .ac-head .s{font-size:12.5px;color:var(--muted);line-height:1.4;margin-top:4px}
+  #acBox{border-top:1px solid var(--line2);padding-top:14px;flex-direction:column;gap:10px}
+  .switch{position:relative;width:56px;height:34px;flex:none;display:block;margin:0}
+  .switch input{opacity:0;width:0;height:0;position:absolute}
+  .switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--line3);border-radius:99px;transition:.2s}
+  .switch span::before{content:"";position:absolute;width:26px;height:26px;left:3px;top:3px;background:var(--muted);border-radius:50%;transition:.2s}
+  .switch input:checked + span{background:var(--bat);border-color:var(--bat)}
+  .switch input:checked + span::before{transform:translateX(22px);background:#052219}
+  .switch input:focus-visible + span{outline:2px solid var(--bat);outline-offset:2px}
+
+  /* ---------- Navigation ---------- */
+  nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);width:min(calc(100vw - 32px),448px);height:68px;
+    display:flex;gap:6px;padding:6px;background:rgba(22,25,33,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;z-index:5}
+  nav.tabs button{flex:1;background:none;border:0;color:var(--muted);border-radius:18px;font-size:12px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button.on{background:#232838;color:var(--text);font-weight:600}
+  nav.tabs button.on svg{color:var(--bat)}
+
+  /* ---------- Einstellungen ---------- */
+  dialog{margin:auto;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:24px;padding:20px;width:min(92vw,420px)}
+  dialog::backdrop{background:rgba(0,0,0,.65)}
+  .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .dhead h2{font-family:var(--num);font-size:20px;font-weight:600}
+  .xbtn{width:44px;height:44px;background:none;border:0;color:var(--muted);font-size:20px;border-radius:12px;cursor:pointer}
+  .dsec{border-top:1px solid var(--line2);padding-top:14px;margin-top:14px}
+  .dtitle{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+  .drow{font-size:12.5px;margin:4px 0 10px}
+  label.f{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
+  input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;height:46px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;font-family:inherit}
+  input:focus{outline:2px solid var(--bat);outline-offset:1px}
+  .dfoot{display:flex;gap:8px;margin-top:20px}
+  .dfoot .btn{flex:1;height:48px}
+  .dfoot .btn.primary{height:48px;font-size:14px}
+
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 100px);background:var(--card2);border:1px solid var(--line);
+    padding:11px 16px;border-radius:14px;font-size:14px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
   .toast.show{opacity:1}
-  .foot{font-size:11.5px;color:var(--muted);text-align:center;margin-top:16px}
+  /* ---------- Gerätesuche ---------- */
+  .setup{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:26px 20px 18px}
+  .setup .ic{width:64px;height:64px;border-radius:20px;background:rgba(61,219,176,.12);color:var(--bat);display:flex;align-items:center;justify-content:center}
+  .setup .ic svg{width:30px;height:30px}
+  .setup h3{font-family:var(--num);font-size:21px;font-weight:600}
+  .setup p{font-size:13px;color:var(--muted);line-height:1.5;max-width:300px}
+  .setup .btn.primary{width:100%;margin-top:6px}
+  .linkbtn{background:none;border:0;color:var(--muted2);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:10px;cursor:pointer;min-height:44px}
+  .found{width:100%;display:flex;flex-direction:column;gap:8px;text-align:left}
+  .found:empty{display:none}
+  .found .hint{margin:0;text-align:center}
+  .found .warn{color:#fecaca}
+  .devbtn{width:100%;min-height:56px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card3);color:var(--text);text-align:left;cursor:pointer}
+  .devbtn:hover,.devbtn:focus-visible{border-color:var(--bat)}
+  .devbtn .di{width:36px;height:36px;border-radius:11px;background:rgba(61,219,176,.12);color:var(--bat);display:flex;align-items:center;justify-content:center;flex:none}
+  .devbtn .di svg{width:18px;height:18px}
+  .devbtn b{display:block;font-size:14px;font-weight:600}
+  .devbtn small{display:block;font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+  .iprow{display:flex;gap:8px}
+  .iprow input{flex:1;min-width:0}
+  .iprow .btn{height:46px;border-radius:12px;flex:none}
+  .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .msg .btn{margin-top:10px;height:40px;background:#4a2229;border-color:#7a3340;color:#fecaca}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">
-      <svg viewBox="0 0 1024 1024" aria-hidden="true">
-        <defs><radialGradient id="ig" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#1e2a44"/><stop offset="1" stop-color="#0b1020"/></radialGradient></defs>
-        <rect width="1024" height="1024" fill="url(#ig)"/>
-        <g transform="translate(512 512) scale(1.25) translate(-512 -512)">
-          <g stroke="#f5a524" stroke-width="34" stroke-linecap="round"><line x1="512" y1="250" x2="512" y2="310"/><line x1="356" y1="314" x2="392" y2="356"/><line x1="668" y1="314" x2="632" y2="356"/><line x1="290" y1="452" x2="345" y2="465"/><line x1="734" y1="452" x2="679" y2="465"/></g>
-          <path d="M392 520 A120 120 0 0 1 632 520 Z" fill="#f5a524"/>
-          <rect x="300" y="534" width="424" height="22" rx="11" fill="#f5a524" opacity=".55"/>
-          <rect x="352" y="590" width="300" height="150" rx="34" fill="none" stroke="#2dd4bf" stroke-width="30"/>
-          <rect x="664" y="634" width="30" height="62" rx="10" fill="#2dd4bf"/>
-          <path d="M528 608 L462 676 H512 L492 724 L560 652 H508 Z" fill="#2dd4bf"/>
-        </g>
-      </svg>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1B1F2A"/><path d="M13 20a8 8 0 0 1 16 0z" fill="#FFB547"/><rect x="11" y="21.5" width="20" height="2" rx="1" fill="#FFB547" opacity=".5"/><rect x="14" y="26" width="13" height="8" rx="2.5" fill="none" stroke="#3DDBB0" stroke-width="2"/><rect x="27.5" y="28.3" width="2" height="3.4" rx="1" fill="#3DDBB0"/></svg>
       <h1>Balkonstrom<small id="devname">SolarFlow 800 Plus</small></h1>
     </div>
     <div class="hdr-right">
       <div class="pill"><span class="dot" id="dot"></span><span id="status">Verbinde…</span></div>
-      <button class="iconbtn" id="btnSettings" aria-label="Einstellungen">⚙</button>
+      <button class="iconbtn" id="btnSettings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
   </header>
 
@@ -140,143 +256,181 @@
 
   <!-- ================= LIVE ================= -->
   <section class="view active" id="vLive">
+    <div class="card setup" id="setup" style="display:none">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M1.5 9a15 15 0 0 1 21 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg></div>
+      <h3>SolarFlow verbinden</h3>
+      <p>Die App sucht deinen SolarFlow im WLAN. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.</p>
+      <button class="btn primary" id="btnFind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>SolarFlow suchen</span></button>
+      <div class="found" id="findResult" aria-live="polite"></div>
+      <button class="linkbtn" id="btnManual">IP-Adresse selbst eingeben</button>
+    </div>
+
     <div class="sun">
-      <svg viewBox="0 0 400 120" aria-hidden="true">
-        <line x1="20" y1="105" x2="380" y2="105" stroke="var(--line)" stroke-width="1.5"/>
-        <path id="sunArc" d="" fill="none" stroke="var(--solar)" stroke-width="1.5" stroke-dasharray="3 4" opacity=".8"/>
-        <circle id="sunDot" r="9" fill="var(--solar)" opacity="0"/>
+      <svg viewBox="0 0 358 96" aria-hidden="true">
+        <line x1="0" y1="88" x2="358" y2="88" stroke="var(--line)" stroke-width="1.5"/>
+        <path id="sunArc" d="" fill="none" stroke="var(--line3)" stroke-width="1.5" stroke-dasharray="2 5"/>
+        <path id="sunArcDone" d="" fill="none" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+        <circle id="sunGlow" r="13" fill="var(--solar)" opacity="0"/>
+        <circle id="sunDot" r="7" fill="var(--solar)" opacity="0"/>
       </svg>
       <div class="sunrow"><span id="sunrise">Aufgang –</span><span id="daylight"></span><span id="sunset">Untergang –</span></div>
     </div>
 
-    <div class="flow">
-      <svg viewBox="0 0 400 330">
-        <path id="wSolar" class="wire" d="M200 82 V150"/>
-        <path id="wGrid" class="wire" d="M92 175 H175"/>
-        <path id="wHome" class="wire" d="M225 175 H308"/>
-        <path id="wBat" class="wire" d="M200 200 V250"/>
-        <circle cx="200" cy="175" r="25" fill="var(--card2)" stroke="var(--line)"/>
-        <path d="M204 160 l-12 18 h9 l-4 13 l12-18 h-9z" fill="var(--text)"/>
-        <circle cx="200" cy="48" r="34" fill="var(--card)" stroke="var(--solar)" stroke-width="2"/>
-        <g fill="none" stroke="var(--solar)" stroke-width="2"><path d="M184 40 h32 l-4 16 h-32z"/><path d="M182 48 h32 M193 40 l-3 16 M205 40 l-3 16"/></g>
-        <text class="node-label" x="135" y="34" text-anchor="end">Solar</text>
-        <text class="node-val" x="135" y="60" text-anchor="end" id="tSolar">– W</text>
-        <text class="node-sub" x="248" y="40" id="tPv1">PV1 – W</text>
-        <text class="node-sub" x="248" y="60" id="tPv2">PV2 – W</text>
-        <circle cx="62" cy="175" r="30" fill="var(--card)" stroke="var(--grid)" stroke-width="2"/>
-        <g fill="none" stroke="var(--grid)" stroke-width="2"><path d="M62 158 l-9 34 M62 158 l9 34 M52 167 h20 M55 178 h14"/></g>
-        <text class="node-label" x="62" y="225" text-anchor="middle">Netz → Akku</text>
-        <text class="node-val" x="62" y="250" text-anchor="middle" id="tGrid">– W</text>
-        <circle cx="338" cy="175" r="30" fill="var(--card)" stroke="var(--home)" stroke-width="2"/>
-        <path d="M324 180 v12 h28 v-12 M320 182 l18-16 l18 16" fill="none" stroke="var(--home)" stroke-width="2"/>
-        <text class="node-label" x="338" y="225" text-anchor="middle">Ins Haus</text>
-        <text class="node-val" x="338" y="250" text-anchor="middle" id="tHome">– W</text>
-        <circle cx="200" cy="285" r="34" fill="var(--card)" stroke="var(--line)" stroke-width="5"/>
-        <circle id="socRing" cx="200" cy="285" r="34" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round"
-                transform="rotate(-90 200 285)" stroke-dasharray="0 214"/>
-        <text x="200" y="292" text-anchor="middle" style="font-size:20px;font-weight:700;fill:var(--text)" id="tSoc">–%</text>
-        <text class="node-label" x="250" y="276" id="tBatState">Akku</text>
-        <text class="node-val" x="250" y="302" id="tBat">– W</text>
+    <div class="card flow">
+      <div class="card-head"><span class="lbl">Energiefluss</span><span class="info" id="flowMode"></span></div>
+      <svg viewBox="0 0 350 250" role="img" aria-label="Energiefluss">
+        <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
+        <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/>
+        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/>
+        <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/>
+
+        <circle cx="175" cy="38" r="28" fill="#1E1A12" stroke="var(--solar)" stroke-width="1.5"/>
+        <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
+        <text class="node-label" x="134" y="34" text-anchor="end">Solar</text>
+        <text class="node-val" x="134" y="56" text-anchor="end" id="tSolar">– W</text>
+        <text class="node-sub" x="216" y="34" id="tPv1">PV1 – W</text>
+        <text class="node-sub" x="216" y="54" id="tPv2">PV2 – W</text>
+
+        <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
+        <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
+
+        <circle cx="46" cy="126" r="26" fill="#161A22" stroke="#3A4152" stroke-width="1.5"/>
+        <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
+        <text class="node-label" x="46" y="174" text-anchor="middle">Netz → Akku</text>
+        <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid">– W</text>
+
+        <circle cx="304" cy="126" r="26" fill="#18162A" stroke="var(--home)" stroke-width="1.5"/>
+        <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
+        <text class="node-label" x="304" y="174" text-anchor="middle">Ins Haus</text>
+        <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome">– W</text>
+
+        <circle cx="175" cy="214" r="28" fill="#112420" stroke="#21342F" stroke-width="5"/>
+        <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
+        <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
+        <text class="node-label" x="216" y="208" id="tBatState">Akku</text>
+        <text class="node-val" x="216" y="228" id="tBat">– W</text>
       </svg>
     </div>
 
-    <div class="cards">
-      <div class="card wide">
-        <h3><span>Heute</span><span id="todayInfo" style="font-weight:400"></span></h3>
-        <div class="today">
-          <div><div class="k">Solar</div><div class="n" id="tdSolar" style="color:var(--solar)">–</div></div>
-          <div><div class="k">Ins Haus</div><div class="n" id="tdHome" style="color:var(--home)">–</div></div>
-          <div><div class="k">Geladen</div><div class="n" id="tdIn" style="color:var(--bat)">–</div></div>
-          <div><div class="k">Entladen</div><div class="n" id="tdOut">–</div></div>
+    <div class="card bat">
+      <div class="bat-top">
+        <div>
+          <div class="lbl">Akku</div>
+          <div class="bat-soc"><span class="num" id="cSoc">–</span><span>%</span></div>
+        </div>
+        <div class="bat-right">
+          <div class="kwh" id="cEnergy">– kWh</div>
+          <div class="chip idle" id="cRemain">–</div>
         </div>
       </div>
-      <div class="card wide">
-        <h3>Akku</h3>
-        <div class="v" id="cEnergy">– kWh</div>
-        <div class="s" id="cRemain">&nbsp;</div>
-        <div class="bar"><i id="barFill" style="width:0"></i><b id="barMin" style="left:10%"></b><b id="barMax" style="left:100%"></b></div>
-        <div class="s" id="cLimits">&nbsp;</div>
+      <div>
+        <div class="bar"><i id="barFill" style="width:0"></i><b id="barMin" style="left:10%"></b><b id="barMax" style="left:calc(100% - 2px)"></b></div>
+        <div class="barlbl"><span id="cMinTxt">Entladen bis – %</span><span id="cMaxTxt">Laden bis – %</span></div>
       </div>
-      <div class="card"><h3>Ausgangslimit</h3><div class="v" id="cOutLimit">– W</div><div class="s" id="cMax">&nbsp;</div></div>
-      <div class="card"><h3>Modus</h3><div class="v" id="cMode" style="font-size:17px">–</div><div class="s" id="cInLimit">&nbsp;</div></div>
-      <div class="card"><h3>Temperatur</h3><div class="trow"><span>Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span>Akku</span><b id="cPackTemp">– °C</b></div></div>
-      <div class="card"><h3>WLAN</h3><div class="v" id="cRssi">– dBm</div><div class="s" id="cVolt">&nbsp;</div></div>
+    </div>
+
+    <div class="card today-card">
+      <div class="card-head"><span class="lbl">Heute</span><span class="info" id="todayInfo"></span></div>
+      <div class="four">
+        <div><span class="k"><i class="d" style="background:var(--solar)"></i>Solar</span><span class="n" id="tdSolar">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--home)"></i>Ins Haus</span><span class="n" id="tdHome">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--bat)"></i>Geladen</span><span class="n" id="tdIn">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--grid)"></i>Entladen</span><span class="n" id="tdOut">–</span></div>
+      </div>
+    </div>
+
+    <div class="tiles">
+      <div class="tile"><span class="t">Ausgangslimit</span><span class="v" id="cOutLimit">– W</span><span class="s" id="cMax">&nbsp;</span></div>
+      <div class="tile"><span class="t">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
+      <div class="tile" style="gap:8px"><span class="t">Temperatur</span><div class="trow"><span>Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span>Akku</span><b id="cPackTemp">– °C</b></div></div>
+      <div class="tile"><span class="t">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt">dBm</span></div>
     </div>
   </section>
 
   <!-- ================= STATISTIK ================= -->
   <section class="view" id="vStats">
-    <h2 class="sec">Statistik</h2>
-    <div id="statsLogin" class="note" style="display:none">
-      Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).<br><br>
-      <button class="btn primary" onclick="document.getElementById('btnSettings').click()">Zendure-Login eintragen</button>
+    <div class="pagehead">
+      <div><h2>Statistik</h2><div class="sub" id="statsInfo">noch nicht geladen</div></div>
+      <button class="btn" id="btnReloadStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Aktualisieren</button>
     </div>
-    <div id="statsBody">
+    <div id="statsLogin" class="note" style="display:none;flex-direction:column">
+      <span>Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).</span>
+      <button class="btn primary wide-btn" onclick="document.getElementById('btnSettings').click()">Zendure-Login eintragen</button>
+    </div>
+    <div id="statsBody" style="display:flex;flex-direction:column;gap:12px">
+      <div class="chips" id="seg" role="tablist" aria-label="Messwert">
+        <button data-k="solar" class="on" style="--c:var(--solar)">Solar</button>
+        <button data-k="home" style="--c:var(--home)">Ins Haus</button>
+        <button data-k="batteryOutput" style="--c:var(--bat)">Geladen</button>
+        <button data-k="batteryInput" style="--c:var(--grid)">Entladen</button>
+      </div>
       <div class="card">
-        <h3><span>Letzte 7 Tage</span><span id="statsInfo"></span></h3>
-        <div class="seg" id="seg">
-          <button data-k="solar" class="on">Solar</button>
-          <button data-k="home">Ins Haus</button>
-          <button data-k="batteryOutput">Geladen</button>
-          <button data-k="batteryInput">Entladen</button>
+        <div class="sum">
+          <div>
+            <div class="lbl" id="sumLabel">Solar · letzte 7 Tage</div>
+            <div class="big"><span class="num" id="sumVal">–</span><span>kWh</span></div>
+          </div>
+          <div class="side"><span>Ø <b id="sumAvg">–</b> kWh/Tag</span><span>Bester Tag: <b id="sumBest">–</b></span></div>
         </div>
-        <svg class="chart" id="chart" viewBox="0 0 360 190"></svg>
+        <div class="bars" id="chart"></div>
       </div>
-      <div class="card" style="margin-top:10px">
-        <h3>Tageswerte (kWh)</h3>
-        <table id="tbl"><thead><tr><th>Tag</th><th>Solar</th><th>Haus</th><th>Geladen</th><th>Entladen</th></tr></thead><tbody></tbody></table>
+      <div class="card" style="padding:18px 16px 8px">
+        <div class="card-head" style="padding:0 4px"><span class="lbl">Tageswerte</span><span class="info">kWh</span></div>
+        <table id="tbl"><thead><tr><th></th><th><i class="d" style="background:var(--solar)"></i>Solar</th><th><i class="d" style="background:var(--home)"></i>Haus</th><th><i class="d" style="background:var(--bat)"></i>Gel.</th><th><i class="d" style="background:var(--grid)"></i>Entl.</th></tr></thead><tbody></tbody></table>
       </div>
-      <div class="card" style="margin-top:10px">
-        <h3>Seit Inbetriebnahme</h3>
-        <div class="today" id="lifetime">
-          <div><div class="k">Solar</div><div class="n" id="ltSolar" style="color:var(--solar)">–</div></div>
-          <div><div class="k">Ins Haus</div><div class="n" id="ltHome" style="color:var(--home)">–</div></div>
-          <div><div class="k">Geladen</div><div class="n" id="ltIn" style="color:var(--bat)">–</div></div>
-          <div><div class="k">Entladen</div><div class="n" id="ltOut">–</div></div>
+      <div class="card">
+        <span class="lbl">Seit Inbetriebnahme</span>
+        <div class="life">
+          <div><span class="k"><i style="background:var(--solar)"></i>Solar</span><span class="n"><span id="ltSolar">–</span> <small>kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--home)"></i>Ins Haus</span><span class="n"><span id="ltHome">–</span> <small>kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--bat)"></i>Geladen</span><span class="n"><span id="ltIn">–</span> <small>kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--grid)"></i>Entladen</span><span class="n"><span id="ltOut">–</span> <small>kWh</small></span></div>
         </div>
       </div>
-      <div style="display:flex;justify-content:center;margin-top:12px"><button class="btn" id="btnReloadStats">Aktualisieren</button></div>
       <details><summary>Rohdaten (für Fehlersuche)</summary><pre id="raw">–</pre></details>
     </div>
   </section>
 
   <!-- ================= STEUERUNG ================= -->
   <section class="view" id="vCtl">
-    <h2 class="sec">Steuerung</h2>
-    <div class="note">Änderungen gehen direkt an den SolarFlow. Ist in der Zendure-App eine Automatik (z.&nbsp;B. Energieplan/HEMS) aktiv, kann sie deine Einstellung wieder überschreiben.</div>
+    <div class="pagehead"><div><h2>Steuerung</h2><div class="sub">Änderungen gehen direkt an den SolarFlow</div></div></div>
+    <div class="note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+      <span>Ist in der Zendure-App eine Automatik aktiv (z.&nbsp;B. Energieplan), kann sie deine Einstellung wieder überschreiben.</span>
+    </div>
 
     <div class="card ctl">
-      <div class="top"><h3 style="margin:0">Ausgangsleistung ins Haus</h3><span class="now" id="nowOut">aktuell –</span></div>
-      <div class="val"><span id="vOut">–</span> W</div>
-      <input type="range" id="rOut" min="0" max="800" step="10">
-      <div class="row2">
-        <div class="presets" data-target="rOut"><button data-v="0">0</button><button data-v="100">100</button><button data-v="200">200</button><button data-v="400">400</button><button data-v="800">800</button></div>
-        <button class="btn primary" id="aOut">Übernehmen</button>
+      <div class="card-head"><span class="lbl">Ausgangsleistung ins Haus</span><span class="info" id="nowOut">aktuell –</span></div>
+      <div class="bigval"><span class="num" id="vOut">–</span><span class="u">W</span></div>
+      <label><span class="sr">Ausgangsleistung in Watt</span><input type="range" id="rOut" min="0" max="800" step="10"></label>
+      <div class="range-lbl"><span>0 W</span><span id="outMaxLbl">800 W</span></div>
+      <div class="presets" data-target="rOut"><button data-v="0">0</button><button data-v="100">100</button><button data-v="200">200</button><button data-v="400">400</button><button data-v="800">800</button></div>
+      <button class="btn primary" id="aOut">Übernehmen</button>
+    </div>
+
+    <div class="card ctl" style="gap:16px">
+      <span class="lbl">Akku-Grenzen</span>
+      <div>
+        <div class="usable"><i id="limRange" style="left:10%;right:0"></i><span id="limTxt">nutzbar – kWh</span></div>
+        <div class="range-lbl" style="margin-top:8px"><span>0 %</span><span>100 %</span></div>
       </div>
+      <div class="lim">
+        <label><span class="t">Laden bis <span class="muted" style="font-size:11px">(70–100)</span></span><span class="v"><span id="vMax">–</span> %</span><input type="range" id="rMax" min="70" max="100" step="5"><span class="r" id="nowMax">70–100 %</span></label>
+        <label><span class="t">Entladen bis <span class="muted" style="font-size:11px">(0–50)</span></span><span class="v"><span id="vMin">–</span> %</span><input type="range" id="rMin" min="0" max="50" step="5"><span class="r" id="nowMin">0–50 %</span></label>
+      </div>
+      <button class="btn secondary" id="aLim">Grenzen übernehmen</button>
     </div>
 
     <div class="card ctl">
-      <div class="top"><h3 style="margin:0">Laden bis</h3><span class="now" id="nowMax">aktuell –</span></div>
-      <div class="val"><span id="vMax">–</span> %</div>
-      <input type="range" id="rMax" min="70" max="100" step="5">
-      <div class="row2"><span class="now">70–100 %</span><button class="btn primary" id="aMax">Übernehmen</button></div>
-    </div>
-
-    <div class="card ctl">
-      <div class="top"><h3 style="margin:0">Entladen bis</h3><span class="now" id="nowMin">aktuell –</span></div>
-      <div class="val"><span id="vMin">–</span> %</div>
-      <input type="range" id="rMin" min="0" max="50" step="5">
-      <div class="row2"><span class="now">0–50 %</span><button class="btn primary" id="aMin">Übernehmen</button></div>
-    </div>
-
-    <div class="card ctl">
-      <div class="top"><h3 style="margin:0">Laden aus dem Netz</h3>
-        <label class="switch" style="margin:0"><input type="checkbox" id="swAc"><span></span></label></div>
-      <div class="s" id="acInfo" style="margin-top:4px">Lädt den Akku mit Strom aus der Steckdose. Ausschalten = normale Abgabe ins Haus.</div>
+      <div class="ac-head">
+        <div><div class="t">Laden aus dem Netz</div><div class="s" id="acInfo">Lädt den Akku mit Strom aus der Steckdose</div></div>
+        <label class="switch"><span class="sr">Laden aus dem Netz</span><input type="checkbox" id="swAc"><span></span></label>
+      </div>
       <div id="acBox" style="display:none">
-        <div class="val" style="margin-top:8px"><span id="vIn">–</span> W Ladeleistung</div>
-        <input type="range" id="rIn" min="50" max="800" step="10">
-        <div class="row2"><span class="now" id="nowIn">&nbsp;</span><button class="btn primary" id="aIn">Übernehmen</button></div>
+        <div class="card-head"><span class="t muted" style="font-size:12.5px">Ladeleistung</span><span class="num" style="font-size:22px"><span id="vIn">–</span> W</span></div>
+        <label><span class="sr">Ladeleistung in Watt</span><input type="range" id="rIn" min="50" max="800" step="10"></label>
+        <div class="range-lbl" style="margin-top:-4px"><span id="nowIn">&nbsp;</span><span></span></div>
+        <button class="btn primary" id="aIn" style="height:46px;font-size:14px">Übernehmen</button>
       </div>
     </div>
   </section>
@@ -284,10 +438,10 @@
   <div class="foot" id="foot">Daten direkt vom Gerät im WLAN (zenSDK)</div>
 </div>
 
-<nav class="tabs">
-  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M13 6l-4 7h4l-2 5 5-8h-4z" fill="currentColor" stroke="none"/></svg>Live</button>
-  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Statistik</button>
-  <button data-v="vCtl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>Steuerung</button>
+<nav class="tabs" aria-label="Bereiche">
+  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>Live</button>
+  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Statistik</button>
+  <button data-v="vCtl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Steuerung</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -304,11 +458,12 @@
 
   <div class="dsec">
     <div class="dtitle">Gerät im WLAN</div>
-    <label for="inIp">IP-Adresse des SolarFlow</label>
-    <input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx">
-    <label for="inCap">Akku-Kapazität (Wh)</label>
+    <label class="f" for="inIp">IP-Adresse des SolarFlow</label>
+    <div class="iprow"><input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Suchen</span></button></div>
+    <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
+    <label class="f" for="inCap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
-    <label for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
+    <label class="f" for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
     <input id="inInt" inputmode="numeric" placeholder="5">
   </div>
 
@@ -317,9 +472,9 @@
       <span>Zendure-Konto (für Statistik)</span>
       <button class="btn small" id="btnLogout">Abmelden</button>
     </div>
-    <label for="inMail">E-Mail</label>
+    <label class="f" for="inMail">E-Mail</label>
     <input id="inMail" type="email" autocomplete="username" placeholder="name@beispiel.de">
-    <label for="inPw">Passwort</label>
+    <label class="f" for="inPw">Passwort</label>
     <input id="inPw" type="password" autocomplete="current-password" placeholder="Passwort">
     <div class="hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
   </div>
@@ -335,7 +490,7 @@
   // ---------- Grundlagen ----------
   const LAT = 51.2277, LON = 6.7735;           // Düsseldorf (Sonnenbogen)
   const CLOUD = 'https://app.zendure.tech/eu'; // Zendure-App-Schnittstelle (inoffiziell)
-  const NBSP = ' ';
+  const NBSP = ' ';
   const store = {
     get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
     set(k, v){ try { localStorage.setItem(k, v); } catch {} },
@@ -351,6 +506,7 @@
   const fmtW = w => (w == null || isNaN(w)) ? '– W' : `${Math.round(w)} W`;
   const kwh = (wh, dig = 2) => (wh/1000).toLocaleString('de-DE', {minimumFractionDigits:dig, maximumFractionDigits:dig});
   const isApp = !!window.Capacitor;
+  const hm = t => t.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
 
   function toast(t, ms = 2600){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
 
@@ -414,14 +570,15 @@
     const solar = p.solarInputPower ?? 0, home = p.outputHomePower ?? 0, grid = p.gridInputPower ?? 0;
     const charge = p.outputPackPower ?? 0, discharge = p.packInputPower ?? 0, soc = p.electricLevel ?? 0;
 
-    $('devname').textContent = d.product === 'solarFlow800Plus' ? 'SolarFlow 800 Plus' : (d.product || 'SolarFlow');
+    $('devname').textContent = d.product ? prodName(d.product) : 'SolarFlow';
     $('tSolar').textContent = fmtW(solar);
     $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
     $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
     $('tHome').textContent = fmtW(home);
     $('tGrid').textContent = fmtW(grid);
+    $('tGrid').style.fill = grid > 2 ? '' : 'var(--muted)';
     $('tSoc').textContent = `${soc}%`;
-    $('socRing').setAttribute('stroke-dasharray', `${(soc/100*213.6).toFixed(1)} 214`);
+    $('socRing').setAttribute('stroke-dasharray', `${(soc/100*175.9).toFixed(1)} 176`);
 
     let batW = 0, batTxt = 'Akku ruht', batRev = false;
     if (charge > 0) { batW = charge; batTxt = 'Akku lädt'; }
@@ -432,33 +589,43 @@
     setWire('wGrid', grid, false, 'var(--grid)');
     setWire('wBat', batW, batRev, 'var(--bat)');
 
-    $('cEnergy').textContent = `${kwh(cfg.cap * soc / 100)} von ${kwh(cfg.cap)} kWh`;
+    // Akku-Karte
+    $('cSoc').textContent = soc;
+    $('cEnergy').innerHTML = `<b>${kwh(cfg.cap * soc / 100)}</b> / ${kwh(cfg.cap)} kWh`;
     const min = (p.minSoc ?? 100) / 10, max = (p.socSet ?? 1000) / 10;
     $('barFill').style.width = soc + '%';
     $('barMin').style.left = min + '%';
     $('barMax').style.left = `calc(${max}% - 2px)`;
-    $('cLimits').textContent = `Entladen bis ${min} % · Laden bis ${max} %`;
-    let remain = '';
+    $('cMinTxt').textContent = `Entladen bis ${min} %`;
+    $('cMaxTxt').textContent = `Laden bis ${max} %`;
+    let remain = '', active = true;
     if (discharge > 0 && p.remainOutTime && p.remainOutTime < 59000) {
       const end = new Date(Date.now() + p.remainOutTime * 60000);
-      remain = `reicht noch ca. ${Math.floor(p.remainOutTime/60)} h ${p.remainOutTime % 60} min (bis ${end.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})})`;
-    } else if (charge > 0) remain = `lädt mit ${fmtW(charge)}`;
-    $('cRemain').textContent = remain || NBSP;
+      remain = `Reicht bis ${hm(end)} · ca. ${Math.floor(p.remainOutTime/60)} h ${p.remainOutTime % 60} min`;
+    } else if (discharge > 0) remain = `Entlädt mit ${fmtW(discharge)}`;
+    else if (charge > 0) remain = `Lädt mit ${fmtW(charge)}`;
+    else { remain = 'Ruht'; active = false; }
+    $('cRemain').textContent = remain;
+    $('cRemain').classList.toggle('idle', !active);
 
+    // Kacheln
+    const mode = p.acMode === 1 ? 'Laden aus Netz' : (p.acMode === 2 ? 'Abgabe ins Haus' : '–');
     $('cOutLimit').textContent = fmtW(p.outputLimit);
     $('cMax').textContent = `max. ${fmtW(p.inverseMaxPower)} Einspeisung`;
-    $('cMode').textContent = p.acMode === 1 ? 'Laden aus Netz' : (p.acMode === 2 ? 'Abgabe ins Haus' : '–');
+    $('cMode').textContent = mode; $('flowMode').textContent = mode === '–' ? '' : mode;
     $('cInLimit').textContent = p.acMode === 1 ? `Ladeleistung ${fmtW(p.inputLimit)}` : `Laden max. ${fmtW(p.chargeMaxLimit)}`;
     const t = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
     $('cTemp').textContent = t == null ? '– °C' : `${Math.round(t)} °C`;
     $('cPackTemp').textContent = tp == null ? '– °C' : `${Math.round(tp)} °C`;
-    $('cRssi').textContent = p.rssi ? `${p.rssi} dBm` : '– dBm';
-    $('cVolt').textContent = p.BatVolt ? `Akku ${de1(p.BatVolt/100)} V` : NBSP;
+    $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') : '–';
+    const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
+    $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
+    $('cVolt').textContent = p.BatVolt ? `dBm · Akku ${de1(p.BatVolt/100)} V` : 'dBm';
     syncControls(false);
   }
 
   function setStatus(kind, text){ $('dot').className = 'dot ' + kind; $('status').textContent = text; }
-  function showMsg(html){ const m = $('msg'); if (!html) { m.style.display = 'none'; return; } m.innerHTML = html; m.style.display = 'block'; }
+  function showMsg(html){ const m = $('msg'); if (!html) { m.style.display = 'none'; m.innerHTML = ''; return; } m.innerHTML = html; m.style.display = 'block'; }
 
   async function tick(){
     try {
@@ -466,42 +633,65 @@
       fails = 0; showMsg('');
       lastOk = new Date();
       setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : '') + lastOk.toLocaleTimeString('de-DE'));
-      $('foot').textContent = (demo ? 'Demo-Daten – keine Verbindung zum Gerät' : `Daten direkt vom Gerät (${cfg.ip}) · alle ${cfg.interval} s`);
+      $('foot').textContent = (demo ? 'Demo-Daten – keine Verbindung zum Gerät' : `Direkt vom Gerät im WLAN (${cfg.ip}) · alle ${cfg.interval} s`);
     } catch (e) {
-      fails++; setStatus('err', lastOk ? 'Offline ' + lastOk.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}) : 'Offline');
-      if (fails >= 2) showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Stimmt die IP-Adresse (⚙)?`);
+      fails++; setStatus('err', lastOk ? 'Offline ' + hm(lastOk) : 'Offline');
+      if (fails >= 2 && !$('msgFind')) {
+        showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`);
+        $('msgFind').onclick = () => { showMsg(''); $('setup').style.display = 'flex'; window.scrollTo(0, 0); runFind($('btnFind'), $('findResult'), useIp); };
+      }
     }
   }
   function start(){
     clearInterval(timer);
-    if (!cfg.ip && !demo) { setStatus('err', 'IP fehlt'); showMsg('Bitte unter ⚙ die IP-Adresse deines SolarFlow eintragen. Sie wird nur auf diesem Handy gespeichert.'); return; }
+    const needSetup = !cfg.ip && !demo;
+    $('setup').style.display = needSetup ? 'flex' : 'none';
+    if (needSetup) { setStatus('err', 'Nicht verbunden'); showMsg(''); return; }
     tick(); timer = setInterval(tick, cfg.interval * 1000);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
   // ---------- Steuerung ----------
   const ctl = {
-    out: {r:'rOut', v:'vOut', now:'nowOut', get: p => p.outputLimit, unit:' W', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut'},
-    max: {r:'rMax', v:'vMax', now:'nowMax', get: p => p.socSet, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), btn:'aMax'},
-    min: {r:'rMin', v:'vMin', now:'nowMin', get: p => p.minSoc, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), btn:'aMin'},
-    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  get: p => p.inputLimit, unit:' W', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn'}
+    out: {r:'rOut', v:'vOut', now:'nowOut', get: p => p.outputLimit, unit:' W', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => `aktuell ${ui} W`},
+    max: {r:'rMax', v:'vMax', now:'nowMax', get: p => p.socSet, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => `aktuell ${ui} %`},
+    min: {r:'rMin', v:'vMin', now:'nowMin', get: p => p.minSoc, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => `aktuell ${ui} %`},
+    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  get: p => p.inputLimit, unit:' W', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => `aktuell ${ui} W`}
   };
+  function markPresets(){
+    const v = $('rOut').value;
+    document.querySelectorAll('.presets button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  }
+  function showLimits(){
+    const max = Number($('rMax').value), min = Number($('rMin').value);
+    $('limRange').style.left = min + '%';
+    $('limRange').style.right = (100 - max) + '%';
+    $('limTxt').textContent = `nutzbar ${kwh(cfg.cap * (max - min) / 100)} kWh`;
+  }
   function syncControls(force){
     const p = last?.properties; if (!p) return;
     for (const [k, c] of Object.entries(ctl)) {
       const cur = c.get(p); if (cur == null) continue;
       const ui = c.toUi(cur);
-      $(c.now).textContent = `aktuell ${ui}${c.unit}`;
+      $(c.now).textContent = c.nowTxt(ui);
       const sl = (k === 'in' && ui < 50) ? 300 : ui;   // Netzladen: sinnvoller Startwert
-      if (force || !editing[k]) { $(c.r).value = sl; $(c.v).textContent = sl; }
+      const ed = (k === 'max' || k === 'min') ? editing.lim : editing[k];
+      if (force || !ed) { $(c.r).value = sl; $(c.v).textContent = sl; }
     }
     $('rOut').max = p.inverseMaxPower || 800;
+    $('outMaxLbl').textContent = `${p.inverseMaxPower || 800} W`;
     $('rIn').max = p.chargeMaxLimit || 800;
     const ac = p.acMode === 1;
-    if (force || !editing.ac) { $('swAc').checked = ac; $('acBox').style.display = ac ? 'block' : 'none'; }
+    if (force || !editing.ac) { $('swAc').checked = ac; $('acBox').style.display = ac ? 'flex' : 'none'; }
+    markPresets(); showLimits();
   }
   for (const [k, c] of Object.entries(ctl)) {
-    $(c.r).oninput = () => { editing[k] = true; $(c.v).textContent = $(c.r).value; };
+    $(c.r).oninput = () => {
+      if (k === 'max' || k === 'min') { editing.lim = true; showLimits(); } else editing[k] = true;
+      $(c.v).textContent = $(c.r).value;
+      if (k === 'out') markPresets();
+    };
+    if (!c.btn) continue;
     $(c.btn).onclick = async () => {
       const val = Number($(c.r).value), btn = $(c.btn);
       btn.disabled = true;
@@ -510,17 +700,24 @@
       finally { btn.disabled = false; }
     };
   }
+  $('aLim').onclick = async () => {
+    const max = Number($('rMax').value), min = Number($('rMin').value), btn = $('aLim');
+    btn.disabled = true;
+    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(`Gespeichert: ${min}–${max} %`); editing.lim = false; setTimeout(tick, 1500); }
+    catch (e) { toast('Fehler: ' + e.message, 4000); }
+    finally { btn.disabled = false; }
+  };
   document.querySelectorAll('.presets button').forEach(b => b.onclick = () => {
     const r = $(b.parentElement.dataset.target); r.value = b.dataset.v; r.oninput();
   });
   $('swAc').onchange = async () => {
     const on = $('swAc').checked; editing.ac = true;
-    $('acBox').style.display = on ? 'block' : 'none';
+    $('acBox').style.display = on ? 'flex' : 'none';
     try {
       if (on) { const v = Number($('rIn').value) || 300; await writeProps({acMode: 1, inputLimit: v}); toast(`Netzladen an (${v} W)`); }
       else { await writeProps({acMode: 2, inputLimit: 0}); toast('Netzladen aus'); }
       editing.ac = false; setTimeout(tick, 1500);
-    } catch (e) { toast('Fehler: ' + e.message, 4000); $('swAc').checked = !on; $('acBox').style.display = !on ? 'block' : 'none'; editing.ac = false; }
+    } catch (e) { toast('Fehler: ' + e.message, 4000); $('swAc').checked = !on; $('acBox').style.display = !on ? 'flex' : 'none'; editing.ac = false; }
   };
 
   // ---------- Zendure-Cloud (Statistik) ----------
@@ -566,6 +763,10 @@
 
   // Statistik wird NUR auf Knopfdruck aus der Cloud geladen und auf dem Handy zwischengespeichert.
   let stats = null, metric = 'solar', loading = false;
+  const METRIC = {
+    solar: {name:'Solar', col:'var(--solar)'}, home: {name:'Ins Haus', col:'var(--home)'},
+    batteryOutput: {name:'Geladen', col:'var(--bat)'}, batteryInput: {name:'Entladen', col:'var(--grid)'}
+  };
   function loadCache(){
     try { const c = JSON.parse(store.get('zStats', 'null')); if (!c) return;
       c.days.forEach(x => x.date = new Date(x.date)); c.at = new Date(c.at); stats = c; } catch {}
@@ -577,12 +778,12 @@
     const d = isToday ? t.d : null;
     $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
     $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
-    $('todayInfo').textContent = !hasLogin() ? 'Login fehlt (⚙)' : (stats && isToday ? `kWh · Stand ${stats.at.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}` : 'laden im Reiter Statistik');
+    $('todayInfo').textContent = !hasLogin() ? 'Login fehlt (⚙)' : (stats && isToday ? `kWh · Stand ${hm(stats.at)}` : 'laden im Reiter Statistik');
   }
   function showStats(){
-    $('statsLogin').style.display = hasLogin() ? 'none' : 'block';
-    $('statsBody').style.display = hasLogin() ? 'block' : 'none';
-    $('statsInfo').textContent = stats ? `Stand ${stats.at.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` : 'noch nicht geladen';
+    $('statsLogin').style.display = hasLogin() ? 'none' : 'flex';
+    $('statsBody').style.display = hasLogin() ? 'flex' : 'none';
+    $('statsInfo').textContent = stats ? `Zendure-Cloud · Stand ${stats.at.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` : 'noch nicht geladen';
     drawStats();
   }
   async function refreshStats(){
@@ -608,22 +809,26 @@
     } catch (e) { toast('Statistik: ' + e.message, 4500); }
     finally { loading = false; $('btnReloadStats').disabled = false; showToday(); showStats(); }
   }
+  const wd = d => d.toLocaleDateString('de-DE', {weekday:'short'}).replace('.', '');
   function drawStats(){
-    if (!stats) return;
-    const col = {solar:'var(--solar)', home:'var(--home)', batteryOutput:'var(--bat)', batteryInput:'var(--grid)'}[metric];
+    const m = METRIC[metric];
+    $('sumLabel').textContent = `${m.name} · letzte 7 Tage`;
+    if (!stats) { $('chart').innerHTML = ''; $('sumVal').textContent = '–'; $('sumAvg').textContent = '–'; $('sumBest').textContent = '–'; return; }
     const vals = stats.days.map(x => (x.d[metric] || 0) / 1000);
-    const max = Math.max(0.5, ...vals) * 1.15;
-    const W = 360, Hh = 190, pl = 6, pb = 26, pt = 18, bw = (W - pl*2) / 7;
-    let s = `<line x1="0" y1="${Hh-pb}" x2="${W}" y2="${Hh-pb}" stroke="var(--line)"/>`;
-    stats.days.forEach((x, i) => {
-      const v = vals[i], h = (Hh - pb - pt) * v / max, xx = pl + i*bw + bw*0.18, w = bw*0.64, y = Hh - pb - h;
-      s += `<rect x="${xx}" y="${y}" width="${w}" height="${Math.max(h, 1)}" rx="5" fill="${col}" opacity="${i === 6 ? 1 : .75}"/>`;
-      s += `<text x="${xx + w/2}" y="${y - 5}" text-anchor="middle" font-size="10.5" fill="var(--text)">${v.toLocaleString('de-DE',{maximumFractionDigits:1})}</text>`;
-      s += `<text x="${xx + w/2}" y="${Hh - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${i === 6 ? 'Heute' : x.date.toLocaleDateString('de-DE',{weekday:'short'})}</text>`;
-    });
-    $('chart').innerHTML = s;
-    $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map(x =>
-      `<tr><td>${x.date.toLocaleDateString('de-DE',{weekday:'short', day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
+    const total = vals.reduce((a, b) => a + b, 0);
+    const bi = vals.indexOf(Math.max(...vals));
+    const f1 = v => v.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
+    const f2 = v => v.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+    $('sumVal').textContent = f1(total);
+    $('sumAvg').textContent = f2(total / 7);
+    $('sumBest').textContent = `${bi === 6 ? 'Heute' : wd(stats.days[bi].date)} ${f2(vals[bi])}`;
+    const max = Math.max(0.5, ...vals), H = 140;
+    $('chart').innerHTML = stats.days.map((x, i) => {
+      const h = Math.max(4, Math.round(H * vals[i] / max));
+      return `<div class="bc${i === 6 ? ' cur' : ''}"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? 'Heute' : wd(x.date)}</em></div>`;
+    }).join('');
+    $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map((x, i) =>
+      `<tr${i === 0 ? ' class="cur"' : ''}><td>${i === 0 ? 'Heute' : wd(x.date) + ' ' + x.date.toLocaleDateString('de-DE',{day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
     const l = stats.life;
     $('ltSolar').textContent = kwh(l.solar || 0, 1); $('ltHome').textContent = kwh(l.home || 0, 1);
     $('ltIn').textContent = kwh(l.batteryOutput || 0, 1); $('ltOut').textContent = kwh(l.batteryInput || 0, 1);
@@ -637,6 +842,7 @@
   const dlg = $('dlg');
   $('btnSettings').onclick = () => {
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
+    $('findResultDlg').innerHTML = '';
     $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? '•••••• (gespeichert)' : 'Passwort';
     dlg.showModal();
   };
@@ -712,6 +918,58 @@
     finally { btn.disabled = false; }
   };
 
+  // ---------- SolarFlow im WLAN suchen ----------
+  // Android-Modul "Discovery": erst mDNS (_zendure._tcp), sonst alle Adressen im WLAN abfragen.
+  const DEV_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="11" rx="2.5"/><path d="M21 11v3"/><path d="m12 9-3 4h4l-2 3"/></svg>';
+  function prodName(p){
+    if (!p) return 'Zendure-Gerät';
+    const m = p.match(/^solarFlow(.*)$/i); if (!m) return p;
+    return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2').replace(/([a-z])([A-Z])/g, '$1 $2')).trim();
+  }
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  async function discover(){
+    const cap = window.Capacitor;
+    if (!isApp) throw new Error('Die Suche funktioniert nur in der App auf dem Handy.');
+    const opts = {mdnsMs: 4000};
+    const plug = cap.Plugins?.Discovery;
+    const r = plug?.search ? await plug.search(opts) : await cap.nativePromise('Discovery', 'search', opts);
+    return r?.devices || [];
+  }
+  async function runFind(btn, out, onPick){
+    const label = btn.querySelector('span'), old = label.textContent, ico = btn.querySelector('svg');
+    btn.disabled = true; label.textContent = 'Suche läuft…'; ico.style.display = 'none';
+    const sp = document.createElement('i'); sp.className = 'spin'; btn.prepend(sp);
+    out.innerHTML = '<div class="hint">Das dauert bis zu 15 Sekunden.</div>';
+    try {
+      const devs = await discover();
+      if (!devs.length) {
+        out.innerHTML = '<div class="hint">Kein SolarFlow gefunden. Ist der SolarFlow eingeschaltet und im WLAN? Ist dein Handy im selben WLAN (nicht mobile Daten oder Gäste-WLAN)?</div>';
+      } else if (devs.length === 1) {
+        out.innerHTML = '';
+        onPick(devs[0]);
+      } else {
+        out.innerHTML = '<div class="hint">Mehrere Geräte gefunden – bitte antippen:</div>' + devs.map((d, i) =>
+          `<button class="devbtn" data-i="${i}"><span class="di">${DEV_ICON}</span><span><b>${esc(prodName(d.product))}</b><small>${esc(d.ip)}${d.sn ? ' · SN …' + esc(d.sn.slice(-5)) : ''}</small></span></button>`).join('');
+        out.querySelectorAll('.devbtn').forEach(b => b.onclick = () => { out.innerHTML = ''; onPick(devs[Number(b.dataset.i)]); });
+      }
+    } catch (e) {
+      out.innerHTML = `<div class="hint warn">${esc(e?.message || e)}</div>`;
+    } finally {
+      sp.remove(); ico.style.display = ''; label.textContent = old; btn.disabled = false;
+    }
+  }
+  function useIp(d){
+    cfg.ip = d.ip; store.set('ip', cfg.ip); demo = false; fails = 0;
+    toast(`${prodName(d.product)} gefunden: ${d.ip}`);
+    start();
+  }
+  $('btnFind').onclick = () => runFind($('btnFind'), $('findResult'), useIp);
+  $('btnManual').onclick = () => $('btnSettings').click();
+  $('btnFindDlg').onclick = () => runFind($('btnFindDlg'), $('findResultDlg'), d => {
+    $('inIp').value = d.ip;
+    $('findResultDlg').innerHTML = `<div class="hint">${esc(prodName(d.product))} gefunden (${esc(d.ip)}) – mit „Speichern“ übernehmen.</div>`;
+  });
+
   // ---------- Sonnenbogen ----------
   function sunTimes(date){
     const rad = Math.PI/180, start = new Date(date.getFullYear(), 0, 0);
@@ -724,12 +982,19 @@
   }
   function drawSun(){
     const now = new Date(), {rise, set} = sunTimes(now);
-    const pt = f => [30 + 340*f, 105 - 91*Math.sin(Math.PI*f)];
-    let d = ''; for (let i = 0; i <= 40; i++) { const [x, y] = pt(i/40); d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); }
-    $('sunArc').setAttribute('d', d);
-    const f = (now - rise) / (set - rise), dot = $('sunDot');
-    if (f >= 0 && f <= 1) { const [x, y] = pt(f); dot.setAttribute('cx', x); dot.setAttribute('cy', y); dot.setAttribute('opacity', 1); } else dot.setAttribute('opacity', 0);
-    const hm = t => t.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+    const pt = f => [16 + 326*f, 88 - 76*Math.sin(Math.PI*f)];
+    const arc = (to, steps) => { let d = ''; for (let i = 0; i <= steps; i++) { const [x, y] = pt(to*i/steps); d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); } return d; };
+    $('sunArc').setAttribute('d', arc(1, 48));
+    const f = (now - rise) / (set - rise), dot = $('sunDot'), glow = $('sunGlow');
+    if (f >= 0 && f <= 1) {
+      const [x, y] = pt(f);
+      [dot, glow].forEach(c => { c.setAttribute('cx', x); c.setAttribute('cy', y); });
+      dot.setAttribute('opacity', 1); glow.setAttribute('opacity', .18);
+      $('sunArcDone').setAttribute('d', arc(f, Math.max(2, Math.round(48*f))));
+    } else {
+      dot.setAttribute('opacity', 0); glow.setAttribute('opacity', 0);
+      $('sunArcDone').setAttribute('d', f > 1 ? arc(1, 48) : '');
+    }
     $('sunrise').textContent = 'Aufgang ' + hm(rise); $('sunset').textContent = 'Untergang ' + hm(set);
     if (f > 0 && f < 1) { const left = Math.round((set - now)/60000); $('daylight').textContent = `noch ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} h Tageslicht`; }
     else $('daylight').textContent = '';
@@ -741,7 +1006,6 @@
   if (!isApp && location.protocol === 'https:') demo = true;  // Vorschau
   start();
   loadCache(); showToday();
-  if (!cfg.ip && !demo) setTimeout(() => $('btnSettings').click(), 400);
   if (isApp) setTimeout(() => checkUpdate().catch(() => {}), 3000);   // still im Hintergrund, Punkt am ⚙ bei neuer Version
 })();
 </script>
