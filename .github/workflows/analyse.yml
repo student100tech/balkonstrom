@@ -12,17 +12,11 @@ jobs:
         with:
           path: repo
 
-      - name: Neueste Version von Uptodown laden
+      - name: Neueste Version von Uptodown laden (Headless-Browser)
         run: |
-          set +e
-          UA="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
-          curl -sL -A "$UA" -o page.html "https://zendure.uptodown.com/android/download"
-          echo "Seite: $(wc -c < page.html) Bytes"
-          grep -oE 'detail-download-button[^>]*' page.html | head -2
-          DU=$(grep -oE 'data-url="[^"]+"' page.html | head -1 | cut -d'"' -f2)
-          VER=$(grep -oE '<div class="version">[^<]+' page.html | head -1 | sed 's/.*>//')
-          echo "Version laut Seite: $VER  data-url: ${DU:0:20}..."
-          curl -sL -A "$UA" -o app.bin "https://dw.uptodown.com/dwn/$DU"
+          pip install -q playwright
+          python3 -m playwright install --with-deps chromium > /dev/null 2>&1
+          python3 repo/tools/fetch_zendure.py
           echo "Datei: $(stat -c %s app.bin) Bytes, $(file -b app.bin | cut -c1-70)"
 
       - name: Entpacken und Version bestimmen
