@@ -115,6 +115,11 @@
   .btn svg{width:17px;height:17px}
   .btn.primary{height:50px;border:0;border-radius:16px;background:var(--bat);color:#052219;font-size:15px;font-weight:600}
   .btn.secondary{height:50px;border-radius:16px;border-color:var(--line3);background:var(--card2);font-size:15px;font-weight:600}
+  /* Übernehmen-Knopf: grau, solange nichts geändert wurde – grün, sobald der Regler vom Gerätewert abweicht */
+  .btn.apply{height:50px;border-radius:16px;border-color:var(--line3);background:var(--card2);color:var(--dim);font-size:15px;font-weight:600}
+  .btn.apply.on{border-color:transparent;background:var(--bat);color:#052219}
+  .btn:disabled{cursor:default}
+  .resetable{color:var(--muted2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   .btn.small{height:34px;padding:0 12px;font-size:12.5px;border-radius:10px}
   .btn:disabled{opacity:.5}
   .wide-btn{width:100%}
@@ -241,6 +246,9 @@
   .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex:none}
   @keyframes spin{to{transform:rotate(360deg)}}
   .msg .btn{margin-top:10px;height:40px;background:#4a2229;border-color:#7a3340;color:#fecaca}
+  .langsel{display:flex;gap:8px}
+  .langsel button{flex:1;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--muted2);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .langsel button.on{border-color:transparent;background:var(--bat);color:#052219}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -252,8 +260,8 @@
       <h1>Balkonstrom<small id="devname">SolarFlow 800 Plus</small></h1>
     </div>
     <div class="hdr-right">
-      <div class="pill"><span class="dot" id="dot"></span><span id="status">Verbinde…</span></div>
-      <button class="iconbtn" id="btnSettings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <div class="pill"><span class="dot" id="dot"></span><span id="status" data-i18n="connecting">Verbinde…</span></div>
+      <button class="iconbtn" id="btnSettings" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
   </header>
 
@@ -263,11 +271,11 @@
   <section class="view active" id="vLive">
     <div class="card setup" id="setup" style="display:none">
       <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><path d="M1.5 9a15 15 0 0 1 21 0"/><circle cx="12" cy="19.5" r="1" fill="currentColor"/></svg></div>
-      <h3>SolarFlow verbinden</h3>
-      <p>Die App sucht deinen SolarFlow im WLAN. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.</p>
-      <button class="btn primary" id="btnFind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>SolarFlow suchen</span></button>
+      <h3 data-i18n="setup_h">SolarFlow verbinden</h3>
+      <p data-i18n="setup_p">Die App sucht deinen SolarFlow im WLAN. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.</p>
+      <button class="btn primary" id="btnFind"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="find_btn">SolarFlow suchen</span></button>
       <div class="found" id="findResult" aria-live="polite"></div>
-      <button class="linkbtn" id="btnManual">IP-Adresse selbst eingeben</button>
+      <button class="linkbtn" id="btnManual" data-i18n="manual_ip">IP-Adresse selbst eingeben</button>
     </div>
 
     <div class="sun">
@@ -278,12 +286,12 @@
         <circle id="sunGlow" r="13" fill="var(--solar)" opacity="0"/>
         <circle id="sunDot" r="7" fill="var(--solar)" opacity="0"/>
       </svg>
-      <div class="sunrow"><span id="sunrise">Aufgang –</span><span id="daylight"></span><span id="sunset">Untergang –</span></div>
+      <div class="sunrow"><span id="sunrise">–</span><span id="daylight"></span><span id="sunset">–</span></div>
     </div>
 
     <div class="card flow">
-      <div class="card-head"><span class="lbl">Energiefluss</span><span class="info" id="flowMode"></span></div>
-      <svg viewBox="0 0 350 250" role="img" aria-label="Energiefluss">
+      <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
+      <svg viewBox="0 0 350 250" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
         <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/>
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/>
@@ -291,216 +299,221 @@
 
         <circle cx="175" cy="38" r="28" fill="#1E1A12" stroke="var(--solar)" stroke-width="1.5"/>
         <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
-        <text class="node-label" x="134" y="34" text-anchor="end">Solar</text>
-        <text class="node-val" x="134" y="56" text-anchor="end" id="tSolar">– W</text>
-        <text class="node-sub" x="216" y="34" id="tPv1">PV1 – W</text>
-        <text class="node-sub" x="216" y="54" id="tPv2">PV2 – W</text>
+        <text class="node-label" x="134" y="34" text-anchor="end" data-i18n="solar">Solar</text>
+        <text class="node-val" x="134" y="56" text-anchor="end" id="tSolar" data-i18n="dash_w">– W</text>
+        <text class="node-sub" x="216" y="34" id="tPv1" data-i18n="pv1">PV1 – W</text>
+        <text class="node-sub" x="216" y="54" id="tPv2" data-i18n="pv2">PV2 – W</text>
 
         <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
         <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
 
         <circle cx="46" cy="126" r="26" fill="#161A22" stroke="#3A4152" stroke-width="1.5"/>
         <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
-        <text class="node-label" x="46" y="174" text-anchor="middle">Netz → Akku</text>
-        <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid">– W</text>
+        <text class="node-label" x="46" y="174" text-anchor="middle" data-i18n="grid_bat">Netz → Akku</text>
+        <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
         <circle cx="304" cy="126" r="26" fill="#18162A" stroke="var(--home)" stroke-width="1.5"/>
         <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
-        <text class="node-label" x="304" y="174" text-anchor="middle">Ins Haus</text>
-        <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome">– W</text>
+        <text class="node-label" x="304" y="174" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
+        <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
 
         <circle cx="175" cy="214" r="28" fill="#112420" stroke="#21342F" stroke-width="5"/>
         <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
         <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
-        <text class="node-label" x="216" y="208" id="tBatState">Akku</text>
-        <text class="node-val" x="216" y="228" id="tBat">– W</text>
+        <text class="node-label" x="216" y="208" id="tBatState" data-i18n="bat">Akku</text>
+        <text class="node-val" x="216" y="228" id="tBat" data-i18n="dash_w">– W</text>
       </svg>
     </div>
 
     <div class="card bat">
       <div class="bat-top">
         <div>
-          <div class="lbl">Akku</div>
+          <div class="lbl" data-i18n="bat">Akku</div>
           <div class="bat-soc"><span class="num" id="cSoc">–</span><span>%</span></div>
         </div>
         <div class="bat-right">
-          <div class="kwh" id="cEnergy">– kWh</div>
+          <div class="kwh" id="cEnergy" data-i18n="dash_kwh">– kWh</div>
           <div class="chip idle" id="cRemain">–</div>
         </div>
       </div>
       <div>
         <div class="bar"><i id="barFill" style="width:0"></i><b id="barMin" style="left:10%"></b><b id="barMax" style="left:calc(100% - 2px)"></b></div>
-        <div class="barlbl"><span id="cMinTxt">Entladen bis – %</span><span id="cMaxTxt">Laden bis – %</span></div>
+        <div class="barlbl"><span id="cMinTxt">–</span><span id="cMaxTxt">–</span></div>
       </div>
     </div>
 
     <div class="card today-card">
-      <div class="card-head"><span class="lbl">Heute</span><span class="info" id="todayInfo"></span></div>
+      <div class="card-head"><span class="lbl" data-i18n="today">Heute</span><span class="info" id="todayInfo"></span></div>
       <div class="four">
-        <div><span class="k"><i class="d" style="background:var(--solar)"></i>Solar</span><span class="n" id="tdSolar">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--home)"></i>Ins Haus</span><span class="n" id="tdHome">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--bat)"></i>Geladen</span><span class="n" id="tdIn">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--grid)"></i>Entladen</span><span class="n" id="tdOut">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></span><span class="n" id="tdSolar">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--home)"></i><span data-i18n="m_home">Ins Haus</span></span><span class="n" id="tdHome">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--bat)"></i><span data-i18n="m_in">Geladen</span></span><span class="n" id="tdIn">–</span></div>
+        <div><span class="k"><i class="d" style="background:var(--grid)"></i><span data-i18n="m_out">Entladen</span></span><span class="n" id="tdOut">–</span></div>
       </div>
     </div>
 
     <div class="tiles">
-      <div class="tile"><span class="t">Ausgangslimit</span><span class="v" id="cOutLimit">– W</span><span class="s" id="cMax">&nbsp;</span></div>
-      <div class="tile"><span class="t">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
-      <div class="tile" style="gap:8px"><span class="t">Temperatur</span><div class="trow"><span>Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span>Akku</span><b id="cPackTemp">– °C</b></div></div>
-      <div class="tile"><span class="t">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt">dBm</span></div>
+      <div class="tile"><span class="t" data-i18n="out_limit">Ausgangslimit</span><span class="v" id="cOutLimit" data-i18n="dash_w">– W</span><span class="s" id="cMax">&nbsp;</span></div>
+      <div class="tile"><span class="t" data-i18n="mode">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
+      <div class="tile" style="gap:8px"><span class="t" data-i18n="temp">Temperatur</span><div class="trow"><span data-i18n="electronics">Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span data-i18n="bat">Akku</span><b id="cPackTemp">– °C</b></div></div>
+      <div class="tile"><span class="t" data-i18n="wifi">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt" data-i18n="u_dbm">dBm</span></div>
     </div>
   </section>
 
   <!-- ================= STATISTIK ================= -->
   <section class="view" id="vStats">
     <div class="pagehead">
-      <div><h2>Statistik</h2><div class="sub" id="statsInfo">noch nicht geladen</div></div>
-      <button class="btn" id="btnReloadStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>Aktualisieren</button>
+      <div><h2 data-i18n="stats">Statistik</h2><div class="sub" id="statsInfo" data-i18n="not_loaded">noch nicht geladen</div></div>
+      <button class="btn" id="btnReloadStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-i18n="refresh">Aktualisieren</span></button>
     </div>
     <div id="statsLogin" class="note" style="display:none;flex-direction:column">
-      <span>Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).</span>
-      <button class="btn primary wide-btn" onclick="document.getElementById('btnSettings').click()">Zendure-Login eintragen</button>
+      <span data-i18n="stats_login_p">Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).</span>
+      <button class="btn primary wide-btn" onclick="document.getElementById('btnSettings').click()" data-i18n="stats_login_b">Zendure-Login eintragen</button>
     </div>
     <div id="statsBody" style="display:flex;flex-direction:column;gap:12px">
-      <div class="chips" id="seg" role="tablist" aria-label="Messwert">
-        <button data-k="solar" class="on" style="--c:var(--solar)">Solar</button>
-        <button data-k="home" style="--c:var(--home)">Ins Haus</button>
-        <button data-k="batteryOutput" style="--c:var(--bat)">Geladen</button>
-        <button data-k="batteryInput" style="--c:var(--grid)">Entladen</button>
+      <div class="chips" id="seg" role="tablist" data-i18n-al="al_metric" aria-label="Messwert">
+        <button data-k="solar" class="on" style="--c:var(--solar)" data-i18n="m_solar">Solar</button>
+        <button data-k="home" style="--c:var(--home)" data-i18n="m_home">Ins Haus</button>
+        <button data-k="batteryOutput" style="--c:var(--bat)" data-i18n="m_in">Geladen</button>
+        <button data-k="batteryInput" style="--c:var(--grid)" data-i18n="m_out">Entladen</button>
       </div>
       <div class="card">
         <div class="sum">
           <div>
-            <div class="lbl" id="sumLabel">Solar · letzte 7 Tage</div>
-            <div class="big"><span class="num" id="sumVal">–</span><span>kWh</span></div>
+            <div class="lbl" id="sumLabel">–</div>
+            <div class="big"><span class="num" id="sumVal">–</span><span data-i18n="kwh">kWh</span></div>
           </div>
-          <div class="side"><span>Ø <b id="sumAvg">–</b> kWh/Tag</span><span>Bester Tag: <b id="sumBest">–</b></span></div>
+          <div class="side"><span>Ø <b id="sumAvg">–</b> <span data-i18n="per_day">kWh/Tag</span></span><span><span data-i18n="best_day">Bester Tag:</span> <b id="sumBest">–</b></span></div>
         </div>
         <div class="bars" id="chart"></div>
       </div>
       <div class="card" style="padding:18px 16px 8px">
-        <div class="card-head" style="padding:0 4px"><span class="lbl">Tageswerte</span><span class="info">kWh</span></div>
-        <table id="tbl"><thead><tr><th></th><th><i class="d" style="background:var(--solar)"></i>Solar</th><th><i class="d" style="background:var(--home)"></i>Haus</th><th><i class="d" style="background:var(--bat)"></i>Gel.</th><th><i class="d" style="background:var(--grid)"></i>Entl.</th></tr></thead><tbody></tbody></table>
+        <div class="card-head" style="padding:0 4px"><span class="lbl" data-i18n="daily">Tageswerte</span><span class="info" data-i18n="kwh">kWh</span></div>
+        <table id="tbl"><thead><tr><th></th><th><i class="d" style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></th><th><i class="d" style="background:var(--home)"></i><span data-i18n="th_home">Haus</span></th><th><i class="d" style="background:var(--bat)"></i><span data-i18n="th_in">Gel.</span></th><th><i class="d" style="background:var(--grid)"></i><span data-i18n="th_out">Entl.</span></th></tr></thead><tbody></tbody></table>
       </div>
       <div class="card">
-        <span class="lbl">Seit Inbetriebnahme</span>
+        <span class="lbl" data-i18n="lifetime">Seit Inbetriebnahme</span>
         <div class="life">
-          <div><span class="k"><i style="background:var(--solar)"></i>Solar</span><span class="n"><span id="ltSolar">–</span> <small>kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--home)"></i>Ins Haus</span><span class="n"><span id="ltHome">–</span> <small>kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--bat)"></i>Geladen</span><span class="n"><span id="ltIn">–</span> <small>kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--grid)"></i>Entladen</span><span class="n"><span id="ltOut">–</span> <small>kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></span><span class="n"><span id="ltSolar">–</span> <small data-i18n="kwh">kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--home)"></i><span data-i18n="m_home">Ins Haus</span></span><span class="n"><span id="ltHome">–</span> <small data-i18n="kwh">kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--bat)"></i><span data-i18n="m_in">Geladen</span></span><span class="n"><span id="ltIn">–</span> <small data-i18n="kwh">kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--grid)"></i><span data-i18n="m_out">Entladen</span></span><span class="n"><span id="ltOut">–</span> <small data-i18n="kwh">kWh</small></span></div>
         </div>
       </div>
-      <details><summary>Rohdaten (für Fehlersuche)</summary><pre id="raw">–</pre></details>
+      <details><summary data-i18n="rawdata">Rohdaten (für Fehlersuche)</summary><pre id="raw">–</pre></details>
     </div>
   </section>
 
   <!-- ================= STEUERUNG ================= -->
   <section class="view" id="vCtl">
-    <div class="pagehead"><div><h2>Steuerung</h2><div class="sub">Änderungen gehen direkt an den SolarFlow</div></div></div>
+    <div class="pagehead"><div><h2 data-i18n="ctl">Steuerung</h2><div class="sub" data-i18n="ctl_sub">Änderungen gehen direkt an den SolarFlow</div></div></div>
     <div class="note">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-      <span>Ist in der Zendure-App eine Automatik aktiv (z.&nbsp;B. Energieplan), kann sie deine Einstellung wieder überschreiben.</span>
+      <span data-i18n="ctl_note">Ist in der Zendure-App eine Automatik aktiv (z.&nbsp;B. Energieplan), kann sie deine Einstellung wieder überschreiben.</span>
     </div>
 
     <div class="card ctl">
-      <div class="card-head"><span class="lbl">Ausgangsleistung ins Haus</span><span class="info" id="nowOut">aktuell –</span></div>
-      <div class="bigval"><span class="num" id="vOut">–</span><span class="u">W</span></div>
-      <label><span class="sr">Ausgangsleistung in Watt</span><input type="range" id="rOut" min="0" max="800" step="10"></label>
-      <div class="range-lbl"><span>0 W</span><span id="outMaxLbl">800 W</span></div>
+      <div class="card-head"><span class="lbl" data-i18n="out_power">Ausgangsleistung ins Haus</span><span class="info" id="nowOut" data-i18n="now_dash">aktuell –</span></div>
+      <div class="bigval"><span class="num" id="vOut">–</span><span class="u" data-i18n="u_w">W</span></div>
+      <label><span class="sr" data-i18n="sr_out">Ausgangsleistung in Watt</span><input type="range" id="rOut" min="0" max="800" step="5"></label>
+      <div class="range-lbl"><span data-i18n="zero_w">0 W</span><span id="outMaxLbl">800 W</span></div>
       <div class="presets" data-target="rOut"><button data-v="0">0</button><button data-v="100">100</button><button data-v="200">200</button><button data-v="400">400</button><button data-v="800">800</button></div>
-      <button class="btn primary" id="aOut">Übernehmen</button>
+      <button class="btn apply" id="aOut" disabled data-i18n="apply">Übernehmen</button>
     </div>
 
     <div class="card ctl" style="gap:16px">
-      <span class="lbl">Akku-Grenzen</span>
+      <span class="lbl" data-i18n="bat_limits">Akku-Grenzen</span>
       <div>
-        <div class="usable"><i id="limRange" style="left:10%;right:0"></i><span id="limTxt">nutzbar – kWh</span></div>
+        <div class="usable"><i id="limRange" style="left:10%;right:0"></i><span id="limTxt" data-i18n="usable_dash">nutzbar – kWh</span></div>
         <div class="range-lbl" style="margin-top:8px"><span>0 %</span><span>100 %</span></div>
       </div>
       <div class="lim">
-        <label><span class="t">Laden bis <span class="muted" style="font-size:11px">(70–100)</span></span><span class="v"><span id="vMax">–</span> %</span><input type="range" id="rMax" min="70" max="100" step="5"><span class="r" id="nowMax">70–100 %</span></label>
-        <label><span class="t">Entladen bis <span class="muted" style="font-size:11px">(0–50)</span></span><span class="v"><span id="vMin">–</span> %</span><input type="range" id="rMin" min="0" max="50" step="5"><span class="r" id="nowMin">0–50 %</span></label>
+        <label><span class="t"><span data-i18n="chg_until">Laden bis</span> <span class="muted" style="font-size:11px">(70–100)</span></span><span class="v"><span id="vMax">–</span> %</span><input type="range" id="rMax" min="70" max="100" step="5"><span class="r" id="nowMax">70–100 %</span></label>
+        <label><span class="t"><span data-i18n="dis_until">Entladen bis</span> <span class="muted" style="font-size:11px">(0–50)</span></span><span class="v"><span id="vMin">–</span> %</span><input type="range" id="rMin" min="0" max="50" step="5"><span class="r" id="nowMin">0–50 %</span></label>
       </div>
-      <button class="btn secondary" id="aLim">Grenzen übernehmen</button>
+      <button class="btn apply" id="aLim" disabled data-i18n="apply_limits">Grenzen übernehmen</button>
     </div>
 
     <div class="card ctl">
       <div class="ac-head">
-        <div><div class="t">Laden aus dem Netz</div><div class="s" id="acInfo">Lädt den Akku mit Strom aus der Steckdose</div></div>
-        <label class="switch"><span class="sr">Laden aus dem Netz</span><input type="checkbox" id="swAc"><span></span></label>
+        <div><div class="t" data-i18n="grid_chg">Laden aus dem Netz</div><div class="s" id="acInfo" data-i18n="grid_chg_sub">Lädt den Akku mit Strom aus der Steckdose</div></div>
+        <label class="switch"><span class="sr" data-i18n="grid_chg">Laden aus dem Netz</span><input type="checkbox" id="swAc"><span></span></label>
       </div>
       <div id="acBox" style="display:none">
-        <div class="card-head"><span class="t muted" style="font-size:12.5px">Ladeleistung</span><span class="num" style="font-size:22px"><span id="vIn">–</span> W</span></div>
-        <label><span class="sr">Ladeleistung in Watt</span><input type="range" id="rIn" min="50" max="800" step="10"></label>
+        <div class="card-head"><span class="t muted" style="font-size:12.5px" data-i18n="chg_power">Ladeleistung</span><span class="num" style="font-size:22px"><span id="vIn">–</span> W</span></div>
+        <label><span class="sr" data-i18n="sr_in">Ladeleistung in Watt</span><input type="range" id="rIn" min="50" max="800" step="5"></label>
         <div class="range-lbl" style="margin-top:-4px"><span id="nowIn">&nbsp;</span><span></span></div>
-        <button class="btn primary" id="aIn" style="height:46px;font-size:14px">Übernehmen</button>
+        <button class="btn apply" id="aIn" disabled style="height:46px;font-size:14px" data-i18n="apply">Übernehmen</button>
       </div>
     </div>
   </section>
 
-  <div class="foot" id="foot">Daten direkt vom Gerät im WLAN (zenSDK)</div>
+  <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
 </div>
 
-<nav class="tabs" aria-label="Bereiche">
-  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg>Live</button>
-  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>Statistik</button>
-  <button data-v="vCtl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Steuerung</button>
+<nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
+  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
+  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span data-i18n="stats">Statistik</span></button>
+  <button data-v="vCtl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span data-i18n="ctl">Steuerung</span></button>
 </nav>
 
 <div class="toast" id="toast"></div>
 
 <dialog id="dlg">
-  <div class="dhead"><h2>Einstellungen</h2><button class="xbtn" id="btnX" aria-label="Schließen">✕</button></div>
+  <div class="dhead"><h2 data-i18n="d_title">Einstellungen</h2><button class="xbtn" id="btnX" data-i18n-al="al_close" aria-label="Schließen">✕</button></div>
 
   <div class="dsec">
-    <div class="dtitle">App</div>
-    <div class="drow"><span class="muted">Version __APPVERSION__</span></div>
-    <button class="btn wide-btn" id="btnUpdate">Nach Update suchen</button>
+    <div class="dtitle" data-i18n="d_lang">Sprache</div>
+    <div class="langsel"><button data-l="de">Deutsch</button><button data-l="ru">Русский</button></div>
+  </div>
+
+  <div class="dsec">
+    <div class="dtitle" data-i18n="d_app">App</div>
+    <div class="drow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
+    <button class="btn wide-btn" id="btnUpdate" data-i18n="check_update">Nach Update suchen</button>
     <div id="updInfo" class="hint" style="display:none"></div>
   </div>
 
   <div class="dsec">
-    <div class="dtitle">Gerät im WLAN</div>
-    <label class="f" for="inIp">IP-Adresse des SolarFlow</label>
-    <div class="iprow"><input id="inIp" inputmode="decimal" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span>Suchen</span></button></div>
+    <div class="dtitle" data-i18n="d_dev">Gerät im WLAN</div>
+    <label class="f" for="inIp" data-i18n="d_ip">IP-Adresse des SolarFlow</label>
+    <div class="iprow"><input id="inIp" inputmode="decimal" data-i18n-ph="ph_ip" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="d_search">Suchen</span></button></div>
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
-    <label class="f" for="inCap">Akku-Kapazität (Wh)</label>
+    <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
-    <label class="f" for="inInt">Aktualisierung alle … Sekunden (min. 3)</label>
+    <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
     <input id="inInt" inputmode="numeric" placeholder="5">
   </div>
 
   <div class="dsec">
     <div class="dtitle" style="display:flex;justify-content:space-between;align-items:center">
-      <span>Zendure-Konto (für Statistik)</span>
-      <button class="btn small" id="btnLogout">Abmelden</button>
+      <span data-i18n="d_acct">Zendure-Konto (für Statistik)</span>
+      <button class="btn small" id="btnLogout" data-i18n="d_logout">Abmelden</button>
     </div>
-    <label class="f" for="inMail">E-Mail</label>
-    <input id="inMail" type="email" autocomplete="username" placeholder="name@beispiel.de">
-    <label class="f" for="inPw">Passwort</label>
+    <label class="f" for="inMail" data-i18n="d_mail">E-Mail</label>
+    <input id="inMail" type="email" autocomplete="username" data-i18n-ph="ph_mail" placeholder="name@beispiel.de">
+    <label class="f" for="inPw" data-i18n="d_pw">Passwort</label>
     <input id="inPw" type="password" autocomplete="current-password" placeholder="Passwort">
-    <div class="hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
+    <div class="hint" data-i18n="d_pw_hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
   </div>
 
   <div class="dsec" id="secDiag">
-    <div class="dtitle">Diagnose (vorübergehend)</div>
-    <div class="hint">Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte
+    <div class="dtitle" data-i18n="d_diag">Diagnose (vorübergehend)</div>
+    <div class="hint" data-i18n="d_diag_hint">Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte
       bereitstellt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte&#8209;Nummern sind gekürzt.</div>
-    <button class="btn wide-btn" id="btnDiag" style="margin-top:10px">Diagnose starten</button>
+    <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Diagnose starten</button>
     <div class="diagbox" id="diagBox" style="display:none">
       <textarea id="diagOut" readonly></textarea>
       <div class="diagrow">
-        <button class="btn" id="btnDiagCopy">Kopieren</button>
-        <button class="btn primary" id="btnDiagShare">Teilen</button>
+        <button class="btn" id="btnDiagCopy" data-i18n="d_copy">Kopieren</button>
+        <button class="btn primary" id="btnDiagShare" data-i18n="d_share">Teilen</button>
       </div>
     </div>
   </div>
 
   <div class="dfoot">
-    <button class="btn" id="btnCancel">Abbrechen</button>
-    <button class="btn primary" id="btnSave">Speichern</button>
+    <button class="btn" id="btnCancel" data-i18n="d_cancel">Abbrechen</button>
+    <button class="btn primary" id="btnSave" data-i18n="d_save">Speichern</button>
   </div>
 </dialog>
 
@@ -521,13 +534,205 @@
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
   let demo = false, timer = null, fails = 0, last = null, editing = {}, lastOk = null;
+  const base = {};   // zuletzt vom Gerät übernommener Reglerwert – Vergleich für „geändert?“
   const $ = id => document.getElementById(id);
-  const fmtW = w => (w == null || isNaN(w)) ? '– W' : `${Math.round(w)} W`;
-  const kwh = (wh, dig = 2) => (wh/1000).toLocaleString('de-DE', {minimumFractionDigits:dig, maximumFractionDigits:dig});
+  // ---------- Sprachen / Языки ----------
+  const L10N = {
+    de: {
+      u_w:'W', u_p:'%', u_dbm:'dBm', zero_w:'0 W',
+      connecting:'Verbinde…', not_connected:'Nicht verbunden', offline:'Offline', demo_pfx:'Demo ',
+      setup_h:'SolarFlow verbinden',
+      setup_p:'Die App sucht deinen SolarFlow im WLAN. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.',
+      find_btn:'SolarFlow suchen', manual_ip:'IP-Adresse selbst eingeben',
+      sunrise:'Aufgang', sunset:'Untergang',
+      daylight:(h,m)=>`noch ${h}:${m} h Tageslicht`,
+      flow:'Energiefluss', solar:'Solar', grid_bat:'Netz → Akku', to_home:'Ins Haus',
+      bat:'Akku', bat_idle:'Akku ruht', bat_charge:'Akku lädt', bat_discharge:'Akku entlädt',
+      dash_w:'– W', dash_kwh:'– kWh', dash_c:'– °C', pv1:'PV1 – W', pv2:'PV2 – W',
+      dis_to:v=>`Entladen bis ${v} %`, chg_to:v=>`Laden bis ${v} %`,
+      lasts_until:(t0,h,m)=>`Reicht bis ${t0} · ca. ${h} h ${m} min`,
+      discharging:w=>`Entlädt mit ${w}`, charging:w=>`Lädt mit ${w}`, idle:'Ruht',
+      today:'Heute', charged:'Geladen', discharged:'Entladen',
+      out_limit:'Ausgangslimit', mode:'Modus', temp:'Temperatur', electronics:'Elektronik', wifi:'WLAN',
+      mode_grid:'Laden aus Netz', mode_home:'Abgabe ins Haus',
+      max_feed:w=>`max. ${w} Einspeisung`,
+      chg_power_v:w=>`Ladeleistung ${w}`, chg_max_v:w=>`Laden max. ${w}`,
+      dbm_bat:v=>`dBm · Akku ${v} V`,
+      foot_demo:'Demo-Daten – keine Verbindung zum Gerät',
+      foot_live:(ip,s)=>`Direkt vom Gerät im WLAN (${ip}) · alle ${s} s`,
+      no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
+      stats:'Statistik', not_loaded:'noch nicht geladen', refresh:'Aktualisieren',
+      stats_login_p:'Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).',
+      stats_login_b:'Zendure-Login eintragen',
+      m_solar:'Solar', m_home:'Ins Haus', m_in:'Geladen', m_out:'Entladen',
+      last7:n=>`${n} · letzte 7 Tage`,
+      kwh:'kWh', per_day:'kWh/Tag', best_day:'Bester Tag:', daily:'Tageswerte',
+      th_home:'Haus', th_in:'Gel.', th_out:'Entl.',
+      lifetime:'Seit Inbetriebnahme', rawdata:'Rohdaten (für Fehlersuche)',
+      login_missing:'Login fehlt (⚙)', kwh_as_of:t0=>`kWh · Stand ${t0}`, load_in_stats:'laden im Reiter Statistik',
+      cloud_as_of:s=>`Zendure-Cloud · Stand ${s}`,
+      enter_login_first:'Bitte zuerst den Zendure-Login unter ⚙ eintragen',
+      loading:'lädt…', stats_updated:'Statistik aktualisiert', stats_pfx:'Statistik: ',
+      ctl:'Steuerung', ctl_sub:'Änderungen gehen direkt an den SolarFlow',
+      ctl_note:'Ist in der Zendure-App eine Automatik aktiv (z. B. Energieplan), kann sie deine Einstellung wieder überschreiben.',
+      out_power:'Ausgangsleistung ins Haus', now_dash:'aktuell –',
+      sr_out:'Ausgangsleistung in Watt', apply:'Übernehmen',
+      bat_limits:'Akku-Grenzen', usable:v=>`nutzbar ${v} kWh`, usable_dash:'nutzbar – kWh',
+      chg_until:'Laden bis', dis_until:'Entladen bis', apply_limits:'Grenzen übernehmen',
+      grid_chg:'Laden aus dem Netz', grid_chg_sub:'Lädt den Akku mit Strom aus der Steckdose',
+      chg_power:'Ladeleistung', sr_in:'Ladeleistung in Watt',
+      now_w:v=>`aktuell ${v} W`, now_p:v=>`aktuell ${v} %`, reset_sfx:' · zurück',
+      saved:v=>`Gespeichert: ${v}`, err_pfx:'Fehler: ',
+      grid_chg_on:v=>`Netzladen an (${v} W)`, grid_chg_off:'Netzladen aus',
+      e_notconn:'Gerät noch nicht verbunden', e_nologin:'Kein Zendure-Login eingetragen',
+      e_nodev:'Kein Gerät im Zendure-Konto gefunden',
+      foot_src:'Daten direkt vom Gerät im WLAN (zenSDK)',
+      tab_live:'Live',
+      d_title:'Einstellungen', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
+      check_update:'Nach Update suchen', update_to:n=>`Jetzt updaten auf Build ${n}`,
+      d_dev:'Gerät im WLAN', d_ip:'IP-Adresse des SolarFlow', d_search:'Suchen',
+      d_cap:'Akku-Kapazität (Wh)', d_int:'Aktualisierung alle … Sekunden (min. 3)',
+      d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
+      d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
+      d_diag:'Diagnose (vorübergehend)',
+      d_diag_hint:'Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte bereitstellt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte-Nummern sind gekürzt.',
+      d_diag_run:'Diagnose starten', d_copy:'Kopieren', d_share:'Teilen',
+      d_cancel:'Abbrechen', d_save:'Speichern',
+      ph_ip:'z. B. 192.168.178.xx', ph_mail:'name@beispiel.de', ph_pw:'Passwort',
+      pw_saved:'•••••• (gespeichert)',
+      al_settings:'Einstellungen', al_flow:'Energiefluss', al_metric:'Messwert', al_areas:'Bereiche', al_close:'Schließen',
+      login_ok:'Zendure-Login erfolgreich – Statistik im Reiter „Statistik“ laden',
+      login_fail:'Zendure-Login fehlgeschlagen: ', login_deleted:'Zendure-Login gelöscht',
+      copied_clip:'In die Zwischenablage kopiert', copied:'Kopiert',
+      copy_manual:'Bitte Text markieren und kopieren',
+      share_unavail:'Teilen hier nicht möglich',
+      share_fail:m=>`Teilen ging nicht (${m}) – bitte „Kopieren“ benutzen`,
+      gh_down:s=>`GitHub antwortet nicht (HTTP ${s})`,
+      downloading:n=>`Lade Build ${n} herunter… (ca. 11 MB)`,
+      app_only:'nur in der App möglich', no_updater:'Updater fehlt',
+      dl_done:'Fertig geladen – bitte im Android-Fenster auf „Installieren“ tippen.',
+      upd_manual:(m,u)=>`Automatisches Update ging nicht (${m}).<br><a href="${u}" style="color:var(--bat)">Hier herunterladen</a> und die Datei öffnen.`,
+      checking:'Prüfe…',
+      upd_avail:(n,b)=>`Build ${n} ist verfügbar (du hast Build ${b}).`,
+      upd_latest:b=>`Du hast die neueste Version (Build ${b}).`,
+      upd_failed:'Update-Prüfung fehlgeschlagen: ',
+      zendure_dev:'Zendure-Gerät', find_app_only:'Die Suche funktioniert nur in der App auf dem Handy.',
+      searching:'Suche läuft…', find_wait:'Das dauert bis zu 15 Sekunden.',
+      find_none:'Kein SolarFlow gefunden. Ist der SolarFlow eingeschaltet und im WLAN? Ist dein Handy im selben WLAN (nicht mobile Daten oder Gäste-WLAN)?',
+      find_many:'Mehrere Geräte gefunden – bitte antippen:',
+      found_at:(p,ip)=>`${p} gefunden: ${ip}`,
+      found_save:(p,ip)=>`${p} gefunden (${ip}) – mit „Speichern“ übernehmen.`
+    },
+    ru: {
+      u_w:'Вт', u_p:'%', u_dbm:'дБм', zero_w:'0 Вт',
+      connecting:'Подключение…', not_connected:'Нет подключения', offline:'Не в сети', demo_pfx:'Демо ',
+      setup_h:'Подключить SolarFlow',
+      setup_p:'Приложение ищет SolarFlow в сети Wi-Fi. Телефон должен быть в той же сети Wi-Fi, что и SolarFlow.',
+      find_btn:'Найти SolarFlow', manual_ip:'Ввести IP-адрес вручную',
+      sunrise:'Восход', sunset:'Закат',
+      daylight:(h,m)=>`ещё ${h}:${m} ч светового дня`,
+      flow:'Поток энергии', solar:'Солнце', grid_bat:'Сеть → АКБ', to_home:'В дом',
+      bat:'Аккумулятор', bat_idle:'АКБ в покое', bat_charge:'АКБ заряжается', bat_discharge:'АКБ разряжается',
+      dash_w:'– Вт', dash_kwh:'– кВт·ч', dash_c:'– °C', pv1:'PV1 – Вт', pv2:'PV2 – Вт',
+      dis_to:v=>`Разряд до ${v} %`, chg_to:v=>`Заряд до ${v} %`,
+      lasts_until:(t0,h,m)=>`Хватит до ${t0} · ок. ${h} ч ${m} мин`,
+      discharging:w=>`Разряд ${w}`, charging:w=>`Заряд ${w}`, idle:'Покой',
+      today:'Сегодня', charged:'Заряжено', discharged:'Разряжено',
+      out_limit:'Лимит выдачи', mode:'Режим', temp:'Температура', electronics:'Электроника', wifi:'Wi-Fi',
+      mode_grid:'Зарядка от сети', mode_home:'Выдача в дом',
+      max_feed:w=>`макс. выдача ${w}`,
+      chg_power_v:w=>`Мощность зарядки ${w}`, chg_max_v:w=>`Зарядка макс. ${w}`,
+      dbm_bat:v=>`дБм · АКБ ${v} В`,
+      foot_demo:'Демо-данные — нет связи с устройством',
+      foot_live:(ip,s)=>`Напрямую с устройства в сети Wi-Fi (${ip}) · каждые ${s} с`,
+      no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
+      stats:'Статистика', not_loaded:'ещё не загружено', refresh:'Обновить',
+      stats_login_p:'Для дневных значений и истории нужен вход в учётную запись Zendure — эти данные хранятся в облаке Zendure.',
+      stats_login_b:'Ввести данные Zendure',
+      m_solar:'Солнце', m_home:'В дом', m_in:'Заряжено', m_out:'Разряжено',
+      last7:n=>`${n} · последние 7 дней`,
+      kwh:'кВт·ч', per_day:'кВт·ч/сут.', best_day:'Лучший день:', daily:'По дням',
+      th_home:'Дом', th_in:'Зар.', th_out:'Разр.',
+      lifetime:'За всё время', rawdata:'Исходные данные (для диагностики)',
+      login_missing:'нет входа (⚙)', kwh_as_of:t0=>`кВт·ч · на ${t0}`, load_in_stats:'загрузить во вкладке «Статистика»',
+      cloud_as_of:s=>`Облако Zendure · на ${s}`,
+      enter_login_first:'Сначала введите данные Zendure в ⚙',
+      loading:'загрузка…', stats_updated:'Статистика обновлена', stats_pfx:'Статистика: ',
+      ctl:'Управление', ctl_sub:'Изменения сразу уходят на SolarFlow',
+      ctl_note:'Если в приложении Zendure включена автоматика (например, план энергопотребления), она может перезаписать вашу настройку.',
+      out_power:'Мощность выдачи в дом', now_dash:'сейчас –',
+      sr_out:'Мощность выдачи в ваттах', apply:'Применить',
+      bat_limits:'Границы заряда', usable:v=>`доступно ${v} кВт·ч`, usable_dash:'доступно – кВт·ч',
+      chg_until:'Заряд до', dis_until:'Разряд до', apply_limits:'Применить границы',
+      grid_chg:'Зарядка от сети', grid_chg_sub:'Заряжает аккумулятор током из розетки',
+      chg_power:'Мощность зарядки', sr_in:'Мощность зарядки в ваттах',
+      now_w:v=>`сейчас ${v} Вт`, now_p:v=>`сейчас ${v} %`, reset_sfx:' · сброс',
+      saved:v=>`Сохранено: ${v}`, err_pfx:'Ошибка: ',
+      grid_chg_on:v=>`Зарядка от сети включена (${v} Вт)`, grid_chg_off:'Зарядка от сети выключена',
+      e_notconn:'Устройство ещё не подключено', e_nologin:'Данные Zendure не введены',
+      e_nodev:'В учётной записи Zendure устройств не найдено',
+      foot_src:'Данные напрямую с устройства в сети Wi-Fi (zenSDK)',
+      tab_live:'Онлайн',
+      d_title:'Настройки', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
+      check_update:'Проверить обновление', update_to:n=>`Обновить до сборки ${n}`,
+      d_dev:'Устройство в сети Wi-Fi', d_ip:'IP-адрес SolarFlow', d_search:'Найти',
+      d_cap:'Ёмкость аккумулятора (Вт·ч)', d_int:'Обновление каждые … секунд (мин. 3)',
+      d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
+      d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
+      d_diag:'Диагностика (временно)',
+      d_diag_hint:'Один раз считывает, какие данные облако Zendure отдаёт по своим и по общим устройствам. Ничего не изменяется. В результате нет данных для входа, номера устройств сокращены.',
+      d_diag_run:'Запустить диагностику', d_copy:'Копировать', d_share:'Поделиться',
+      d_cancel:'Отмена', d_save:'Сохранить',
+      ph_ip:'напр. 192.168.178.xx', ph_mail:'name@example.com', ph_pw:'Пароль',
+      pw_saved:'•••••• (сохранён)',
+      al_settings:'Настройки', al_flow:'Поток энергии', al_metric:'Показатель', al_areas:'Разделы', al_close:'Закрыть',
+      login_ok:'Вход в Zendure выполнен — загрузите статистику во вкладке «Статистика»',
+      login_fail:'Не удалось войти в Zendure: ', login_deleted:'Данные Zendure удалены',
+      copied_clip:'Скопировано в буфер обмена', copied:'Скопировано',
+      copy_manual:'Выделите текст и скопируйте вручную',
+      share_unavail:'Здесь поделиться нельзя',
+      share_fail:m=>`Не удалось поделиться (${m}) — нажмите «Копировать»`,
+      gh_down:s=>`GitHub не отвечает (HTTP ${s})`,
+      downloading:n=>`Загрузка сборки ${n}… (ок. 11 МБ)`,
+      app_only:'только в приложении', no_updater:'модуль обновления отсутствует',
+      dl_done:'Загрузка завершена — нажмите «Установить» в окне Android.',
+      upd_manual:(m,u)=>`Автоматическое обновление не удалось (${m}).<br><a href="${u}" style="color:var(--bat)">Скачать здесь</a> и открыть файл.`,
+      checking:'Проверка…',
+      upd_avail:(n,b)=>`Доступна сборка ${n} (у вас сборка ${b}).`,
+      upd_latest:b=>`У вас последняя версия (сборка ${b}).`,
+      upd_failed:'Не удалось проверить обновление: ',
+      zendure_dev:'Устройство Zendure', find_app_only:'Поиск работает только в приложении на телефоне.',
+      searching:'Идёт поиск…', find_wait:'Это занимает до 15 секунд.',
+      find_none:'SolarFlow не найден. Устройство включено и подключено к Wi-Fi? Телефон в той же сети Wi-Fi (не мобильный интернет и не гостевая сеть)?',
+      find_many:'Найдено несколько устройств — нажмите нужное:',
+      found_at:(p,ip)=>`${p} найден: ${ip}`,
+      found_save:(p,ip)=>`${p} найден (${ip}) — нажмите «Сохранить».`
+    }
+  };
+  let lang = store.get('lang', '');
+  if (!L10N[lang]) lang = (navigator.language || '').toLowerCase().startsWith('ru') ? 'ru' : 'de';
+  const t = (k, ...a) => { const v = L10N[lang][k] ?? L10N.de[k] ?? k; return typeof v === 'function' ? v(...a) : v; };
+  const LOC = () => lang === 'ru' ? 'ru-RU' : 'de-DE';
+  function applyStatic(){
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(e => e.textContent = t(e.dataset.i18n));
+    document.querySelectorAll('[data-i18n-ph]').forEach(e => e.placeholder = t(e.dataset.i18nPh));
+    document.querySelectorAll('[data-i18n-al]').forEach(e => e.setAttribute('aria-label', t(e.dataset.i18nAl)));
+    document.querySelectorAll('.langsel button').forEach(b => b.classList.toggle('on', b.dataset.l === lang));
+  }
+  function setLang(l){
+    if (l === lang || !L10N[l]) return;
+    lang = l; store.set('lang', l);
+    applyStatic();
+    if (last) render(last); else syncControls(true);
+    showToday(); showStats(); showUpdate(); drawSun();
+  }
+  const fmtW = w => (w == null || isNaN(w)) ? ('– ' + t('u_w')) : `${Math.round(w)} ${t('u_w')}`;
+  const kwh = (wh, dig = 2) => (wh/1000).toLocaleString(LOC(), {minimumFractionDigits:dig, maximumFractionDigits:dig});
   const isApp = !!window.Capacitor;
-  const hm = t => t.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'});
+  const hm = x => x.toLocaleTimeString(LOC(), {hour:'2-digit', minute:'2-digit'});
 
-  function toast(t, ms = 2600){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
+  function toast(txt, ms = 2600){ const el = $('toast'); el.textContent = txt; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
 
   // ---------- Tabs ----------
   document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
@@ -540,8 +745,8 @@
 
   // ---------- Gerät lokal ----------
   async function http(url, opts = {}, ms = 5000){
-    const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), ms);
-    try { return await fetch(url, {...opts, signal: ctrl.signal, cache: 'no-store'}); } finally { clearTimeout(t); }
+    const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), ms);
+    try { return await fetch(url, {...opts, signal: ctrl.signal, cache: 'no-store'}); } finally { clearTimeout(to); }
   }
   async function fetchReport(){
     if (demo) return demoData();
@@ -553,7 +758,7 @@
   }
   async function writeProps(props){
     if (demo) { Object.assign(last.properties, props); render(last); return; }
-    if (!last?.sn) throw new Error('Gerät noch nicht verbunden');
+    if (!last?.sn) throw new Error(t('e_notconn'));
     const r = await http(`http://${cfg.ip}/properties/write`, {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({sn: last.sn, properties: props})
@@ -599,9 +804,9 @@
     $('tSoc').textContent = `${soc}%`;
     $('socRing').setAttribute('stroke-dasharray', `${(soc/100*175.9).toFixed(1)} 176`);
 
-    let batW = 0, batTxt = 'Akku ruht', batRev = false;
-    if (charge > 0) { batW = charge; batTxt = 'Akku lädt'; }
-    else if (discharge > 0) { batW = discharge; batTxt = 'Akku entlädt'; batRev = true; }
+    let batW = 0, batTxt = t('bat_idle'), batRev = false;
+    if (charge > 0) { batW = charge; batTxt = t('bat_charge'); }
+    else if (discharge > 0) { batW = discharge; batTxt = t('bat_discharge'); batRev = true; }
     $('tBat').textContent = fmtW(batW); $('tBatState').textContent = batTxt;
     setWire('wSolar', solar, false, 'var(--solar)');
     setWire('wHome', home, false, 'var(--home)');
@@ -610,36 +815,36 @@
 
     // Akku-Karte
     $('cSoc').textContent = soc;
-    $('cEnergy').innerHTML = `<b>${kwh(cfg.cap * soc / 100)}</b> / ${kwh(cfg.cap)} kWh`;
+    $('cEnergy').innerHTML = `<b>${kwh(cfg.cap * soc / 100)}</b> / ${kwh(cfg.cap)} ${t('kwh')}`;
     const min = (p.minSoc ?? 100) / 10, max = (p.socSet ?? 1000) / 10;
     $('barFill').style.width = soc + '%';
     $('barMin').style.left = min + '%';
     $('barMax').style.left = `calc(${max}% - 2px)`;
-    $('cMinTxt').textContent = `Entladen bis ${min} %`;
-    $('cMaxTxt').textContent = `Laden bis ${max} %`;
+    $('cMinTxt').textContent = t('dis_to', min);
+    $('cMaxTxt').textContent = t('chg_to', max);
     let remain = '', active = true;
     if (discharge > 0 && p.remainOutTime && p.remainOutTime < 59000) {
       const end = new Date(Date.now() + p.remainOutTime * 60000);
-      remain = `Reicht bis ${hm(end)} · ca. ${Math.floor(p.remainOutTime/60)} h ${p.remainOutTime % 60} min`;
-    } else if (discharge > 0) remain = `Entlädt mit ${fmtW(discharge)}`;
-    else if (charge > 0) remain = `Lädt mit ${fmtW(charge)}`;
-    else { remain = 'Ruht'; active = false; }
+      remain = t('lasts_until', hm(end), Math.floor(p.remainOutTime/60), p.remainOutTime % 60);
+    } else if (discharge > 0) remain = t('discharging', fmtW(discharge));
+    else if (charge > 0) remain = t('charging', fmtW(charge));
+    else { remain = t('idle'); active = false; }
     $('cRemain').textContent = remain;
     $('cRemain').classList.toggle('idle', !active);
 
     // Kacheln
-    const mode = p.acMode === 1 ? 'Laden aus Netz' : (p.acMode === 2 ? 'Abgabe ins Haus' : '–');
+    const mode = p.acMode === 1 ? t('mode_grid') : (p.acMode === 2 ? t('mode_home') : '–');
     $('cOutLimit').textContent = fmtW(p.outputLimit);
-    $('cMax').textContent = `max. ${fmtW(p.inverseMaxPower)} Einspeisung`;
-    $('cMode').textContent = mode; $('flowMode').textContent = mode === '–' ? '' : mode;
-    $('cInLimit').textContent = p.acMode === 1 ? `Ladeleistung ${fmtW(p.inputLimit)}` : `Laden max. ${fmtW(p.chargeMaxLimit)}`;
-    const t = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
-    $('cTemp').textContent = t == null ? '– °C' : `${Math.round(t)} °C`;
+    $('cMax').textContent = t('max_feed', fmtW(p.inverseMaxPower));
+    $('cMode').textContent = mode;
+    $('cInLimit').textContent = p.acMode === 1 ? t('chg_power_v', fmtW(p.inputLimit)) : t('chg_max_v', fmtW(p.chargeMaxLimit));
+    const te = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
+    $('cTemp').textContent = te == null ? '– °C' : `${Math.round(te)} °C`;
     $('cPackTemp').textContent = tp == null ? '– °C' : `${Math.round(tp)} °C`;
     $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') : '–';
     const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
-    $('cVolt').textContent = p.BatVolt ? `dBm · Akku ${de1(p.BatVolt/100)} V` : 'dBm';
+    $('cVolt').textContent = p.BatVolt ? t('dbm_bat', de1(p.BatVolt/100)) : t('u_dbm');
     syncControls(false);
   }
 
@@ -651,12 +856,12 @@
       render(await fetchReport());
       fails = 0; showMsg('');
       lastOk = new Date();
-      setStatus(demo ? 'demo' : 'ok', (demo ? 'Demo ' : '') + lastOk.toLocaleTimeString('de-DE'));
-      $('foot').textContent = (demo ? 'Demo-Daten – keine Verbindung zum Gerät' : `Direkt vom Gerät im WLAN (${cfg.ip}) · alle ${cfg.interval} s`);
+      setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : '') + lastOk.toLocaleTimeString(LOC()));
+      $('foot').textContent = demo ? t('foot_demo') : t('foot_live', cfg.ip, cfg.interval);
     } catch (e) {
-      fails++; setStatus('err', lastOk ? 'Offline ' + hm(lastOk) : 'Offline');
+      fails++; setStatus('err', lastOk ? t('offline') + ' ' + hm(lastOk) : t('offline'));
       if (fails >= 2 && !$('msgFind')) {
-        showMsg(`Keine Verbindung zum SolarFlow unter <b>${cfg.ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`);
+        showMsg(t('no_conn_html', cfg.ip));
         $('msgFind').onclick = () => { showMsg(''); $('setup').style.display = 'flex'; window.scrollTo(0, 0); runFind($('btnFind'), $('findResult'), useIp); };
       }
     }
@@ -665,17 +870,17 @@
     clearInterval(timer);
     const needSetup = !cfg.ip && !demo;
     $('setup').style.display = needSetup ? 'flex' : 'none';
-    if (needSetup) { setStatus('err', 'Nicht verbunden'); showMsg(''); return; }
+    if (needSetup) { setStatus('err', t('not_connected')); showMsg(''); return; }
     tick(); timer = setInterval(tick, cfg.interval * 1000);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
   // ---------- Steuerung ----------
   const ctl = {
-    out: {r:'rOut', v:'vOut', now:'nowOut', get: p => p.outputLimit, unit:' W', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => `aktuell ${ui} W`},
-    max: {r:'rMax', v:'vMax', now:'nowMax', get: p => p.socSet, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => `aktuell ${ui} %`},
-    min: {r:'rMin', v:'vMin', now:'nowMin', get: p => p.minSoc, unit:' %', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => `aktuell ${ui} %`},
-    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  get: p => p.inputLimit, unit:' W', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => `aktuell ${ui} W`}
+    out: {r:'rOut', v:'vOut', now:'nowOut', get: p => p.outputLimit, uk:'u_w', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => t('now_w', ui)},
+    max: {r:'rMax', v:'vMax', now:'nowMax', get: p => p.socSet, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => t('now_p', ui)},
+    min: {r:'rMin', v:'vMin', now:'nowMin', get: p => p.minSoc, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => t('now_p', ui)},
+    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  get: p => p.inputLimit, uk:'u_w', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => t('now_w', ui)}
   };
   function markPresets(){
     const v = $('rOut').value;
@@ -685,46 +890,67 @@
     const max = Number($('rMax').value), min = Number($('rMin').value);
     $('limRange').style.left = min + '%';
     $('limRange').style.right = (100 - max) + '%';
-    $('limTxt').textContent = `nutzbar ${kwh(cfg.cap * (max - min) / 100)} kWh`;
+    $('limTxt').textContent = t('usable', kwh(cfg.cap * (max - min) / 100));
   }
   function syncControls(force){
     const p = last?.properties; if (!p) return;
     for (const [k, c] of Object.entries(ctl)) {
       const cur = c.get(p); if (cur == null) continue;
       const ui = c.toUi(cur);
-      $(c.now).textContent = c.nowTxt(ui);
+      $(c.now).dataset.txt = c.nowTxt(ui);
       const sl = (k === 'in' && ui < 50) ? 300 : ui;   // Netzladen: sinnvoller Startwert
       const ed = (k === 'max' || k === 'min') ? editing.lim : editing[k];
-      if (force || !ed) { $(c.r).value = sl; $(c.v).textContent = sl; }
+      if (force || !ed) { $(c.r).value = sl; base[k] = Number($(c.r).value); $(c.v).textContent = sl; }
     }
     $('rOut').max = p.inverseMaxPower || 800;
-    $('outMaxLbl').textContent = `${p.inverseMaxPower || 800} W`;
+    $('outMaxLbl').textContent = `${p.inverseMaxPower || 800} ${t('u_w')}`;
     $('rIn').max = p.chargeMaxLimit || 800;
     const ac = p.acMode === 1;
     if (force || !editing.ac) { $('swAc').checked = ac; $('acBox').style.display = ac ? 'flex' : 'none'; }
-    markPresets(); showLimits();
+    markPresets(); showLimits(); refreshApply();
+  }
+  // Wurde der Regler gegenüber dem Gerätewert verstellt?
+  const changed = k => base[k] != null && Number($(ctl[k].r).value) !== base[k];
+  function setApply(id, on){ const b = $(id); if (b) { b.classList.toggle('on', on); b.disabled = !on; } }
+  function refreshApply(){
+    for (const [k, c] of Object.entries(ctl)) {
+      const d = changed(k), el = $(c.now), txt = el.dataset.txt;
+      if (txt) { el.textContent = d ? txt + t('reset_sfx') : txt; el.classList.toggle('resetable', d); }
+      if (c.btn) setApply(c.btn, d);
+    }
+    setApply('aLim', changed('max') || changed('min'));
+  }
+  // Versehentlich verschoben: auf den Hinweis tippen stellt den Gerätewert wieder her
+  function resetCtl(k){
+    const c = ctl[k]; if (base[k] == null) return;
+    $(c.r).value = base[k]; $(c.v).textContent = base[k];
+    if (k === 'max' || k === 'min') { editing.lim = false; showLimits(); } else editing[k] = false;
+    if (k === 'out') markPresets();
+    refreshApply();
   }
   for (const [k, c] of Object.entries(ctl)) {
     $(c.r).oninput = () => {
       if (k === 'max' || k === 'min') { editing.lim = true; showLimits(); } else editing[k] = true;
       $(c.v).textContent = $(c.r).value;
       if (k === 'out') markPresets();
+      refreshApply();
     };
+    $(c.now).onclick = () => { if (changed(k)) resetCtl(k); };
     if (!c.btn) continue;
     $(c.btn).onclick = async () => {
       const val = Number($(c.r).value), btn = $(c.btn);
       btn.disabled = true;
-      try { await writeProps(c.toDev(val)); toast(`Gespeichert: ${val}${c.unit}`); editing[k] = false; setTimeout(tick, 1500); }
-      catch (e) { toast('Fehler: ' + e.message, 4000); }
-      finally { btn.disabled = false; }
+      try { await writeProps(c.toDev(val)); toast(t('saved', `${val} ${t(c.uk)}`)); editing[k] = false; base[k] = val; setTimeout(tick, 1500); }
+      catch (e) { toast(t('err_pfx') + e.message, 4000); }
+      finally { refreshApply(); }
     };
   }
   $('aLim').onclick = async () => {
     const max = Number($('rMax').value), min = Number($('rMin').value), btn = $('aLim');
     btn.disabled = true;
-    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(`Gespeichert: ${min}–${max} %`); editing.lim = false; setTimeout(tick, 1500); }
-    catch (e) { toast('Fehler: ' + e.message, 4000); }
-    finally { btn.disabled = false; }
+    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(t('saved', `${min}–${max} %`)); editing.lim = false; base.max = max; base.min = min; setTimeout(tick, 1500); }
+    catch (e) { toast(t('err_pfx') + e.message, 4000); }
+    finally { refreshApply(); }
   };
   document.querySelectorAll('.presets button').forEach(b => b.onclick = () => {
     const r = $(b.parentElement.dataset.target); r.value = b.dataset.v; r.oninput();
@@ -733,10 +959,10 @@
     const on = $('swAc').checked; editing.ac = true;
     $('acBox').style.display = on ? 'flex' : 'none';
     try {
-      if (on) { const v = Number($('rIn').value) || 300; await writeProps({acMode: 1, inputLimit: v}); toast(`Netzladen an (${v} W)`); }
-      else { await writeProps({acMode: 2, inputLimit: 0}); toast('Netzladen aus'); }
+      if (on) { const v = Number($('rIn').value) || 300; await writeProps({acMode: 1, inputLimit: v}); toast(t('grid_chg_on', v)); }
+      else { await writeProps({acMode: 2, inputLimit: 0}); toast(t('grid_chg_off')); }
       editing.ac = false; setTimeout(tick, 1500);
-    } catch (e) { toast('Fehler: ' + e.message, 4000); $('swAc').checked = !on; $('acBox').style.display = !on ? 'flex' : 'none'; editing.ac = false; }
+    } catch (e) { toast(t('err_pfx') + e.message, 4000); $('swAc').checked = !on; $('acBox').style.display = !on ? 'flex' : 'none'; editing.ac = false; }
   };
 
   // ---------- Zendure-Cloud (Statistik) ----------
@@ -758,7 +984,7 @@
     return j;
   }
   async function cloudLogin(){
-    if (!cloud.mail || !cloud.pw) throw new Error('Kein Zendure-Login eingetragen');
+    if (!cloud.mail || !cloud.pw) throw new Error(t('e_nologin'));
     const j = await cpost(CLOUD + '/auth/app/token', {password: cloud.pw, account: cloud.mail, appId:'121c83f761305d6cf7e', appType:'iOS', grantType:'password', tenantId:''});
     cloud.token = j.data?.accessToken || ''; let node = j.data?.serverNodeUrl || CLOUD;
     if (!node.startsWith('http')) node = 'https://' + node;
@@ -766,7 +992,7 @@
     const d = await cpost(CLOUD + '/productModule/device/queryDeviceListByConsumerId', {}, cloud.token);
     const list = d.data || [];
     const dev = list.find(x => /800/.test(x.productName || '')) || list[0];
-    if (!dev) throw new Error('Kein Gerät im Zendure-Konto gefunden');
+    if (!dev) throw new Error(t('e_nodev'));
     cloud.devId = String(dev.id);
     store.set('zToken', cloud.token); store.set('zNode', cloud.node); store.set('zDev', cloud.devId);
   }
@@ -783,8 +1009,8 @@
   // Statistik wird NUR auf Knopfdruck aus der Cloud geladen und auf dem Handy zwischengespeichert.
   let stats = null, metric = 'solar', loading = false;
   const METRIC = {
-    solar: {name:'Solar', col:'var(--solar)'}, home: {name:'Ins Haus', col:'var(--home)'},
-    batteryOutput: {name:'Geladen', col:'var(--bat)'}, batteryInput: {name:'Entladen', col:'var(--grid)'}
+    solar: {k:'m_solar', col:'var(--solar)'}, home: {k:'m_home', col:'var(--home)'},
+    batteryOutput: {k:'m_in', col:'var(--bat)'}, batteryInput: {k:'m_out', col:'var(--grid)'}
   };
   function loadCache(){
     try { const c = JSON.parse(store.get('zStats', 'null')); if (!c) return;
@@ -792,24 +1018,24 @@
   }
   const hasLogin = () => demo || (cloud.mail && cloud.pw);
   function showToday(){
-    const t = stats?.days?.[6];
-    const isToday = t && iso(t.date) === iso(new Date());
-    const d = isToday ? t.d : null;
+    const td = stats?.days?.[6];
+    const isToday = td && iso(td.date) === iso(new Date());
+    const d = isToday ? td.d : null;
     $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
     $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
-    $('todayInfo').textContent = !hasLogin() ? 'Login fehlt (⚙)' : (stats && isToday ? `kWh · Stand ${hm(stats.at)}` : 'laden im Reiter Statistik');
+    $('todayInfo').textContent = !hasLogin() ? t('login_missing') : (stats && isToday ? t('kwh_as_of', hm(stats.at)) : t('load_in_stats'));
   }
   function showStats(){
     $('statsLogin').style.display = hasLogin() ? 'none' : 'flex';
     $('statsBody').style.display = hasLogin() ? 'flex' : 'none';
-    $('statsInfo').textContent = stats ? `Zendure-Cloud · Stand ${stats.at.toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}` : 'noch nicht geladen';
+    $('statsInfo').textContent = stats ? t('cloud_as_of', stats.at.toLocaleString(LOC(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})) : t('not_loaded');
     drawStats();
   }
   async function refreshStats(){
     if (loading) return;
-    if (!hasLogin()) { toast('Bitte zuerst den Zendure-Login unter ⚙ eintragen'); return; }
+    if (!hasLogin()) { toast(t('enter_login_first')); return; }
     loading = true; $('btnReloadStats').disabled = true;
-    $('statsInfo').textContent = 'lädt…'; $('todayInfo').textContent = 'lädt…';
+    $('statsInfo').textContent = t('loading'); $('todayInfo').textContent = t('loading');
     try {
       if (!demo) await ensureCloud();
       const days = [], raws = {};
@@ -824,30 +1050,30 @@
       stats = {days, life, at: new Date()};
       if (!demo) store.set('zStats', JSON.stringify(stats));
       $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
-      toast('Statistik aktualisiert');
-    } catch (e) { toast('Statistik: ' + e.message, 4500); }
+      toast(t('stats_updated'));
+    } catch (e) { toast(t('stats_pfx') + e.message, 4500); }
     finally { loading = false; $('btnReloadStats').disabled = false; showToday(); showStats(); }
   }
-  const wd = d => d.toLocaleDateString('de-DE', {weekday:'short'}).replace('.', '');
+  const wd = d => d.toLocaleDateString(LOC(), {weekday:'short'}).replace('.', '');
   function drawStats(){
     const m = METRIC[metric];
-    $('sumLabel').textContent = `${m.name} · letzte 7 Tage`;
+    $('sumLabel').textContent = t('last7', t(m.k));
     if (!stats) { $('chart').innerHTML = ''; $('sumVal').textContent = '–'; $('sumAvg').textContent = '–'; $('sumBest').textContent = '–'; return; }
     const vals = stats.days.map(x => (x.d[metric] || 0) / 1000);
     const total = vals.reduce((a, b) => a + b, 0);
     const bi = vals.indexOf(Math.max(...vals));
-    const f1 = v => v.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
-    const f2 = v => v.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const f1 = v => v.toLocaleString(LOC(), {minimumFractionDigits:1, maximumFractionDigits:1});
+    const f2 = v => v.toLocaleString(LOC(), {minimumFractionDigits:2, maximumFractionDigits:2});
     $('sumVal').textContent = f1(total);
     $('sumAvg').textContent = f2(total / 7);
-    $('sumBest').textContent = `${bi === 6 ? 'Heute' : wd(stats.days[bi].date)} ${f2(vals[bi])}`;
+    $('sumBest').textContent = `${bi === 6 ? t('today') : wd(stats.days[bi].date)} ${f2(vals[bi])}`;
     const max = Math.max(0.5, ...vals), H = 140;
     $('chart').innerHTML = stats.days.map((x, i) => {
       const h = Math.max(4, Math.round(H * vals[i] / max));
-      return `<div class="bc${i === 6 ? ' cur' : ''}"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? 'Heute' : wd(x.date)}</em></div>`;
+      return `<div class="bc${i === 6 ? ' cur' : ''}"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? t('today') : wd(x.date)}</em></div>`;
     }).join('');
     $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map((x, i) =>
-      `<tr${i === 0 ? ' class="cur"' : ''}><td>${i === 0 ? 'Heute' : wd(x.date) + ' ' + x.date.toLocaleDateString('de-DE',{day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
+      `<tr${i === 0 ? ' class="cur"' : ''}><td>${i === 0 ? t('today') : wd(x.date) + ' ' + x.date.toLocaleDateString(LOC(),{day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
     const l = stats.life;
     $('ltSolar').textContent = kwh(l.solar || 0, 1); $('ltHome').textContent = kwh(l.home || 0, 1);
     $('ltIn').textContent = kwh(l.batteryOutput || 0, 1); $('ltOut').textContent = kwh(l.batteryInput || 0, 1);
@@ -862,7 +1088,7 @@
   $('btnSettings').onclick = () => {
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
     $('findResultDlg').innerHTML = '';
-    $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? '•••••• (gespeichert)' : 'Passwort';
+    $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? t('pw_saved') : t('ph_pw');
     dlg.showModal();
   };
   $('btnCancel').onclick = () => dlg.close();
@@ -878,14 +1104,14 @@
     if (pw) { cloud.pw = pw; store.set('zPw', pw); }
     demo = false; dlg.close(); start();
     if (changed && cloud.mail && cloud.pw) {
-      try { await cloudLogin(); toast('Zendure-Login erfolgreich – Statistik im Reiter „Statistik“ laden'); showToday(); }
-      catch (e) { toast('Zendure-Login fehlgeschlagen: ' + e.message, 5000); }
+      try { await cloudLogin(); toast(t('login_ok')); showToday(); }
+      catch (e) { toast(t('login_fail') + e.message, 5000); }
     }
   };
   $('btnLogout').onclick = () => {
     ['zMail','zPw','zToken','zNode','zDev'].forEach(store.del);
     Object.assign(cloud, {mail:'', pw:'', token:'', node:'', devId:''});
-    stats = null; store.del('zStats'); dlg.close(); toast('Zendure-Login gelöscht');
+    stats = null; store.del('zStats'); dlg.close(); toast(t('login_deleted'));
     showToday(); showStats();
   };
 
@@ -927,7 +1153,7 @@
     const zeig = () => { $('diagOut').value = L.join('\n'); };
     $('diagBox').style.display = 'block';
     $('btnDiag').disabled = true;
-    L.push('Balkonstrom-Diagnose  ' + new Date().toLocaleString('de-DE'));
+    L.push('Balkonstrom-Diagnose  ' + new Date().toLocaleString('de-DE'));  // Protokoll bleibt deutsch
     L.push('App-Version __APPVERSION__');
     zeig();
     try {
@@ -1024,11 +1250,11 @@
   }
   $('btnDiag').onclick = runDiagnose;
   $('btnDiagCopy').onclick = async () => {
-    const t = $('diagOut');
-    try { await navigator.clipboard.writeText(t.value); toast('In die Zwischenablage kopiert'); }
-    catch { t.removeAttribute('readonly'); t.select(); t.setSelectionRange(0, t.value.length);
-            try { document.execCommand('copy'); toast('Kopiert'); } catch { toast('Bitte Text markieren und kopieren', 4000); }
-            t.setAttribute('readonly', ''); }
+    const ta = $('diagOut');
+    try { await navigator.clipboard.writeText(ta.value); toast(t('copied_clip')); }
+    catch { ta.removeAttribute('readonly'); ta.select(); ta.setSelectionRange(0, ta.value.length);
+            try { document.execCommand('copy'); toast(t('copied')); } catch { toast(t('copy_manual'), 4000); }
+            ta.setAttribute('readonly', ''); }
   };
   $('btnDiagShare').onclick = async () => {
     const txt = $('diagOut').value, cap = window.Capacitor;
@@ -1036,9 +1262,9 @@
       const plug = cap?.Plugins?.Updater;
       if (plug?.shareText) await plug.shareText({text: txt, title: 'Balkonstrom-Diagnose'});
       else if (cap?.nativePromise) await cap.nativePromise('Updater', 'shareText', {text: txt, title: 'Balkonstrom-Diagnose'});
-      else throw new Error('Teilen hier nicht möglich');
+      else throw new Error(t('share_unavail'));
     } catch (e) {
-      toast('Teilen ging nicht (' + (e.message || e) + ') – bitte „Kopieren“ benutzen', 4500);
+      toast(t('share_fail', e.message || e), 4500);
     }
   };
 
@@ -1047,7 +1273,7 @@
   let upd = null;   // {nr, url}
   async function checkUpdate(){
     const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest', {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
-    if (!r.ok) throw new Error('GitHub antwortet nicht (HTTP ' + r.status + ')');
+    if (!r.ok) throw new Error(t('gh_down', r.status));
     const j = await r.json();
     const nr = Number((j.tag_name || '').replace(/\D/g, '')) || 0;
     const apk = (j.assets || []).find(a => a.name.endsWith('.apk'));
@@ -1059,34 +1285,33 @@
     const btn = $('btnUpdate');
     $('btnSettings').classList.toggle('has-update', !!upd);
     btn.classList.toggle('update', !!upd);
-    btn.textContent = upd ? `Jetzt updaten auf Build ${upd.nr}` : 'Nach Update suchen';
+    btn.textContent = upd ? t('update_to', upd.nr) : t('check_update');
   }
   async function installUpdate(){
     const info = $('updInfo');
     info.style.display = 'block'; info.style.color = 'var(--muted)';
-    info.textContent = 'Lade Build ' + upd.nr + ' herunter… (ca. 11 MB)';
+    info.textContent = t('downloading', upd.nr);
     const cap = window.Capacitor;
     try {
-      if (!isApp) throw new Error('nur in der App möglich');
+      if (!isApp) throw new Error(t('app_only'));
       const plug = cap.Plugins?.Updater;
       if (plug?.downloadAndInstall) await plug.downloadAndInstall({url: upd.url});
       else if (cap.nativePromise) await cap.nativePromise('Updater', 'downloadAndInstall', {url: upd.url});
-      else throw new Error('Updater fehlt');
-      info.textContent = 'Fertig geladen – bitte im Android-Fenster auf „Installieren“ tippen.';
+      else throw new Error(t('no_updater'));
+      info.textContent = t('dl_done');
     } catch (e) {
       // Rückfall: Download im Browser öffnen
       const m = String(e?.message || e);
       info.style.color = 'var(--warn)';
-      info.innerHTML = /zulassen/.test(m) ? m
-        : `Automatisches Update ging nicht (${m}).<br><a href="${upd.url}" style="color:var(--bat)">Hier herunterladen</a> und die Datei öffnen.`;
+      info.innerHTML = /zulassen/.test(m) ? m : t('upd_manual', m, upd.url);
     }
   }
   $('btnUpdate').onclick = async () => {
     const info = $('updInfo'), btn = $('btnUpdate');
     if (upd) return installUpdate();
-    info.style.display = 'block'; info.style.color = 'var(--muted)'; info.textContent = 'Prüfe…'; btn.disabled = true;
-    try { info.textContent = (await checkUpdate()) ? `Build ${upd.nr} ist verfügbar (du hast Build ${BUILD}).` : `Du hast die neueste Version (Build ${BUILD}).`; }
-    catch (e) { info.style.color = 'var(--warn)'; info.textContent = 'Update-Prüfung fehlgeschlagen: ' + e.message; }
+    info.style.display = 'block'; info.style.color = 'var(--muted)'; info.textContent = t('checking'); btn.disabled = true;
+    try { info.textContent = (await checkUpdate()) ? t('upd_avail', upd.nr, BUILD) : t('upd_latest', BUILD); }
+    catch (e) { info.style.color = 'var(--warn)'; info.textContent = t('upd_failed') + e.message; }
     finally { btn.disabled = false; }
   };
 
@@ -1094,14 +1319,14 @@
   // Android-Modul "Discovery": erst mDNS (_zendure._tcp), sonst alle Adressen im WLAN abfragen.
   const DEV_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="11" rx="2.5"/><path d="M21 11v3"/><path d="m12 9-3 4h4l-2 3"/></svg>';
   function prodName(p){
-    if (!p) return 'Zendure-Gerät';
+    if (!p) return t('zendure_dev');
     const m = p.match(/^solarFlow(.*)$/i); if (!m) return p;
     return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2').replace(/([a-z])([A-Z])/g, '$1 $2')).trim();
   }
   const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   async function discover(){
     const cap = window.Capacitor;
-    if (!isApp) throw new Error('Die Suche funktioniert nur in der App auf dem Handy.');
+    if (!isApp) throw new Error(t('find_app_only'));
     const opts = {mdnsMs: 4000};
     const plug = cap.Plugins?.Discovery;
     const r = plug?.search ? await plug.search(opts) : await cap.nativePromise('Discovery', 'search', opts);
@@ -1109,18 +1334,18 @@
   }
   async function runFind(btn, out, onPick){
     const label = btn.querySelector('span'), old = label.textContent, ico = btn.querySelector('svg');
-    btn.disabled = true; label.textContent = 'Suche läuft…'; ico.style.display = 'none';
+    btn.disabled = true; label.textContent = t('searching'); ico.style.display = 'none';
     const sp = document.createElement('i'); sp.className = 'spin'; btn.prepend(sp);
-    out.innerHTML = '<div class="hint">Das dauert bis zu 15 Sekunden.</div>';
+    out.innerHTML = `<div class="hint">${t('find_wait')}</div>`;
     try {
       const devs = await discover();
       if (!devs.length) {
-        out.innerHTML = '<div class="hint">Kein SolarFlow gefunden. Ist der SolarFlow eingeschaltet und im WLAN? Ist dein Handy im selben WLAN (nicht mobile Daten oder Gäste-WLAN)?</div>';
+        out.innerHTML = `<div class="hint">${t('find_none')}</div>`;
       } else if (devs.length === 1) {
         out.innerHTML = '';
         onPick(devs[0]);
       } else {
-        out.innerHTML = '<div class="hint">Mehrere Geräte gefunden – bitte antippen:</div>' + devs.map((d, i) =>
+        out.innerHTML = `<div class="hint">${t('find_many')}</div>` + devs.map((d, i) =>
           `<button class="devbtn" data-i="${i}"><span class="di">${DEV_ICON}</span><span><b>${esc(prodName(d.product))}</b><small>${esc(d.ip)}${d.sn ? ' · SN …' + esc(d.sn.slice(-5)) : ''}</small></span></button>`).join('');
         out.querySelectorAll('.devbtn').forEach(b => b.onclick = () => { out.innerHTML = ''; onPick(devs[Number(b.dataset.i)]); });
       }
@@ -1132,14 +1357,14 @@
   }
   function useIp(d){
     cfg.ip = d.ip; store.set('ip', cfg.ip); demo = false; fails = 0;
-    toast(`${prodName(d.product)} gefunden: ${d.ip}`);
+    toast(t('found_at', prodName(d.product), d.ip));
     start();
   }
   $('btnFind').onclick = () => runFind($('btnFind'), $('findResult'), useIp);
   $('btnManual').onclick = () => $('btnSettings').click();
   $('btnFindDlg').onclick = () => runFind($('btnFindDlg'), $('findResultDlg'), d => {
     $('inIp').value = d.ip;
-    $('findResultDlg').innerHTML = `<div class="hint">${esc(prodName(d.product))} gefunden (${esc(d.ip)}) – mit „Speichern“ übernehmen.</div>`;
+    $('findResultDlg').innerHTML = `<div class="hint">${t('found_save', esc(prodName(d.product)), esc(d.ip))}</div>`;
   });
 
   // ---------- Sonnenbogen ----------
@@ -1167,10 +1392,12 @@
       dot.setAttribute('opacity', 0); glow.setAttribute('opacity', 0);
       $('sunArcDone').setAttribute('d', f > 1 ? arc(1, 48) : '');
     }
-    $('sunrise').textContent = 'Aufgang ' + hm(rise); $('sunset').textContent = 'Untergang ' + hm(set);
-    if (f > 0 && f < 1) { const left = Math.round((set - now)/60000); $('daylight').textContent = `noch ${Math.floor(left/60)}:${String(left%60).padStart(2,'0')} h Tageslicht`; }
+    $('sunrise').textContent = t('sunrise') + ' ' + hm(rise); $('sunset').textContent = t('sunset') + ' ' + hm(set);
+    if (f > 0 && f < 1) { const left = Math.round((set - now)/60000); $('daylight').textContent = t('daylight', Math.floor(left/60), String(left%60).padStart(2,'0')); }
     else $('daylight').textContent = '';
   }
+  document.querySelectorAll('.langsel button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+  applyStatic();
   drawSun(); setInterval(drawSun, 60000);
 
   // ---------- Start ----------
