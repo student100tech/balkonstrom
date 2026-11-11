@@ -205,6 +205,11 @@
   label.f{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
   input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;height:46px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;font-family:inherit}
   input:focus{outline:2px solid var(--bat);outline-offset:1px}
+  .diagbox{margin-top:10px}
+  .diagbox textarea{width:100%;height:200px;background:var(--bg);color:var(--text);border:1px solid var(--line);
+    border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre}
+  .diagrow{display:flex;gap:8px;margin-top:8px}
+  .diagrow .btn{flex:1}
   .dfoot{display:flex;gap:8px;margin-top:20px}
   .dfoot .btn{flex:1;height:48px}
   .dfoot .btn.primary{height:48px;font-size:14px}
@@ -477,6 +482,20 @@
     <label class="f" for="inPw">Passwort</label>
     <input id="inPw" type="password" autocomplete="current-password" placeholder="Passwort">
     <div class="hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
+  </div>
+
+  <div class="dsec" id="secDiag">
+    <div class="dtitle">Diagnose (vorübergehend)</div>
+    <div class="hint">Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte
+      bereitstellt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte&#8209;Nummern sind gekürzt.</div>
+    <button class="btn wide-btn" id="btnDiag" style="margin-top:10px">Diagnose starten</button>
+    <div class="diagbox" id="diagBox" style="display:none">
+      <textarea id="diagOut" readonly></textarea>
+      <div class="diagrow">
+        <button class="btn" id="btnDiagCopy">Kopieren</button>
+        <button class="btn primary" id="btnDiagShare">Teilen</button>
+      </div>
+    </div>
   </div>
 
   <div class="dfoot">
@@ -868,6 +887,159 @@
     Object.assign(cloud, {mail:'', pw:'', token:'', node:'', devId:''});
     stats = null; store.del('zStats'); dlg.close(); toast('Zendure-Login gelöscht');
     showToday(); showStats();
+  };
+
+  // ---------- Diagnose (vorübergehend, nur lesen) ----------
+  const cut = v => { const t = String(v ?? ''); return t.length > 4 ? '…' + t.slice(-4) : t; };
+
+  async function cget(url, tok){
+    const r = await http(url, {headers: H(tok)}, 20000);
+    const j = await r.json().catch(() => ({}));
+    return {st: r.status, j};
+  }
+
+  function kanaele(L, data){
+    if (!data || typeof data !== 'object') { L('   (keine Daten)'); return; }
+    const reihen = data.data && typeof data.data === 'object' ? {...data.data} : {};
+    if (Array.isArray(data.energyVos) && data.energyVos.length) reihen.energyVos = data.energyVos;
+    const keys = Object.keys(reihen).sort((a, b) => (a.length - b.length) || a.localeCompare(b));
+    const leer = [];
+    for (const k of keys) {
+      const arr = reihen[k];
+      if (!Array.isArray(arr)) continue;
+      const w = arr.map(p => Number(p && p.data) || 0);
+      const nz = w.filter(x => x !== 0);
+      if (!nz.length) { leer.push(k); continue; }
+      const neg = nz.filter(x => x < 0).length;
+      const t0 = (arr.find(p => Number(p && p.data)) || {}).dateTime || '';
+      L(`   Kanal ${String(k).padStart(9)}: n=${w.length} ≠0=${nz.length} min=${Math.min(...nz).toFixed(1)} max=${Math.max(...nz).toFixed(1)}`
+        + ` Σ/60=${(w.reduce((a, b) => a + b, 0) / 60).toFixed(1)}` + (neg ? ` NEGATIV=${neg}` : '') + (t0 ? ` ab ${t0}` : ''));
+    }
+    if (leer.length) L('   leer: ' + leer.join(', '));
+    const felder = Object.entries(data).filter(([, v]) => v !== null && typeof v !== 'object')
+      .map(([k, v]) => `${k}=${v}`).join(' ');
+    if (felder) L('   Felder: ' + felder);
+  }
+
+  async function runDiagnose(){
+    const L = [];
+    const log = (...a) => L.push(a.join(' '));
+    const zeig = () => { $('diagOut').value = L.join('\n'); };
+    $('diagBox').style.display = 'block';
+    $('btnDiag').disabled = true;
+    L.push('Balkonstrom-Diagnose  ' + new Date().toLocaleString('de-DE'));
+    L.push('App-Version __APPVERSION__');
+    zeig();
+    try {
+      // 1) Gerät im eigenen WLAN
+      if (cfg.ip) {
+        try {
+          const r = await http(`http://${cfg.ip}/properties/report`, {}, 5000);
+          const d = await r.json();
+          const p = d.properties || {};
+          log('\n== Gerät im WLAN ==');
+          log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
+          log(' ' + ['solarInputPower','outputHomePower','gridInputPower','outputPackPower','packInputPower',
+                     'electricLevel','acMode','outputLimit','inputLimit','socSet','minSoc','inverseMaxPower']
+                    .map(k => `${k}=${p[k]}`).join(' '));
+          const extra = Object.keys(p).filter(k => /meter|grid|phase|ct|reverse|hems/i.test(k)).map(k => `${k}=${p[k]}`);
+          if (extra.length) log(' Netz-Felder:', extra.join(' '));
+        } catch (e) { log('\n== Gerät im WLAN: nicht erreichbar (' + (e.message || e) + ')'); }
+      } else log('\n== Gerät im WLAN: keine IP eingetragen');
+      zeig();
+
+      // 2) Anmeldung – nimmt auch gerade eingetippte Daten, ohne vorher zu speichern
+      const mail = ($('inMail').value || '').trim() || cloud.mail;
+      const pw = $('inPw').value || cloud.pw;
+      if (!mail || !pw) { log('\n== Zendure-Konto: kein Login eingetragen – bitte oben E-Mail und Passwort eintragen.'); zeig(); return; }
+      const lj = await cpost(CLOUD + '/auth/app/token', {password: pw, account: mail,
+        appId:'121c83f761305d6cf7e', appType:'iOS', grantType:'password', tenantId:''});
+      const tok = lj.data?.accessToken || '';
+      let node = lj.data?.serverNodeUrl || CLOUD;
+      if (!node.startsWith('http')) node = 'https://' + node;
+      log('\n== Anmeldung bei Zendure: OK');
+      zeig();
+
+      // 3) Geräte einsammeln (eigene + geteilte)
+      const geraete = {};
+      const merke = o => {
+        if (Array.isArray(o)) return o.forEach(merke);
+        if (!o || typeof o !== 'object') return;
+        for (const k of ['deviceId', 'id']) {
+          const v = o[k];
+          if (v != null && /^\d{5,}$/.test(String(v)))
+            geraete[String(v)] = geraete[String(v)] || (o.productName || o.deviceName || o.name || '?');
+        }
+        Object.values(o).forEach(merke);
+      };
+      const hatWert = v => v != null && String(v) !== '0' && String(v) !== '';
+      const eigen = await cpost(CLOUD + '/productModule/device/queryDeviceListByConsumerId', {}, tok);
+      log(' Eigene Geräte:', (eigen.data || []).length);
+      (eigen.data || []).forEach(d => log('  ·', d.productName || '?', cut(d.id), 'SN', cut(d.snNumber),
+        'meter=' + (hatWert(d.meterId) ? 'ja ' + cut(d.meterId) : 'nein'),
+        'hems=' + (hatWert(d.hemsId) ? 'ja ' + cut(d.hemsId) : 'nein'),
+        'productType=' + (d.productType ?? '?'), 'phase=' + (d.phase ?? '-'), 'gridState=' + (d.gridState ?? '-')));
+      merke(eigen.data);
+      // Smart Meter und HEMS hängen als eigene Nummern am Gerät – ebenfalls abfragen
+      (eigen.data || []).forEach(d => {
+        if (hatWert(d.meterId)) geraete[String(d.meterId)] = 'SmartMeter (meterId)';
+        if (hatWert(d.hemsId)) geraete[String(d.hemsId)] = 'HEMS (hemsId)';
+      });
+      for (const [name, pfad] of [['Mit mir geteilt', '/product/devicesharerecord/pageQueryAcceptShareRecord'],
+                                   ['Von mir geteilt', '/product/devicesharerecord/pageQueryShareRecord']]) {
+        const {st, j} = await cget(`${CLOUD}${pfad}?current=1&size=50`, tok);
+        const recs = j.data?.records || [];
+        log(` ${name}: HTTP ${st}, ${recs.length} Einträge`);
+        recs.forEach(r => log('  ·', r.productName || r.deviceName || '?', cut(r.deviceId || r.id)));
+        merke(j.data);
+      }
+      zeig();
+
+      // 4) Daten pro Gerät (gestern)
+      const g = new Date(); g.setDate(g.getDate() - 1); const tag = iso(g);
+      for (const [id, name] of Object.entries(geraete)) {
+        log(`\n== ${name} ${cut(id)} · ${tag} ==`);
+        try {
+          const {st, j} = await cget(`${CLOUD}/panel/grid/detail?deviceId=${id}`, tok);
+          const d = j.data;
+          if (st === 200 && d && (typeof d !== 'object' || Object.keys(d).length))
+            log(' Netz-Einstellung:', JSON.stringify(d).slice(0, 400));
+        } catch {}
+        for (const ep of ['energy', 'electric']) {
+          try {
+            const r = await cpost(`${node}/tdengine/device/solarFlow/${ep}`,
+              {aceId:'', deviceId: Number(id), beginDate: tag, endDate: tag, zone:'Europe/Berlin', type: 0}, tok);
+            log(` ${ep}:`); kanaele(log, r.data);
+          } catch (e) { log(` ${ep}: Fehler – ${e.message || e}`); }
+          zeig();
+        }
+      }
+      log('\n== Ende ==');
+    } catch (e) {
+      log('\nABBRUCH: ' + (e.message || e));
+    } finally {
+      zeig(); $('btnDiag').disabled = false;
+      $('diagOut').scrollTop = $('diagOut').scrollHeight;
+    }
+  }
+  $('btnDiag').onclick = runDiagnose;
+  $('btnDiagCopy').onclick = async () => {
+    const t = $('diagOut');
+    try { await navigator.clipboard.writeText(t.value); toast('In die Zwischenablage kopiert'); }
+    catch { t.removeAttribute('readonly'); t.select(); t.setSelectionRange(0, t.value.length);
+            try { document.execCommand('copy'); toast('Kopiert'); } catch { toast('Bitte Text markieren und kopieren', 4000); }
+            t.setAttribute('readonly', ''); }
+  };
+  $('btnDiagShare').onclick = async () => {
+    const txt = $('diagOut').value, cap = window.Capacitor;
+    try {
+      const plug = cap?.Plugins?.Updater;
+      if (plug?.shareText) await plug.shareText({text: txt, title: 'Balkonstrom-Diagnose'});
+      else if (cap?.nativePromise) await cap.nativePromise('Updater', 'shareText', {text: txt, title: 'Balkonstrom-Diagnose'});
+      else throw new Error('Teilen hier nicht möglich');
+    } catch (e) {
+      toast('Teilen ging nicht (' + (e.message || e) + ') – bitte „Kopieren“ benutzen', 4500);
+    }
   };
 
   // ---------- Updates (GitHub-Releases, öffentlich) ----------

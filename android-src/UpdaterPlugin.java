@@ -23,6 +23,29 @@ public class UpdaterPlugin extends Plugin {
 
     private static final String ALLOWED = "https://github.com/student100tech/balkonstrom/releases/download/";
 
+    /** Oeffnet den Android-Teilen-Dialog mit einem Text (z. B. fuer Telegram). */
+    @PluginMethod
+    public void shareText(PluginCall call) {
+        String text = call.getString("text");
+        String title = call.getString("title", "Balkonstrom");
+        if (text == null || text.isEmpty()) {
+            call.reject("Kein Text zum Teilen");
+            return;
+        }
+        try {
+            Intent send = new Intent(Intent.ACTION_SEND);
+            send.setType("text/plain");
+            send.putExtra(Intent.EXTRA_SUBJECT, title);
+            send.putExtra(Intent.EXTRA_TEXT, text);
+            Intent chooser = Intent.createChooser(send, title);
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(chooser);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject(e.getMessage() != null ? e.getMessage() : e.toString());
+        }
+    }
+
     @PluginMethod
     public void downloadAndInstall(PluginCall call) {
         final String url = call.getString("url");
