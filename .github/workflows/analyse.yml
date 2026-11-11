@@ -12,35 +12,35 @@ jobs:
         with:
           path: repo
 
-      - name: apkeep holen
-        run: |
-          curl -sL -o apkeep https://github.com/EFForg/apkeep/releases/latest/download/apkeep-x86_64-unknown-linux-gnu
-          chmod +x apkeep && ./apkeep --version
-
-      - name: Neueste Version laden (Huawei AppGallery)
+      - name: Neueste Version von Uptodown laden
         run: |
           set +e
-          ./apkeep -a com.zendure.app -l -d huawei-app-gallery 2>&1 | tail -5
-          mkdir -p dl && ./apkeep -a com.zendure.app -d huawei-app-gallery dl 2>&1 | tail -5
-          ls -la dl
+          UA="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
+          curl -sL -A "$UA" -o page.html "https://zendure.uptodown.com/android/download"
+          echo "Seite: $(wc -c < page.html) Bytes"
+          grep -oE 'detail-download-button[^>]*' page.html | head -2
+          DU=$(grep -oE 'data-url="[^"]+"' page.html | head -1 | cut -d'"' -f2)
+          VER=$(grep -oE '<div class="version">[^<]+' page.html | head -1 | sed 's/.*>//')
+          echo "Version laut Seite: $VER  data-url: ${DU:0:20}..."
+          curl -sL -A "$UA" -o app.bin "https://dw.uptodown.com/dwn/$DU"
+          echo "Datei: $(stat -c %s app.bin) Bytes, $(file -b app.bin | cut -c1-70)"
 
       - name: Entpacken und Version bestimmen
         run: |
           set +e
-          f=$(ls dl/* | head -1); echo "Datei: $f"
-          mkdir -p x && unzip -q -o "$f" -d x
+          mkdir -p x && unzip -q -o app.bin -d x
           for a in x/*.apk; do [ -f "$a" ] && mkdir -p "x/_$(basename $a)" && unzip -q -o "$a" -d "x/_$(basename $a)"; done
           AAPT=$(ls $ANDROID_HOME/build-tools/*/aapt | tail -1)
-          base=$(ls x/*.apk 2>/dev/null | grep -i -E "base|com.zendure" | head -1); [ -z "$base" ] && base="$f"
-          $AAPT dump badging "$base" 2>/dev/null | grep -E "^package|sdkVersion" | head -3
-          cat x/manifest.json 2>/dev/null | head -c 400; echo
-          echo "dex-Dateien: $(find x -name '*.dex' | wc -l), so: $(find x -name '*.so' | wc -l)"
-          find x -name '*.so' -printf '%s %p\n' | sort -rn | head -15
+          base=$(ls x/*.apk 2>/dev/null | grep -iE "base|zendure" | head -1); [ -z "$base" ] && base="app.bin"
+          $AAPT dump badging "$base" 2>/dev/null | grep -E "^package" | head -2
+          echo "dex: $(find x -name '*.dex' | wc -l)"
 
       - name: Adressen suchen
         run: |
-          python3 repo/dexstrings.py x > endpunkte.txt 2>&1
-          echo "Anzahl: $(wc -l < endpunkte.txt)"
-          grep -vE "^URL " endpunkte.txt | head -400
-          echo "== Treffer in .so/.js/sonstigen Dateien"
-          grep -rhaoE "(tdengine|productModule|panel|meter|smartMeter|hems|energy|grid|phase)/[A-Za-z0-9_/.-]{2,80}" x --include=*.so --include=*.js --include=*.json 2>/dev/null | sort | uniq -c | sort -rn | head -150
+          set +e
+          python3 repo/dexstrings.py x > alle.txt 2>&1
+          echo "Zeichenketten gesamt: $(wc -l < alle.txt)"
+          echo "== API-Pfade (gefiltert)"
+          grep -vE "^URL " alle.txt | grep -aiE "family|home|hems|meter|smartMeter|ct/|grid|phase|energy|statistic|electric|share|device" | grep -vE "ViewBinding|Lambda|Activity|Fragment|Adapter|/R$|bean/" | sort -u | head -250
+          echo "== Alle Modul-Pfade"
+          grep -vE "^URL " alle.txt | grep -aE "^/?[a-zA-Z]+(Module|Service)?/" | sort -u | head -250
