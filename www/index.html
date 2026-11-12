@@ -14,6 +14,7 @@
     --bg:#0A0C11; --card:#13161E; --card2:#1B1F2A; --card3:#181C26; --line:#252A36; --line2:#1F2430; --line3:#2A3040;
     --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
     --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#8E9AAF; --warn:#F87171; --ok:#4ADE80;
+    --gridin:#F87171; --feed:#60A5FA;
     --num:"Space Grotesk",Inter,system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -98,6 +99,17 @@
   /* ---------- Heute ---------- */
   .today-card{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
   .four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .four.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .badge{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#07213d;background:var(--feed);border-radius:99px;padding:3px 9px}
+  .fieldnote{margin-top:10px;font-size:11px;color:var(--dim);font-family:ui-monospace,monospace;word-break:break-all}
+  .daychart{margin-top:4px}
+  .daychart svg{display:block;width:100%;height:150px;overflow:visible}
+  .daychart .gl{stroke:var(--line2);stroke-width:1}
+  .daychart .hx{fill:var(--dim);font-size:9px}
+  .daychart .soc{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:3 3;opacity:.75}
+  .dlegend{display:flex;gap:14px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+  .dlegend span{display:flex;align-items:center;gap:5px}
+  .dlegend i{width:14px;height:2px;border-radius:2px;display:block}
   .four > div{display:flex;flex-direction:column;align-items:center;gap:3px}
   .four .k{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);white-space:nowrap}
   .four .n{font-family:var(--num);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -352,6 +364,14 @@
       </div>
     </div>
 
+    <div class="card" id="cardNetzLive">
+        <div class="card-head"><span class="lbl" data-i18n="grid_live">Netz heute</span><span class="badge" data-i18n="prov">vorläufig</span></div>
+        <div class="four two">
+          <div><span class="k"><i class="d" style="background:var(--gridin)"></i><span data-i18n="m_grid_in">Netzbezug</span></span><span class="n" id="tdGridIn">–</span></div>
+          <div><span class="k"><i class="d" style="background:var(--feed)"></i><span data-i18n="m_grid_out">Einspeisung</span></span><span class="n" id="tdGridOut">–</span></div>
+        </div>
+      </div>
+
     <div class="tiles">
       <div class="tile"><span class="t" data-i18n="out_limit">Ausgangslimit</span><span class="v" id="cOutLimit" data-i18n="dash_w">– W</span><span class="s" id="cMax">&nbsp;</span></div>
       <div class="tile"><span class="t" data-i18n="mode">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
@@ -376,6 +396,8 @@
         <button data-k="home" style="--c:var(--home)" data-i18n="m_home">Ins Haus</button>
         <button data-k="batteryOutput" style="--c:var(--bat)" data-i18n="m_in">Geladen</button>
         <button data-k="batteryInput" style="--c:var(--grid)" data-i18n="m_out">Entladen</button>
+        <button data-k="gridInputTotal" style="--c:var(--gridin)" data-i18n="m_grid_in">Netzbezug</button>
+        <button data-k="gridDirectTotal" style="--c:var(--feed)" data-i18n="m_grid_out">Einspeisung</button>
       </div>
       <div class="card">
         <div class="sum">
@@ -387,9 +409,23 @@
         </div>
         <div class="bars" id="chart"></div>
       </div>
+      <div class="card">
+        <div class="card-head"><span class="lbl" id="dayLabel">–</span><span class="info" id="dayPeak"></span></div>
+        <div class="chips" id="dayseg" style="margin-bottom:10px"></div>
+        <div class="daychart" id="daychart"></div>
+      </div>
       <div class="card" style="padding:18px 16px 8px">
         <div class="card-head" style="padding:0 4px"><span class="lbl" data-i18n="daily">Tageswerte</span><span class="info" data-i18n="kwh">kWh</span></div>
         <table id="tbl"><thead><tr><th></th><th><i class="d" style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></th><th><i class="d" style="background:var(--home)"></i><span data-i18n="th_home">Haus</span></th><th><i class="d" style="background:var(--bat)"></i><span data-i18n="th_in">Gel.</span></th><th><i class="d" style="background:var(--grid)"></i><span data-i18n="th_out">Entl.</span></th></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="lbl" data-i18n="grid_card">Netz</span><span class="badge" data-i18n="prov">vorläufig</span></div>
+        <div class="hint" data-i18n="grid_hint">Die Zuordnung der Cloud-Felder ist noch nicht bestätigt. Ohne Smart Meter bleiben die Werte 0.</div>
+        <table id="tblNetz"><thead><tr><th></th><th data-i18n="today">Heute</th><th data-i18n="d7">7 Tage</th><th data-i18n="total">Gesamt</th></tr></thead><tbody>
+          <tr><td style="text-align:left"><i class="d" style="background:var(--gridin)"></i> <span data-i18n="m_grid_in">Netzbezug</span></td><td id="nzIn0">–</td><td id="nzIn7">–</td><td id="nzInL">–</td></tr>
+          <tr><td style="text-align:left"><i class="d" style="background:var(--feed)"></i> <span data-i18n="m_grid_out">Einspeisung</span></td><td id="nzOut0">–</td><td id="nzOut7">–</td><td id="nzOutL">–</td></tr>
+        </tbody></table>
+        <div class="fieldnote">gridInputTotal · gridDirectTotal</div>
       </div>
       <div class="card">
         <span class="lbl" data-i18n="lifetime">Seit Inbetriebnahme</span>
@@ -398,6 +434,8 @@
           <div><span class="k"><i style="background:var(--home)"></i><span data-i18n="m_home">Ins Haus</span></span><span class="n"><span id="ltHome">–</span> <small data-i18n="kwh">kWh</small></span></div>
           <div><span class="k"><i style="background:var(--bat)"></i><span data-i18n="m_in">Geladen</span></span><span class="n"><span id="ltIn">–</span> <small data-i18n="kwh">kWh</small></span></div>
           <div><span class="k"><i style="background:var(--grid)"></i><span data-i18n="m_out">Entladen</span></span><span class="n"><span id="ltOut">–</span> <small data-i18n="kwh">kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--gridin)"></i><span data-i18n="m_grid_in">Netzbezug</span></span><span class="n"><span id="ltGridIn">–</span> <small data-i18n="kwh">kWh</small></span></div>
+          <div><span class="k"><i style="background:var(--feed)"></i><span data-i18n="m_grid_out">Einspeisung</span></span><span class="n"><span id="ltGridOut">–</span> <small data-i18n="kwh">kWh</small></span></div>
         </div>
       </div>
       <details><summary data-i18n="rawdata">Rohdaten (für Fehlersuche)</summary><pre id="raw">–</pre></details>
@@ -621,7 +659,13 @@
       find_none:'Kein SolarFlow gefunden. Ist der SolarFlow eingeschaltet und im WLAN? Ist dein Handy im selben WLAN (nicht mobile Daten oder Gäste-WLAN)?',
       find_many:'Mehrere Geräte gefunden – bitte antippen:',
       found_at:(p,ip)=>`${p} gefunden: ${ip}`,
-      found_save:(p,ip)=>`${p} gefunden (${ip}) – mit „Speichern“ übernehmen.`
+      found_save:(p,ip)=>`${p} gefunden (${ip}) – mit „Speichern“ übernehmen.`,
+      m_grid_in:'Netzbezug', m_grid_out:'Einspeisung',
+      grid_live:'Netz heute', grid_card:'Netz', prov:'vorläufig',
+      grid_hint:'Die Zuordnung der Cloud-Felder ist noch nicht bestätigt. Ohne Smart Meter bleiben die Werte 0.',
+      d7:'7 Tage', total:'Gesamt',
+      day_curve:n=>`${n} · Tagesverlauf`, no_curve:'Für diesen Tag liegen keine Minutenwerte vor',
+      soc_line:'Ladestand', peak:w=>`Spitze ${w}`
     },
     ru: {
       u_w:'Вт', u_p:'%', u_dbm:'дБм', zero_w:'0 Вт',
@@ -706,7 +750,13 @@
       find_none:'SolarFlow не найден. Устройство включено и подключено к Wi-Fi? Телефон в той же сети Wi-Fi (не мобильный интернет и не гостевая сеть)?',
       find_many:'Найдено несколько устройств — нажмите нужное:',
       found_at:(p,ip)=>`${p} найден: ${ip}`,
-      found_save:(p,ip)=>`${p} найден (${ip}) — нажмите «Сохранить».`
+      found_save:(p,ip)=>`${p} найден (${ip}) — нажмите «Сохранить».`,
+      m_grid_in:'Из сети', m_grid_out:'Отдача в сеть',
+      grid_live:'Сеть сегодня', grid_card:'Сеть', prov:'предварительно',
+      grid_hint:'Соответствие полей облака пока не подтверждено. Без смарт-счётчика значения остаются нулевыми.',
+      d7:'7 дней', total:'Всего',
+      day_curve:n=>`${n} · за сутки`, no_curve:'За этот день поминутных данных нет',
+      soc_line:'Заряд', peak:w=>`Пик ${w}`
     }
   };
   let lang = store.get('lang', '');
@@ -1001,17 +1051,63 @@
     try { return (await cpost(cloud.node + '/tdengine/device/solarFlow/energy', body, cloud.token)).data || {}; }
     catch (e) { await cloudLogin(); return (await cpost(cloud.node + '/tdengine/device/solarFlow/energy', body, cloud.token)).data || {}; }
   }
+  async function electric(date){
+    const body = {aceId:'', deviceId: /^\d+$/.test(cloud.devId) ? Number(cloud.devId) : cloud.devId, beginDate: date || '', endDate: date || '', zone:'Europe/Berlin', type: date ? 0 : ''};
+    return (await cpost(cloud.node + '/tdengine/device/solarFlow/electric', body, cloud.token)).data || {};
+  }
   async function ensureCloud(){ if (!cloud.token || !cloud.devId || !cloud.node) await cloudLogin(); }
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-  function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3)); return {solar:s, home:s*0.85, batteryOutput:s*0.45, batteryInput:s*0.38}; }
+  function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3));
+    return {solar:s, home:s*0.85, batteryOutput:s*0.45, batteryInput:s*0.38, gridInputTotal:s*0.2, gridDirectTotal:s*0.3}; }
+
+  // Welcher Minutenwert-Kanal gehört zu welchem Messwert.
+  // Am 11.11.2026 gegen die Tagessummen geprüft: Kanal 1+5 = PV1+PV2, 2 = Entladen, 3 = Ins Haus, 4 = Geladen.
+  const CH = {solar:['1','5'], batteryInput:['2'], home:['3'], batteryOutput:['4']};
+  const STEP = 5;   // Minuten je Stützstelle – 288 Punkte statt 1440 schonen den Speicher
+  function reihe(arr){
+    if (!Array.isArray(arr) || arr.length < 60) return null;
+    const out = [];
+    for (let i = 0; i < arr.length; i += STEP) {
+      let sum = 0, n = 0;
+      for (let j = i; j < Math.min(i + STEP, arr.length); j++) { sum += Number(arr[j] && arr[j].data) || 0; n++; }
+      out.push(n ? Math.round(sum / n) : 0);
+    }
+    return out;
+  }
+  function kurven(raw){
+    const src = raw && raw.data && typeof raw.data === 'object' ? raw.data : null;
+    if (!src) return null;
+    const out = {};
+    for (const [m, chs] of Object.entries(CH)) {
+      const teile = chs.map(c => reihe(src[c])).filter(Boolean);
+      if (!teile.length) continue;
+      out[m] = teile[0].map((_, i) => teile.reduce((a, r) => a + (r[i] || 0), 0));
+    }
+    return Object.keys(out).length ? out : null;
+  }
+  function demoKurve(i){
+    const o = {}, n = Math.ceil(1440 / STEP);
+    const bogen = (amp, von, bis) => Array.from({length:n}, (_, k) => {
+      const h = k * STEP / 60;
+      return h < von || h > bis ? 0 : Math.round(amp * Math.sin(Math.PI * (h - von) / (bis - von)));
+    });
+    o.solar = bogen(420 + i*40, 8.5, 17);
+    o.batteryOutput = bogen(300 + i*30, 9.5, 15.5);
+    o.home = Array.from({length:n}, () => 90 + Math.round(40*Math.random()));
+    o.batteryInput = o.home.map((v, k) => (o.solar[k] > 120 ? 0 : v));
+    return o;
+  }
 
   // Statistik wird NUR auf Knopfdruck aus der Cloud geladen und auf dem Handy zwischengespeichert.
   let stats = null, metric = 'solar', loading = false;
   const METRIC = {
     solar: {k:'m_solar', col:'var(--solar)'}, home: {k:'m_home', col:'var(--home)'},
-    batteryOutput: {k:'m_in', col:'var(--bat)'}, batteryInput: {k:'m_out', col:'var(--grid)'}
+    batteryOutput: {k:'m_in', col:'var(--bat)'}, batteryInput: {k:'m_out', col:'var(--grid)'},
+    // vorläufig: Feldzuordnung noch nicht bestätigt, ohne Smart Meter bleiben die Werte 0
+    gridInputTotal: {k:'m_grid_in', col:'var(--gridin)'}, gridDirectTotal: {k:'m_grid_out', col:'var(--feed)'}
   };
+  let dayIdx = 6;
   function loadCache(){
     try { const c = JSON.parse(store.get('zStats', 'null')); if (!c) return;
       c.days.forEach(x => x.date = new Date(x.date)); c.at = new Date(c.at); stats = c; } catch {}
@@ -1023,6 +1119,8 @@
     const d = isToday ? td.d : null;
     $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
     $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
+    $('tdGridIn').textContent = d ? kwh(d.gridInputTotal || 0) : '–';
+    $('tdGridOut').textContent = d ? kwh(d.gridDirectTotal || 0) : '–';
     $('todayInfo').textContent = !hasLogin() ? t('login_missing') : (stats && isToday ? t('kwh_as_of', hm(stats.at)) : t('load_in_stats'));
   }
   function showStats(){
@@ -1041,12 +1139,19 @@
       const days = [], raws = {};
       for (let i = 6; i >= 0; i--) {
         const dt = new Date(); dt.setHours(12, 0, 0, 0); dt.setDate(dt.getDate() - i);
-        const d = demo ? demoDay(i) : await energy(iso(dt));
+        const roh = demo ? demoDay(i) : await energy(iso(dt));
+        const {data, energyVos, ...d} = roh;          // Minutenwerte getrennt halten
         if (i === 0) raws.heute = d;
-        days.push({date: dt, d});
+        days.push({date: dt, d, c: demo ? demoKurve(i) : kurven(roh)});
       }
-      const life = demo ? {solar:48210, home:41022, batteryOutput:20130, batteryInput:17702} : await energy(null);
-      raws.gesamt = life;
+      // Ladestand-Kurve: eigene Abfrage, nur für heute
+      try {
+        const e = demo ? null : await electric(iso(new Date()));
+        const soc = demo ? null : reihe(e && e.energyVos);
+        if (soc) days[6].soc = soc;
+      } catch {}
+      const life = demo ? {solar:48210, home:41022, batteryOutput:20130, batteryInput:17702, gridInputTotal:0, gridDirectTotal:0} : await energy(null);
+      const {data: _d2, energyVos: _e2, ...lifeSlim} = life; raws.gesamt = lifeSlim;
       stats = {days, life, at: new Date()};
       if (!demo) store.set('zStats', JSON.stringify(stats));
       $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
@@ -1077,6 +1182,57 @@
     const l = stats.life;
     $('ltSolar').textContent = kwh(l.solar || 0, 1); $('ltHome').textContent = kwh(l.home || 0, 1);
     $('ltIn').textContent = kwh(l.batteryOutput || 0, 1); $('ltOut').textContent = kwh(l.batteryInput || 0, 1);
+    $('ltGridIn').textContent = kwh(l.gridInputTotal || 0, 1); $('ltGridOut').textContent = kwh(l.gridDirectTotal || 0, 1);
+    drawNetz(); drawDay();
+  }
+
+  // Netz-Karte – vorläufig, solange die Feldzuordnung nicht bestätigt ist
+  function drawNetz(){
+    const ids = ['nzIn0','nzIn7','nzInL','nzOut0','nzOut7','nzOutL'];
+    if (!stats) { ids.forEach(i => $(i).textContent = '–'); return; }
+    const sum = k => stats.days.reduce((a, x) => a + (x.d[k] || 0), 0);
+    const heute = stats.days[6].d, l = stats.life;
+    $('nzIn0').textContent  = kwh(heute.gridInputTotal  || 0); $('nzIn7').textContent  = kwh(sum('gridInputTotal'));
+    $('nzInL').textContent  = kwh(l.gridInputTotal  || 0, 1);
+    $('nzOut0').textContent = kwh(heute.gridDirectTotal || 0); $('nzOut7').textContent = kwh(sum('gridDirectTotal'));
+    $('nzOutL').textContent = kwh(l.gridDirectTotal || 0, 1);
+  }
+
+  // Tagesverlauf aus den Minutenwerten der Cloud
+  function drawDay(){
+    const seg = $('dayseg'), box = $('daychart');
+    if (!stats) { seg.innerHTML = ''; box.innerHTML = ''; $('dayLabel').textContent = '–'; $('dayPeak').textContent = ''; return; }
+    if (dayIdx > stats.days.length - 1) dayIdx = stats.days.length - 1;
+    // neueste zuerst – „Heute“ steht links und ist ohne Wischen sichtbar
+    seg.innerHTML = stats.days.slice().reverse().map((x, j) => { const i = stats.days.length - 1 - j;
+      return `<button data-i="${i}"${i === dayIdx ? ' class="on"' : ''} style="--c:var(--muted2)">${j === 0 ? t('today') : wd(x.date)}</button>`; }).join('');
+    seg.querySelectorAll('button').forEach(b => b.onclick = () => { dayIdx = Number(b.dataset.i); drawDay(); });
+
+    const m = METRIC[metric], tag = stats.days[dayIdx];
+    $('dayLabel').textContent = t('day_curve', t(m.k));
+    const pts = tag.c && tag.c[metric];
+    if (!pts || !pts.some(v => v)) { box.innerHTML = `<div class="hint">${t('no_curve')}</div>`; $('dayPeak').textContent = ''; return; }
+
+    const W = 300, H = 110, n = pts.length, max = Math.max(10, ...pts);
+    $('dayPeak').textContent = t('peak', fmtW(max));
+    const X = i => (i / (n - 1)) * W, Y = v => H - (v / max) * H;
+    const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
+    const grid = [0, 6, 12, 18, 24].map(h => {
+      const x = (h / 24) * W;
+      return `<line class="gl" x1="${x}" y1="0" x2="${x}" y2="${H}"/>` +
+             `<text class="hx" x="${x}" y="${H + 13}" text-anchor="${h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}">${h}</text>`;
+    }).join('');
+    const soc = tag.soc && tag.soc.length
+      ? `<path class="soc" d="${tag.soc.map((v, i) => `${i ? 'L' : 'M'}${((i/(tag.soc.length-1))*W).toFixed(1)} ${(H - (Math.max(0, Math.min(100, v))/100)*H).toFixed(1)}`).join(' ')}"/>` : '';
+    box.innerHTML =
+      `<svg viewBox="0 -4 ${W} ${H + 22}" preserveAspectRatio="none" role="img" aria-label="${t('day_curve', t(m.k))}">
+         ${grid}
+         <path d="${line} L${W} ${H} L0 ${H} Z" fill="${m.col}" opacity=".16"/>
+         <path d="${line}" fill="none" stroke="${m.col}" stroke-width="1.8" stroke-linejoin="round"/>
+         ${soc}
+       </svg>
+       <div class="dlegend"><span><i style="background:${m.col}"></i>${t(m.k)}</span>` +
+      (soc ? `<span><i style="background:var(--muted)"></i>${t('soc_line')} %</span>` : '') + `</div>`;
   }
   document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
     metric = b.dataset.k; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b)); drawStats();
