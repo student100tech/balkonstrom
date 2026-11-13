@@ -309,7 +309,8 @@
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/>
         <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/>
 
-        <circle cx="175" cy="38" r="28" fill="#1E1A12" stroke="var(--solar)" stroke-width="1.5"/>
+        <circle cx="175" cy="38" r="28" fill="#1E1A12" stroke="#3A3124" stroke-width="5"/>
+        <circle id="pvRing" cx="175" cy="38" r="28" fill="none" stroke="var(--solar)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 38)"/>
         <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
         <text class="node-label" x="134" y="34" text-anchor="end" data-i18n="solar">Solar</text>
         <text class="node-val" x="134" y="56" text-anchor="end" id="tSolar" data-i18n="dash_w">– W</text>
@@ -519,6 +520,8 @@
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
     <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
+    <label class="f" for="inPeak" data-i18n="d_peak">Modulleistung gesamt (Wp)</label>
+    <input id="inPeak" inputmode="numeric" placeholder="800">
     <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
     <input id="inInt" inputmode="numeric" placeholder="5">
   </div>
@@ -569,6 +572,7 @@
   let cfg = {
     ip: store.get('ip', ''),
     cap: Number(store.get('cap', 1920)),
+    peak: Number(store.get('peak', 800)),
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
   let demo = false, timer = null, fails = 0, last = null, editing = {}, lastOk = null;
@@ -629,7 +633,7 @@
       d_title:'Einstellungen', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
       check_update:'Nach Update suchen', update_to:n=>`Jetzt updaten auf Build ${n}`,
       d_dev:'Gerät im WLAN', d_ip:'IP-Adresse des SolarFlow', d_search:'Suchen',
-      d_cap:'Akku-Kapazität (Wh)', d_int:'Aktualisierung alle … Sekunden (min. 3)',
+      d_cap:'Akku-Kapazität (Wh)', d_peak:'Modulleistung gesamt (Wp)', d_int:'Aktualisierung alle … Sekunden (min. 3)',
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
       d_diag:'Diagnose (vorübergehend)',
@@ -720,7 +724,7 @@
       d_title:'Настройки', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
       check_update:'Проверить обновление', update_to:n=>`Обновить до сборки ${n}`,
       d_dev:'Устройство в сети Wi-Fi', d_ip:'IP-адрес SolarFlow', d_search:'Найти',
-      d_cap:'Ёмкость аккумулятора (Вт·ч)', d_int:'Обновление каждые … секунд (мин. 3)',
+      d_cap:'Ёмкость аккумулятора (Вт·ч)', d_peak:'Мощность модулей всего (Вт·п)', d_int:'Обновление каждые … секунд (мин. 3)',
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
       d_diag:'Диагностика (временно)',
@@ -851,6 +855,9 @@
     $('tHome').textContent = fmtW(home);
     $('tGrid').textContent = fmtW(grid);
     $('tGrid').style.fill = grid > 2 ? '' : 'var(--muted)';
+    // Solarkreis fuellt sich wie der Akkuring: aktuelle Leistung an der Modulleistung gemessen
+    const pvF = Math.max(0, Math.min(1, solar / Math.max(50, cfg.peak)));
+    $('pvRing').setAttribute('stroke-dasharray', `${(pvF*175.9).toFixed(1)} 176`);
     $('tSoc').textContent = `${soc}%`;
     $('socRing').setAttribute('stroke-dasharray', `${(soc/100*175.9).toFixed(1)} 176`);
 
@@ -1242,7 +1249,7 @@
   // ---------- Einstellungen ----------
   const dlg = $('dlg');
   $('btnSettings').onclick = () => {
-    $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
+    $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
     $('findResultDlg').innerHTML = '';
     $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? t('pw_saved') : t('ph_pw');
     dlg.showModal();
@@ -1252,8 +1259,9 @@
   $('btnSave').onclick = async () => {
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
+    cfg.peak = Math.max(50, Number($('inPeak').value) || 800);
     cfg.interval = Math.max(3, Number($('inInt').value) || 5);
-    store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('interval', cfg.interval);
+    store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('peak', cfg.peak); store.set('interval', cfg.interval);
     const mail = $('inMail').value.trim(), pw = $('inPw').value;
     const changed = mail !== cloud.mail || pw;
     if (mail) { cloud.mail = mail; store.set('zMail', mail); }
