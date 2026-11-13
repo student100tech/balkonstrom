@@ -149,12 +149,12 @@
   .sum .side{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:12px;color:var(--muted)}
   .sum .side b{color:var(--text);font-weight:600}
   .bars{display:flex;gap:10px;margin-top:18px}
-  .bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+  .bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .bw{height:170px;width:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px}
   .bw i{display:block;width:100%;border-radius:10px 10px 4px 4px;opacity:.4}
   .bw span{font-size:11px;color:var(--muted)}
   .bc em{font-style:normal;font-size:11.5px;color:var(--muted)}
-  .bc.cur i{opacity:1} .bc.cur span,.bc.cur em{color:var(--text);font-weight:600}
+  .bc.sel i{opacity:1} .bc.sel span,.bc.sel em{color:var(--text);font-weight:600}
   table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;margin-top:6px}
   td,th{padding:11px 4px;border-top:1px solid var(--line2);text-align:right}
   th{border-top:0;padding:8px 4px;font-size:11.5px;color:var(--muted);font-weight:400;white-space:nowrap}
@@ -412,7 +412,6 @@
       </div>
       <div class="card">
         <div class="card-head"><span class="lbl" id="dayLabel">–</span><span class="info" id="dayPeak"></span></div>
-        <div class="chips" id="dayseg" style="margin-bottom:10px"></div>
         <div class="daychart" id="daychart"></div>
       </div>
       <div class="card" style="padding:18px 16px 8px">
@@ -668,7 +667,7 @@
       grid_live:'Netz heute', grid_card:'Netz', prov:'vorläufig',
       grid_hint:'Die Zuordnung der Cloud-Felder ist noch nicht bestätigt. Ohne Smart Meter bleiben die Werte 0.',
       d7:'7 Tage', total:'Gesamt',
-      day_curve:n=>`${n} · Tagesverlauf`, no_curve:'Für diesen Tag liegen keine Minutenwerte vor',
+      day_curve:n=>`Tagesverlauf · ${n}`, no_curve:'Für diesen Tag liegen keine Minutenwerte vor',
       soc_line:'Ladestand', peak:w=>`Spitze ${w}`
     },
     ru: {
@@ -759,7 +758,7 @@
       grid_live:'Сеть сегодня', grid_card:'Сеть', prov:'предварительно',
       grid_hint:'Соответствие полей облака пока не подтверждено. Без смарт-счётчика значения остаются нулевыми.',
       d7:'7 дней', total:'Всего',
-      day_curve:n=>`${n} · за сутки`, no_curve:'За этот день поминутных данных нет',
+      day_curve:n=>`Ход дня · ${n}`, no_curve:'За этот день поминутных данных нет',
       soc_line:'Заряд', peak:w=>`Пик ${w}`
     }
   };
@@ -1182,8 +1181,10 @@
     const max = Math.max(0.5, ...vals), H = 140;
     $('chart').innerHTML = stats.days.map((x, i) => {
       const h = Math.max(4, Math.round(H * vals[i] / max));
-      return `<div class="bc${i === 6 ? ' cur' : ''}"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? t('today') : wd(x.date)}</em></div>`;
+      return `<div class="bc${i === dayIdx ? ' sel' : ''}" data-i="${i}" role="button" tabindex="0"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? t('today') : wd(x.date)}</em></div>`;
     }).join('');
+    // Antippen eines Balkens schaltet den Tagesverlauf darunter um
+    $('chart').querySelectorAll('.bc').forEach(b => b.onclick = () => { dayIdx = Number(b.dataset.i); drawStats(); });
     $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map((x, i) =>
       `<tr${i === 0 ? ' class="cur"' : ''}><td>${i === 0 ? t('today') : wd(x.date) + ' ' + x.date.toLocaleDateString(LOC(),{day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
     const l = stats.life;
@@ -1207,16 +1208,14 @@
 
   // Tagesverlauf aus den Minutenwerten der Cloud
   function drawDay(){
-    const seg = $('dayseg'), box = $('daychart');
-    if (!stats) { seg.innerHTML = ''; box.innerHTML = ''; $('dayLabel').textContent = '–'; $('dayPeak').textContent = ''; return; }
+    const box = $('daychart');
+    if (!stats) { box.innerHTML = ''; $('dayLabel').textContent = '–'; $('dayPeak').textContent = ''; return; }
     if (dayIdx > stats.days.length - 1) dayIdx = stats.days.length - 1;
-    // neueste zuerst – „Heute“ steht links und ist ohne Wischen sichtbar
-    seg.innerHTML = stats.days.slice().reverse().map((x, j) => { const i = stats.days.length - 1 - j;
-      return `<button data-i="${i}"${i === dayIdx ? ' class="on"' : ''} style="--c:var(--muted2)">${j === 0 ? t('today') : wd(x.date)}</button>`; }).join('');
-    seg.querySelectorAll('button').forEach(b => b.onclick = () => { dayIdx = Number(b.dataset.i); drawDay(); });
 
     const m = METRIC[metric], tag = stats.days[dayIdx];
-    $('dayLabel').textContent = t('day_curve', t(m.k));
+    const name = dayIdx === 6 ? t('today')
+      : wd(tag.date) + ' ' + tag.date.toLocaleDateString(LOC(), {day:'2-digit', month:'2-digit'});
+    $('dayLabel').textContent = t('day_curve', name);
     const pts = tag.c && tag.c[metric];
     if (!pts || !pts.some(v => v)) { box.innerHTML = `<div class="hint">${t('no_curve')}</div>`; $('dayPeak').textContent = ''; return; }
 
