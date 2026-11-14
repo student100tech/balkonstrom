@@ -320,12 +320,14 @@
         <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
         <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
 
-        <circle cx="46" cy="126" r="26" fill="#161A22" stroke="#3A4152" stroke-width="1.5"/>
+        <circle cx="46" cy="126" r="26" fill="#161A22" stroke="#2A303C" stroke-width="5"/>
+        <circle id="gridRing" cx="46" cy="126" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 126)"/>
         <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
         <text class="node-label" x="46" y="174" text-anchor="middle" data-i18n="grid_bat">Netz → Akku</text>
         <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
-        <circle cx="304" cy="126" r="26" fill="#18162A" stroke="var(--home)" stroke-width="1.5"/>
+        <circle cx="304" cy="126" r="26" fill="#18162A" stroke="#2B2745" stroke-width="5"/>
+        <circle id="homeRing" cx="304" cy="126" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 126)"/>
         <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
         <text class="node-label" x="304" y="174" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
         <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
@@ -624,6 +626,7 @@
       chg_power:'Ladeleistung', sr_in:'Ladeleistung in Watt',
       now_w:v=>`aktuell ${v} W`, now_p:v=>`aktuell ${v} %`, reset_sfx:' · zurück',
       saved:v=>`Gespeichert: ${v}`, err_pfx:'Fehler: ',
+      not_taken:v=>`Nicht übernommen – es steht weiter auf ${v}. Läuft im HEMS oder in der Zendure-App eine Automatik?`,
       grid_chg_on:v=>`Netzladen an (${v} W)`, grid_chg_off:'Netzladen aus',
       e_notconn:'Gerät noch nicht verbunden', e_nologin:'Kein Zendure-Login eingetragen',
       e_nodev:'Kein Gerät im Zendure-Konto gefunden',
@@ -715,6 +718,7 @@
       chg_power:'Мощность зарядки', sr_in:'Мощность зарядки в ваттах',
       now_w:v=>`сейчас ${v} Вт`, now_p:v=>`сейчас ${v} %`, reset_sfx:' · сброс',
       saved:v=>`Сохранено: ${v}`, err_pfx:'Ошибка: ',
+      not_taken:v=>`Не принято — осталось ${v}. Возможно, работает автоматика в HEMS или в приложении Zendure?`,
       grid_chg_on:v=>`Зарядка от сети включена (${v} Вт)`, grid_chg_off:'Зарядка от сети выключена',
       e_notconn:'Устройство ещё не подключено', e_nologin:'Данные Zendure не введены',
       e_nodev:'В учётной записи Zendure устройств не найдено',
@@ -817,6 +821,27 @@
       body: JSON.stringify({sn: last.sn, properties: props})
     }, 6000);
     if (!r.ok) throw new Error('HTTP ' + r.status);
+    // Der SolarFlow antwortet auch bei abgelehnten Werten mit HTTP 200 – Rumpf pruefen
+    const j = await r.json().catch(() => null);
+    if (j && (j.error || j.success === false || (j.code && j.code !== 200)))
+      throw new Error(String(j.msg || j.message || j.error || j.code));
+  }
+
+  // Nach dem Schreiben nachsehen, ob der Wert wirklich steht. Haengt der Akku an
+  // einem HEMS oder laeuft in der Zendure-App eine Automatik, wird er zurueckgesetzt.
+  async function pruefeUebernahme(paare){
+    if (demo) return;
+    await new Promise(r => setTimeout(r, 2500));
+    await tick();
+    const p = last && last.properties; if (!p) return;
+    const schief = [];
+    for (const [k, soll] of paare) {
+      const c = ctl[k], roh = c.get(p);
+      if (roh == null) continue;
+      const ist = c.toUi(roh);
+      if (Math.abs(ist - soll) > 0.5) schief.push(`${t(c.lbl)} ${ist} ${t(c.uk)}`);
+    }
+    if (schief.length) toast(t('not_taken', schief.join(' · ')), 7000);
   }
 
   function demoData(){
@@ -854,11 +879,19 @@
     $('tHome').textContent = fmtW(home);
     $('tGrid').textContent = fmtW(grid);
     $('tGrid').style.fill = grid > 2 ? '' : 'var(--muted)';
-    // Solarkreis fuellt sich wie der Akkuring: aktuelle Leistung an der Modulleistung gemessen
-    const pvF = Math.max(0, Math.min(1, solar / Math.max(50, cfg.peak)));
-    $('pvRing').setAttribute('stroke-dasharray', `${(pvF*175.9).toFixed(1)} 176`);
+    // Alle vier Kreise fuellen sich: Solar an der Modulleistung, Haus und Netz
+    // an der Geraetegrenze, die der SolarFlow selbst meldet.
+    const ring = (id, wert, grenze, umfang) => {
+      const f = Math.max(0, Math.min(1, wert / Math.max(50, grenze))), el = $(id);
+      el.setAttribute('stroke-dasharray', `${(f*umfang).toFixed(1)} ${Math.ceil(umfang)}`);
+      el.setAttribute('stroke-linecap', f > 0.004 ? 'round' : 'butt');   // bei 0 sonst ein Punkt
+    };
+    const grenzeAus = p.inverseMaxPower || 800;
+    ring('pvRing',   solar, cfg.peak, 175.9);
+    ring('homeRing', home,  grenzeAus, 163.4);
+    ring('gridRing', grid,  p.chargeMaxLimit || grenzeAus, 163.4);
     $('tSoc').textContent = `${soc}%`;
-    $('socRing').setAttribute('stroke-dasharray', `${(soc/100*175.9).toFixed(1)} 176`);
+    ring('socRing', soc, 100, 175.9);
 
     let batW = 0, batTxt = t('bat_idle'), batRev = false;
     if (charge > 0) { batW = charge; batTxt = t('bat_charge'); }
@@ -933,10 +966,10 @@
 
   // ---------- Steuerung ----------
   const ctl = {
-    out: {r:'rOut', v:'vOut', now:'nowOut', get: p => p.outputLimit, uk:'u_w', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => t('now_w', ui)},
-    max: {r:'rMax', v:'vMax', now:'nowMax', get: p => p.socSet, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => t('now_p', ui)},
-    min: {r:'rMin', v:'vMin', now:'nowMin', get: p => p.minSoc, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => t('now_p', ui)},
-    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  get: p => p.inputLimit, uk:'u_w', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => t('now_w', ui)}
+    out: {r:'rOut', v:'vOut', now:'nowOut', lbl:'out_power', get: p => p.outputLimit, uk:'u_w', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => t('now_w', ui)},
+    max: {r:'rMax', v:'vMax', now:'nowMax', lbl:'chg_until', get: p => p.socSet, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => t('now_p', ui)},
+    min: {r:'rMin', v:'vMin', now:'nowMin', lbl:'dis_until', get: p => p.minSoc, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => t('now_p', ui)},
+    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  lbl:'chg_power', get: p => p.inputLimit, uk:'u_w', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => t('now_w', ui)}
   };
   function markPresets(){
     const v = $('rOut').value;
@@ -996,7 +1029,7 @@
     $(c.btn).onclick = async () => {
       const val = Number($(c.r).value), btn = $(c.btn);
       btn.disabled = true;
-      try { await writeProps(c.toDev(val)); toast(t('saved', `${val} ${t(c.uk)}`)); editing[k] = false; base[k] = val; setTimeout(tick, 1500); }
+      try { await writeProps(c.toDev(val)); toast(t('saved', `${val} ${t(c.uk)}`)); editing[k] = false; base[k] = val; pruefeUebernahme([[k, val]]); }
       catch (e) { toast(t('err_pfx') + e.message, 4000); }
       finally { refreshApply(); }
     };
@@ -1004,7 +1037,7 @@
   $('aLim').onclick = async () => {
     const max = Number($('rMax').value), min = Number($('rMin').value), btn = $('aLim');
     btn.disabled = true;
-    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(t('saved', `${min}–${max} %`)); editing.lim = false; base.max = max; base.min = min; setTimeout(tick, 1500); }
+    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(t('saved', `${min}–${max} %`)); editing.lim = false; base.max = max; base.min = min; pruefeUebernahme([['max', max], ['min', min]]); }
     catch (e) { toast(t('err_pfx') + e.message, 4000); }
     finally { refreshApply(); }
   };
