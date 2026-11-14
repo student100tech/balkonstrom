@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0A0C11">
-<title>Balkonstrom Live</title>
+<title>Balkonstrom</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
@@ -38,7 +38,9 @@
   .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
   .iconbtn{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
   .iconbtn svg{width:20px;height:20px}
-  .iconbtn.has-update::after{content:"";position:absolute;top:-3px;right:-3px;width:12px;height:12px;border-radius:50%;background:var(--bat);border:2px solid var(--bg)}
+  .iconbtn.has-update::after,
+  nav.tabs button.has-update::after{content:"";position:absolute;top:6px;right:50%;margin-right:-18px;width:9px;height:9px;border-radius:50%;background:var(--bat)}
+  nav.tabs button{position:relative}
 
   .view{display:none;flex-direction:column;gap:12px} .view.active{display:flex}
   .pagehead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:4px 4px 2px}
@@ -65,6 +67,7 @@
   .sun svg{width:100%;height:auto;display:block}
   .sunrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
   .sunrow #daylight{color:var(--muted2)}
+  .moontxt{font-size:11px;fill:var(--dim);font-family:Inter,system-ui,sans-serif}
 
   /* ---------- Energiefluss ---------- */
   .flow{padding:16px 12px 10px}
@@ -273,7 +276,6 @@
     </div>
     <div class="hdr-right">
       <div class="pill"><span class="dot" id="dot"></span><span id="status" data-i18n="connecting">Verbinde…</span></div>
-      <button class="iconbtn" id="btnSettings" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
   </header>
 
@@ -297,6 +299,13 @@
         <path id="sunArcDone" d="" fill="none" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
         <circle id="sunGlow" r="13" fill="var(--solar)" opacity="0"/>
         <circle id="sunDot" r="7" fill="var(--solar)" opacity="0"/>
+        <g id="moon" opacity="0">
+          <g transform="translate(179 30)">
+            <circle r="12.5" fill="none" stroke="var(--line3)" stroke-width="1"/>
+            <path id="moonLit" d="" fill="#C9D4E8"/>
+          </g>
+          <text id="moonTxt" x="179" y="62" text-anchor="middle" class="moontxt"></text>
+        </g>
       </svg>
       <div class="sunrow"><span id="sunrise">–</span><span id="daylight"></span><span id="sunset">–</span></div>
     </div>
@@ -445,56 +454,13 @@
   </section>
 
   <!-- ================= STEUERUNG ================= -->
-  <section class="view" id="vCtl">
-    <div class="pagehead"><div><h2 data-i18n="ctl">Steuerung</h2><div class="sub" data-i18n="ctl_sub">Änderungen gehen direkt an den SolarFlow</div></div></div>
-    <div class="note">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
-      <span data-i18n="ctl_note">Ist in der Zendure-App eine Automatik aktiv (z.&nbsp;B. Energieplan), kann sie deine Einstellung wieder überschreiben.</span>
-    </div>
-
-    <div class="card ctl">
-      <div class="card-head"><span class="lbl" data-i18n="out_power">Ausgangsleistung ins Haus</span><span class="info" id="nowOut" data-i18n="now_dash">aktuell –</span></div>
-      <div class="bigval"><span class="num" id="vOut">–</span><span class="u" data-i18n="u_w">W</span></div>
-      <label><span class="sr" data-i18n="sr_out">Ausgangsleistung in Watt</span><input type="range" id="rOut" min="0" max="800" step="5"></label>
-      <div class="range-lbl"><span data-i18n="zero_w">0 W</span><span id="outMaxLbl">800 W</span></div>
-      <div class="presets" data-target="rOut"><button data-v="0">0</button><button data-v="100">100</button><button data-v="200">200</button><button data-v="400">400</button><button data-v="800">800</button></div>
-      <button class="btn apply" id="aOut" disabled data-i18n="apply">Übernehmen</button>
-    </div>
-
-    <div class="card ctl" style="gap:16px">
-      <span class="lbl" data-i18n="bat_limits">Akku-Grenzen</span>
-      <div>
-        <div class="usable"><i id="limRange" style="left:10%;right:0"></i><span id="limTxt" data-i18n="usable_dash">nutzbar – kWh</span></div>
-        <div class="range-lbl" style="margin-top:8px"><span>0 %</span><span>100 %</span></div>
-      </div>
-      <div class="lim">
-        <label><span class="t"><span data-i18n="chg_until">Laden bis</span> <span class="muted" style="font-size:11px">(70–100)</span></span><span class="v"><span id="vMax">–</span> %</span><input type="range" id="rMax" min="70" max="100" step="5"><span class="r" id="nowMax">70–100 %</span></label>
-        <label><span class="t"><span data-i18n="dis_until">Entladen bis</span> <span class="muted" style="font-size:11px">(0–50)</span></span><span class="v"><span id="vMin">–</span> %</span><input type="range" id="rMin" min="0" max="50" step="5"><span class="r" id="nowMin">0–50 %</span></label>
-      </div>
-      <button class="btn apply" id="aLim" disabled data-i18n="apply_limits">Grenzen übernehmen</button>
-    </div>
-
-    <div class="card ctl">
-      <div class="ac-head">
-        <div><div class="t" data-i18n="grid_chg">Laden aus dem Netz</div><div class="s" id="acInfo" data-i18n="grid_chg_sub">Lädt den Akku mit Strom aus der Steckdose</div></div>
-        <label class="switch"><span class="sr" data-i18n="grid_chg">Laden aus dem Netz</span><input type="checkbox" id="swAc"><span></span></label>
-      </div>
-      <div id="acBox" style="display:none">
-        <div class="card-head"><span class="t muted" style="font-size:12.5px" data-i18n="chg_power">Ladeleistung</span><span class="num" style="font-size:22px"><span id="vIn">–</span> W</span></div>
-        <label><span class="sr" data-i18n="sr_in">Ladeleistung in Watt</span><input type="range" id="rIn" min="50" max="800" step="5"></label>
-        <div class="range-lbl" style="margin-top:-4px"><span id="nowIn">&nbsp;</span><span></span></div>
-        <button class="btn apply" id="aIn" disabled style="height:46px;font-size:14px" data-i18n="apply">Übernehmen</button>
-      </div>
-    </div>
-  </section>
-
   <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
 </div>
 
 <nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
   <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
   <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span data-i18n="stats">Statistik</span></button>
-  <button data-v="vCtl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span data-i18n="ctl">Steuerung</span></button>
+  <button id="btnSettings" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="d_title">Einstellungen</span></button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -525,6 +491,13 @@
     <input id="inPeak" inputmode="numeric" placeholder="800">
     <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
     <input id="inInt" inputmode="numeric" placeholder="5">
+  </div>
+
+  <div class="dsec">
+    <div class="dtitle" data-i18n="d_loc">Standort (für Sonnenauf- und -untergang)</div>
+    <label class="f" for="inPlz" data-i18n="d_plz">Postleitzahl</label>
+    <input id="inPlz" inputmode="numeric" placeholder="40123">
+    <div class="hint" id="locHint"></div>
   </div>
 
   <div class="dsec">
@@ -562,7 +535,7 @@
 <script>
 (() => {
   // ---------- Grundlagen ----------
-  const LAT = 51.2277, LON = 6.7735;           // Düsseldorf (Sonnenbogen)
+  const ORT0 = [51.2277, 6.7735];              // Düsseldorf – Vorgabe für den Sonnenbogen
   const CLOUD = 'https://app.zendure.tech/eu'; // Zendure-App-Schnittstelle (inoffiziell)
   const NBSP = ' ';
   const store = {
@@ -573,12 +546,65 @@
   let cfg = {
     ip: store.get('ip', ''),
     cap: Number(store.get('cap', 1920)),
+    plz: store.get('plz', ''),
+    lat: Number(store.get('lat', ORT0[0])),
+    lon: Number(store.get('lon', ORT0[1])),
     peak: Number(store.get('peak', 800)),
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
-  let demo = false, timer = null, fails = 0, last = null, editing = {}, lastOk = null;
-  const base = {};   // zuletzt vom Gerät übernommener Reglerwert – Vergleich für „geändert?“
+  let demo = false, timer = null, fails = 0, last = null, lastOk = null;
   const $ = id => document.getElementById(id);
+  // ---------- Standort ----------
+  // Grobe Mittelpunkte der deutschen Postleitzahl-Gebiete (erste zwei Ziffern).
+  // Für den Sonnenbogen reicht das: 40 km Abweichung sind rund zwei Minuten.
+  const PLZ = {
+    '01':[51.05,13.74],'02':[51.15,14.43],'03':[51.76,14.33],'04':[51.34,12.37],
+    '06':[51.48,11.97],'07':[50.88,12.08],'08':[50.72,12.49],'09':[50.83,12.92],
+    '10':[52.52,13.40],'12':[52.46,13.40],'13':[52.56,13.35],'14':[52.40,13.06],
+    '15':[52.34,14.55],'16':[52.83,13.82],'17':[53.56,13.26],'18':[54.09,12.14],
+    '19':[53.63,11.41],'20':[53.55, 9.99],'21':[53.25,10.41],'22':[53.60,10.00],
+    '23':[53.87,10.69],'24':[54.32,10.14],'25':[53.93, 9.52],'26':[53.14, 8.21],
+    '27':[53.54, 8.58],'28':[53.08, 8.81],'29':[52.63,10.08],'30':[52.37, 9.73],
+    '31':[52.15, 9.95],'32':[52.29, 8.92],'33':[51.95, 8.63],'34':[51.31, 9.49],
+    '35':[50.59, 8.68],'36':[50.55, 9.68],'37':[51.53, 9.93],'38':[52.27,10.52],
+    '39':[52.13,11.63],'40':[51.23, 6.77],'41':[51.19, 6.44],'42':[51.26, 7.15],
+    '44':[51.51, 7.47],'45':[51.46, 7.01],'46':[51.50, 6.85],'47':[51.43, 6.76],
+    '48':[51.96, 7.63],'49':[52.28, 8.05],'50':[50.94, 6.96],'51':[51.00, 7.10],
+    '52':[50.78, 6.08],'53':[50.73, 7.10],'54':[49.75, 6.64],'55':[50.00, 8.27],
+    '56':[50.36, 7.59],'57':[50.88, 8.02],'58':[51.36, 7.47],'59':[51.68, 7.82],
+    '60':[50.11, 8.68],'61':[50.23, 8.62],'63':[50.08, 8.95],'64':[49.87, 8.65],
+    '65':[50.08, 8.24],'66':[49.24, 6.99],'67':[49.44, 7.77],'68':[49.49, 8.47],
+    '69':[49.40, 8.69],'70':[48.78, 9.18],'71':[48.80, 9.00],'72':[48.52, 9.06],
+    '73':[48.70, 9.65],'74':[49.14, 9.22],'75':[48.89, 8.70],'76':[49.01, 8.40],
+    '77':[48.47, 7.95],'78':[48.06, 8.46],'79':[47.99, 7.84],'80':[48.14,11.57],
+    '81':[48.12,11.60],'82':[48.00,11.35],'83':[47.85,12.12],'84':[48.54,12.15],
+    '85':[48.40,11.74],'86':[48.37,10.90],'87':[47.73,10.31],'88':[47.78, 9.61],
+    '89':[48.40, 9.99],'90':[49.45,11.08],'91':[49.44,10.90],'92':[49.44,11.86],
+    '93':[49.02,12.10],'94':[48.57,13.44],'95':[49.95,11.58],'96':[49.89,10.89],
+    '97':[49.79, 9.95],'98':[50.61,10.69],'99':[50.98,11.03]
+  };
+  function plzOrt(plz){
+    const p = String(plz || '').replace(/\D/g, '');
+    return p.length >= 2 ? PLZ[p.slice(0, 2)] || null : null;
+  }
+
+  // ---------- Mond ----------
+  // Mondphase aus dem synodischen Monat, bezogen auf den Neumond vom 6.1.2000.
+  // 0 = Neumond, 0,5 = Vollmond. Auf wenige Stunden genau – fürs Zeichnen reicht das.
+  function mondPhase(d){
+    const syn = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
+    return (((d - ref) / 86400000 / syn) % 1 + 1) % 1;
+  }
+  // Pfad der beleuchteten Fläche: Außenrand als Halbkreis, Schattengrenze als Ellipse.
+  function mondPfad(ph, r){
+    const hell = (1 - Math.cos(2 * Math.PI * ph)) / 2;      // beleuchteter Anteil
+    const rx = (r * Math.abs(1 - 2 * hell)).toFixed(2);
+    const zu = ph < 0.5;                                     // zunehmend: rechts hell
+    const aussen = zu ? 1 : 0;
+    const innen = (hell < 0.5) === zu ? 0 : 1;
+    return `M0 ${-r} A${r} ${r} 0 0 ${aussen} 0 ${r} A${rx} ${r} 0 0 ${innen} 0 ${-r} Z`;
+  }
+
   // ---------- Sprachen / Языки ----------
   const L10N = {
     de: {
@@ -589,6 +615,10 @@
       find_btn:'SolarFlow suchen', manual_ip:'IP-Adresse selbst eingeben',
       sunrise:'Aufgang', sunset:'Untergang',
       daylight:(h,m)=>`noch ${h}:${m} h Tageslicht`,
+      till_sunrise:(h,m)=>`Sonnenaufgang in ${h}:${m} h`,
+      moon:['Neumond','zunehmende Sichel','erstes Viertel','zunehmender Mond','Vollmond','abnehmender Mond','letztes Viertel','abnehmende Sichel'],
+      d_loc:'Standort (für Sonnenauf- und -untergang)', d_plz:'Postleitzahl',
+      plz_unknown:'Postleitzahl nicht gefunden – Standort unverändert',
       flow:'Energiefluss', solar:'Solar', grid_bat:'Netz → Akku', to_home:'Ins Haus',
       bat:'Akku', bat_idle:'Akku ruht', bat_charge:'Akku lädt', bat_discharge:'Akku entlädt',
       dash_w:'– W', dash_kwh:'– kWh', dash_c:'– °C', pv1:'PV1 – W', pv2:'PV2 – W',
@@ -681,6 +711,10 @@
       find_btn:'Найти SolarFlow', manual_ip:'Ввести IP-адрес вручную',
       sunrise:'Восход', sunset:'Закат',
       daylight:(h,m)=>`ещё ${h}:${m} ч светового дня`,
+      till_sunrise:(h,m)=>`Восход через ${h}:${m} ч`,
+      moon:['Новолуние','растущий серп','первая четверть','растущая луна','Полнолуние','убывающая луна','последняя четверть','убывающий серп'],
+      d_loc:'Местоположение (для восхода и заката)', d_plz:'Почтовый индекс',
+      plz_unknown:'Индекс не найден — местоположение не изменено',
       flow:'Поток энергии', solar:'Солнце', grid_bat:'Сеть → АКБ', to_home:'В дом',
       bat:'Аккумулятор', bat_idle:'АКБ в покое', bat_charge:'АКБ заряжается', bat_discharge:'АКБ разряжается',
       dash_w:'– Вт', dash_kwh:'– кВт·ч', dash_c:'– °C', pv1:'PV1 – Вт', pv2:'PV2 – Вт',
@@ -781,7 +815,7 @@
     if (l === lang || !L10N[l]) return;
     lang = l; store.set('lang', l);
     applyStatic();
-    if (last) render(last); else syncControls(true);
+    if (last) render(last);
     showToday(); showStats(); showUpdate(); drawSun();
   }
   const fmtW = w => (w == null || isNaN(w)) ? ('– ' + t('u_w')) : `${Math.round(w)} ${t('u_w')}`;
@@ -792,11 +826,10 @@
   function toast(txt, ms = 2600){ const el = $('toast'); el.textContent = txt; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms); }
 
   // ---------- Tabs ----------
-  document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
-    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('nav.tabs button[data-v]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('nav.tabs button[data-v]').forEach(x => x.classList.toggle('on', x === b));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === b.dataset.v));
     if (b.dataset.v === 'vStats') showStats();
-    if (b.dataset.v === 'vCtl') syncControls(true);
     window.scrollTo(0, 0);
   });
 
@@ -813,37 +846,6 @@
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return await r.json();
   }
-  async function writeProps(props){
-    if (demo) { Object.assign(last.properties, props); render(last); return; }
-    if (!last?.sn) throw new Error(t('e_notconn'));
-    const r = await http(`http://${cfg.ip}/properties/write`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({sn: last.sn, properties: props})
-    }, 6000);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    // Der SolarFlow antwortet auch bei abgelehnten Werten mit HTTP 200 – Rumpf pruefen
-    const j = await r.json().catch(() => null);
-    if (j && (j.error || j.success === false || (j.code && j.code !== 200)))
-      throw new Error(String(j.msg || j.message || j.error || j.code));
-  }
-
-  // Nach dem Schreiben nachsehen, ob der Wert wirklich steht. Haengt der Akku an
-  // einem HEMS oder laeuft in der Zendure-App eine Automatik, wird er zurueckgesetzt.
-  async function pruefeUebernahme(paare){
-    if (demo) return;
-    await new Promise(r => setTimeout(r, 2500));
-    await tick();
-    const p = last && last.properties; if (!p) return;
-    const schief = [];
-    for (const [k, soll] of paare) {
-      const c = ctl[k], roh = c.get(p);
-      if (roh == null) continue;
-      const ist = c.toUi(roh);
-      if (Math.abs(ist - soll) > 0.5) schief.push(`${t(c.lbl)} ${ist} ${t(c.uk)}`);
-    }
-    if (schief.length) toast(t('not_taken', schief.join(' · ')), 7000);
-  }
-
   function demoData(){
     const h = new Date().getHours() + new Date().getMinutes()/60;
     const sun = Math.max(0, Math.sin((h-8)/9*Math.PI));
@@ -934,7 +936,6 @@
     const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
     $('cVolt').textContent = p.BatVolt ? t('dbm_bat', de1(p.BatVolt/100)) : t('u_dbm');
-    syncControls(false);
   }
 
   function setStatus(kind, text){ $('dot').className = 'dot ' + kind; $('status').textContent = text; }
@@ -963,96 +964,6 @@
     tick(); timer = setInterval(tick, cfg.interval * 1000);
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
-
-  // ---------- Steuerung ----------
-  const ctl = {
-    out: {r:'rOut', v:'vOut', now:'nowOut', lbl:'out_power', get: p => p.outputLimit, uk:'u_w', toUi: x => x, toDev: x => ({outputLimit: x}), btn:'aOut', nowTxt: ui => t('now_w', ui)},
-    max: {r:'rMax', v:'vMax', now:'nowMax', lbl:'chg_until', get: p => p.socSet, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({socSet: x*10}), nowTxt: ui => t('now_p', ui)},
-    min: {r:'rMin', v:'vMin', now:'nowMin', lbl:'dis_until', get: p => p.minSoc, uk:'u_p', toUi: x => Math.round(x/10), toDev: x => ({minSoc: x*10}), nowTxt: ui => t('now_p', ui)},
-    in:  {r:'rIn',  v:'vIn',  now:'nowIn',  lbl:'chg_power', get: p => p.inputLimit, uk:'u_w', toUi: x => x, toDev: x => ({acMode: 1, inputLimit: x}), btn:'aIn', nowTxt: ui => t('now_w', ui)}
-  };
-  function markPresets(){
-    const v = $('rOut').value;
-    document.querySelectorAll('.presets button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
-  }
-  function showLimits(){
-    const max = Number($('rMax').value), min = Number($('rMin').value);
-    $('limRange').style.left = min + '%';
-    $('limRange').style.right = (100 - max) + '%';
-    $('limTxt').textContent = t('usable', kwh(cfg.cap * (max - min) / 100));
-  }
-  function syncControls(force){
-    const p = last?.properties; if (!p) return;
-    for (const [k, c] of Object.entries(ctl)) {
-      const cur = c.get(p); if (cur == null) continue;
-      const ui = c.toUi(cur);
-      $(c.now).dataset.txt = c.nowTxt(ui);
-      const sl = (k === 'in' && ui < 50) ? 300 : ui;   // Netzladen: sinnvoller Startwert
-      const ed = (k === 'max' || k === 'min') ? editing.lim : editing[k];
-      if (force || !ed) { $(c.r).value = sl; base[k] = Number($(c.r).value); $(c.v).textContent = sl; }
-    }
-    $('rOut').max = p.inverseMaxPower || 800;
-    $('outMaxLbl').textContent = `${p.inverseMaxPower || 800} ${t('u_w')}`;
-    $('rIn').max = p.chargeMaxLimit || 800;
-    const ac = p.acMode === 1;
-    if (force || !editing.ac) { $('swAc').checked = ac; $('acBox').style.display = ac ? 'flex' : 'none'; }
-    markPresets(); showLimits(); refreshApply();
-  }
-  // Wurde der Regler gegenüber dem Gerätewert verstellt?
-  const changed = k => base[k] != null && Number($(ctl[k].r).value) !== base[k];
-  function setApply(id, on){ const b = $(id); if (b) { b.classList.toggle('on', on); b.disabled = !on; } }
-  function refreshApply(){
-    for (const [k, c] of Object.entries(ctl)) {
-      const d = changed(k), el = $(c.now), txt = el.dataset.txt;
-      if (txt) { el.textContent = d ? txt + t('reset_sfx') : txt; el.classList.toggle('resetable', d); }
-      if (c.btn) setApply(c.btn, d);
-    }
-    setApply('aLim', changed('max') || changed('min'));
-  }
-  // Versehentlich verschoben: auf den Hinweis tippen stellt den Gerätewert wieder her
-  function resetCtl(k){
-    const c = ctl[k]; if (base[k] == null) return;
-    $(c.r).value = base[k]; $(c.v).textContent = base[k];
-    if (k === 'max' || k === 'min') { editing.lim = false; showLimits(); } else editing[k] = false;
-    if (k === 'out') markPresets();
-    refreshApply();
-  }
-  for (const [k, c] of Object.entries(ctl)) {
-    $(c.r).oninput = () => {
-      if (k === 'max' || k === 'min') { editing.lim = true; showLimits(); } else editing[k] = true;
-      $(c.v).textContent = $(c.r).value;
-      if (k === 'out') markPresets();
-      refreshApply();
-    };
-    $(c.now).onclick = () => { if (changed(k)) resetCtl(k); };
-    if (!c.btn) continue;
-    $(c.btn).onclick = async () => {
-      const val = Number($(c.r).value), btn = $(c.btn);
-      btn.disabled = true;
-      try { await writeProps(c.toDev(val)); toast(t('saved', `${val} ${t(c.uk)}`)); editing[k] = false; base[k] = val; pruefeUebernahme([[k, val]]); }
-      catch (e) { toast(t('err_pfx') + e.message, 4000); }
-      finally { refreshApply(); }
-    };
-  }
-  $('aLim').onclick = async () => {
-    const max = Number($('rMax').value), min = Number($('rMin').value), btn = $('aLim');
-    btn.disabled = true;
-    try { await writeProps({...ctl.max.toDev(max), ...ctl.min.toDev(min)}); toast(t('saved', `${min}–${max} %`)); editing.lim = false; base.max = max; base.min = min; pruefeUebernahme([['max', max], ['min', min]]); }
-    catch (e) { toast(t('err_pfx') + e.message, 4000); }
-    finally { refreshApply(); }
-  };
-  document.querySelectorAll('.presets button').forEach(b => b.onclick = () => {
-    const r = $(b.parentElement.dataset.target); r.value = b.dataset.v; r.oninput();
-  });
-  $('swAc').onchange = async () => {
-    const on = $('swAc').checked; editing.ac = true;
-    $('acBox').style.display = on ? 'flex' : 'none';
-    try {
-      if (on) { const v = Number($('rIn').value) || 300; await writeProps({acMode: 1, inputLimit: v}); toast(t('grid_chg_on', v)); }
-      else { await writeProps({acMode: 2, inputLimit: 0}); toast(t('grid_chg_off')); }
-      editing.ac = false; setTimeout(tick, 1500);
-    } catch (e) { toast(t('err_pfx') + e.message, 4000); $('swAc').checked = !on; $('acBox').style.display = !on ? 'flex' : 'none'; editing.ac = false; }
-  };
 
   // ---------- Zendure-Cloud (Statistik) ----------
   // Hinweis: In der Cloud heißt Laden 'batteryOutput' und Entladen 'batteryInput'
@@ -1282,6 +1193,7 @@
   const dlg = $('dlg');
   $('btnSettings').onclick = () => {
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    $('inPlz').value = cfg.plz; zeigeOrt();
     $('findResultDlg').innerHTML = '';
     $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? t('pw_saved') : t('ph_pw');
     dlg.showModal();
@@ -1292,8 +1204,18 @@
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
     cfg.peak = Math.max(50, Number($('inPeak').value) || 800);
+    const plz = String($('inPlz').value || '').replace(/\D/g, '').slice(0, 5);
+    if (plz !== cfg.plz) {
+      cfg.plz = plz;
+      const o = plzOrt(plz);
+      if (o) { cfg.lat = o[0]; cfg.lon = o[1]; }
+      else if (!plz) { cfg.lat = ORT0[0]; cfg.lon = ORT0[1]; }
+      else toast(t('plz_unknown'), 4000);
+    }
     cfg.interval = Math.max(3, Number($('inInt').value) || 5);
     store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('peak', cfg.peak); store.set('interval', cfg.interval);
+    store.set('plz', cfg.plz); store.set('lat', cfg.lat); store.set('lon', cfg.lon);
+    drawSun();
     const mail = $('inMail').value.trim(), pw = $('inPw').value;
     const changed = mail !== cloud.mail || pw;
     if (mail) { cloud.mail = mail; store.set('zMail', mail); }
@@ -1569,8 +1491,8 @@
     const n = Math.floor((date - start) / 864e5), g = 2*Math.PI/365 * (n - 1);
     const eqt = 229.18*(0.000075 + 0.001868*Math.cos(g) - 0.032077*Math.sin(g) - 0.014615*Math.cos(2*g) - 0.040849*Math.sin(2*g));
     const decl = 0.006918 - 0.399912*Math.cos(g) + 0.070257*Math.sin(g) - 0.006758*Math.cos(2*g) + 0.000907*Math.sin(2*g) - 0.002697*Math.cos(3*g) + 0.00148*Math.sin(3*g);
-    const ha = Math.acos(Math.cos(90.833*rad)/(Math.cos(LAT*rad)*Math.cos(decl)) - Math.tan(LAT*rad)*Math.tan(decl)) / rad;
-    const noon = 720 - 4*LON - eqt, mid = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const ha = Math.acos(Math.cos(90.833*rad)/(Math.cos(cfg.lat*rad)*Math.cos(decl)) - Math.tan(cfg.lat*rad)*Math.tan(decl)) / rad;
+    const noon = 720 - 4*cfg.lon - eqt, mid = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
     return {rise: new Date(mid + (noon - 4*ha)*60000), set: new Date(mid + (noon + 4*ha)*60000)};
   }
   function drawSun(){
@@ -1586,11 +1508,28 @@
       $('sunArcDone').setAttribute('d', arc(f, Math.max(2, Math.round(48*f))));
     } else {
       dot.setAttribute('opacity', 0); glow.setAttribute('opacity', 0);
-      $('sunArcDone').setAttribute('d', f > 1 ? arc(1, 48) : '');
+      $('sunArcDone').setAttribute('d', '');   // nachts kein Sonnenbogen, nur der Mond
     }
     $('sunrise').textContent = t('sunrise') + ' ' + hm(rise); $('sunset').textContent = t('sunset') + ' ' + hm(set);
-    if (f > 0 && f < 1) { const left = Math.round((set - now)/60000); $('daylight').textContent = t('daylight', Math.floor(left/60), String(left%60).padStart(2,'0')); }
-    else $('daylight').textContent = '';
+
+    const nacht = f < 0 || f > 1;
+    $('moon').setAttribute('opacity', nacht ? 1 : 0);
+    if (nacht) {
+      // Nach Sonnenuntergang zählt der Aufgang von morgen
+      const naechster = f > 1 ? sunTimes(new Date(+now + 86400000)).rise : rise;
+      const bis = Math.max(0, Math.round((naechster - now) / 60000));
+      $('daylight').textContent = t('till_sunrise', Math.floor(bis/60), String(bis%60).padStart(2,'0'));
+      const ph = mondPhase(now);
+      $('moonLit').setAttribute('d', mondPfad(ph, 12));
+      $('moonTxt').textContent = t('moon')[Math.round(ph*8) % 8];
+    } else if (f > 0 && f < 1) {
+      const left = Math.round((set - now)/60000);
+      $('daylight').textContent = t('daylight', Math.floor(left/60), String(left%60).padStart(2,'0'));
+    } else $('daylight').textContent = '';
+  }
+
+  function zeigeOrt(){
+    $('locHint').textContent = `${cfg.lat.toFixed(3)}° N · ${cfg.lon.toFixed(3)}° O`;
   }
   document.querySelectorAll('.langsel button').forEach(b => b.onclick = () => setLang(b.dataset.l));
   applyStatic();

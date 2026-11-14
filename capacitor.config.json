@@ -1,6 +1,6 @@
 {
   "appId": "de.elektroautonews.balkonstrom",
-  "appName": "Balkonstrom Live",
+  "appName": "Balkonstrom",
   "webDir": "www",
   "server": {
     "androidScheme": "https",
