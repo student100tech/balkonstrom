@@ -230,7 +230,9 @@
     border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre}
   .diagrow{display:flex;gap:8px;margin-top:8px}
   .diagrow .btn{flex:1}
-  .dfoot{display:flex;gap:8px;margin-top:20px}
+  .setcard{padding:16px 18px}
+  .setcard .dsec:first-child{border-top:0;padding-top:0;margin-top:0}
+  .dfoot{display:flex;gap:8px;margin-top:4px}
   .dfoot .btn{flex:1;height:48px}
   .dfoot .btn.primary{height:48px;font-size:14px}
 
@@ -300,12 +302,12 @@
         <circle id="sunGlow" r="13" fill="var(--solar)" opacity="0"/>
         <circle id="sunDot" r="7" fill="var(--solar)" opacity="0"/>
         <g id="moon" opacity="0">
-          <g transform="translate(179 30)">
+          <g id="moonPos" transform="translate(179 30)">
             <circle r="12.5" fill="none" stroke="var(--line3)" stroke-width="1"/>
             <path id="moonLit" d="" fill="#C9D4E8"/>
           </g>
-          <text id="moonTxt" x="179" y="62" text-anchor="middle" class="moontxt"></text>
         </g>
+        <text id="moonTxt" x="179" y="62" text-anchor="middle" class="moontxt"></text>
       </svg>
       <div class="sunrow"><span id="sunrise">–</span><span id="daylight"></span><span id="sunset">–</span></div>
     </div>
@@ -454,19 +456,10 @@
   </section>
 
   <!-- ================= STEUERUNG ================= -->
-  <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
-</div>
-
-<nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
-  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
-  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span data-i18n="stats">Statistik</span></button>
-  <button id="btnSettings" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="d_title">Einstellungen</span></button>
-</nav>
-
-<div class="toast" id="toast"></div>
-
-<dialog id="dlg">
-  <div class="dhead"><h2 data-i18n="d_title">Einstellungen</h2><button class="xbtn" id="btnX" data-i18n-al="al_close" aria-label="Schließen">✕</button></div>
+  <!-- ================= EINSTELLUNGEN ================= -->
+  <section class="view" id="vSet">
+    <div class="pagehead"><div><h2 data-i18n="d_title">Einstellungen</h2></div></div>
+    <div class="card setcard">
 
   <div class="dsec">
     <div class="dtitle" data-i18n="d_lang">Sprache</div>
@@ -526,11 +519,24 @@
     </div>
   </div>
 
+    </div>
   <div class="dfoot">
     <button class="btn" id="btnCancel" data-i18n="d_cancel">Abbrechen</button>
     <button class="btn primary" id="btnSave" data-i18n="d_save">Speichern</button>
-  </div>
-</dialog>
+  </div>  </section>
+
+  <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
+</div>
+
+<nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
+  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
+  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span data-i18n="stats">Statistik</span></button>
+  <button id="btnSettings" data-v="vSet" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="d_title">Einstellungen</span></button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+
 
 <script>
 (() => {
@@ -591,9 +597,30 @@
   // ---------- Mond ----------
   // Mondphase aus dem synodischen Monat, bezogen auf den Neumond vom 6.1.2000.
   // 0 = Neumond, 0,5 = Vollmond. Auf wenige Stunden genau – fürs Zeichnen reicht das.
+  // Ekliptikale Länge und Breite des Mondes, Hauptglieder nach Meeus.
+  // Genauigkeit etwa 0,1 Grad – damit stimmen Auf- und Untergang auf wenige Minuten.
+  function mondOrt(d){
+    const rad = Math.PI / 180, tage = d / 86400000 + 2440587.5 - 2451545, T = tage / 36525;
+    const L = 218.316 + 481267.881 * T;      // mittlere Länge
+    const M = 134.963 + 477198.867 * T;      // mittlere Anomalie des Mondes
+    const F =  93.272 + 483202.017 * T;      // Breitenargument
+    const D = 297.850 + 445267.115 * T;      // mittlere Elongation
+    const S = 357.529 +  35999.050 * T;      // mittlere Anomalie der Sonne
+    const lam = L + 6.289 * Math.sin(M*rad) + 1.274 * Math.sin((2*D - M)*rad)
+              + 0.658 * Math.sin(2*D*rad)   + 0.214 * Math.sin(2*M*rad)
+              - 0.186 * Math.sin(S*rad)     - 0.114 * Math.sin(2*F*rad);
+    const bet = 5.128 * Math.sin(F*rad) + 0.281 * Math.sin((M + F)*rad) - 0.278 * Math.sin((F - M)*rad);
+    return {lam, bet, tage};
+  }
+  // Ekliptikale Länge der Sonne – für die Mondphase gebraucht
+  function sonnenLaenge(d){
+    const rad = Math.PI / 180, tage = d / 86400000 + 2440587.5 - 2451545;
+    const g = (357.529 + 0.98560028 * tage) * rad;
+    return 280.459 + 0.98564736 * tage + 1.915 * Math.sin(g) + 0.020 * Math.sin(2*g);
+  }
+  // Mondphase aus dem Winkelabstand zur Sonne. 0 = Neumond, 0,5 = Vollmond.
   function mondPhase(d){
-    const syn = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
-    return (((d - ref) / 86400000 / syn) % 1 + 1) % 1;
+    return ((((mondOrt(d).lam - sonnenLaenge(d)) / 360) % 1) + 1) % 1;
   }
   // Pfad der beleuchteten Fläche: Außenrand als Halbkreis, Schattengrenze als Ellipse.
   function mondPfad(ph, r){
@@ -603,6 +630,43 @@
     const aussen = zu ? 1 : 0;
     const innen = (hell < 0.5) === zu ? 0 : 1;
     return `M0 ${-r} A${r} ${r} 0 0 ${aussen} 0 ${r} A${rx} ${r} 0 0 ${innen} 0 ${-r} Z`;
+  }
+
+  // Mondstand am Himmel, vereinfachte Formel (auf etwa 0,3 Grad genau).
+  // Reicht für den Bogen und für Auf- und Untergang auf wenige Minuten.
+  function mondHoehe(d){
+    const rad = Math.PI / 180;
+    const o = mondOrt(d), tage = o.tage;
+    const lam = o.lam * rad, bet = o.bet * rad, eps = 23.4397 * rad;
+    const ra = Math.atan2(Math.sin(lam) * Math.cos(eps) - Math.tan(bet) * Math.sin(eps), Math.cos(lam));
+    const dec = Math.asin(Math.sin(bet) * Math.cos(eps) + Math.cos(bet) * Math.sin(eps) * Math.sin(lam));
+    const gmst = (280.16 + 360.9856235 * tage) * rad;
+    const H = gmst + cfg.lon * rad - ra;                  // Stundenwinkel
+    const phi = cfg.lat * rad;
+    return Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(H)) / rad;
+  }
+  // Auf- und Untergang suchen: Höhe im 10-Minuten-Raster abtasten und die
+  // Nulldurchgänge linear interpolieren. 0,125 Grad sind Mondrand und Refraktion.
+  function mondZeiten(now){
+    const schritt = 600000, h0 = 0.125;
+    const hoehe = ms => mondHoehe(new Date(ms)) - h0;
+    const kreuz = (t1, a1, t2, a2) => t1 + (t2 - t1) * (-a1) / (a2 - a1);
+    let auf = null, unter = null, naechsterAuf = null;
+    let tv = +now - 144 * schritt, av = hoehe(tv);
+    for (let k = -143; k <= 144; k++) {
+      const tn = +now + k * schritt, an = hoehe(tn);
+      if (av < 0 && an >= 0) {
+        const t = kreuz(tv, av, tn, an);
+        if (t <= +now) auf = t; else if (naechsterAuf == null) naechsterAuf = t;
+      }
+      if (av >= 0 && an < 0) {
+        const t = kreuz(tv, av, tn, an);
+        if (t > +now && unter == null) unter = t;
+      }
+      tv = tn; av = an;
+    }
+    const oben = hoehe(+now) > 0 && auf != null && unter != null;
+    return {oben, auf, unter, naechsterAuf};
   }
 
   // ---------- Sprachen / Языки ----------
@@ -616,6 +680,7 @@
       sunrise:'Aufgang', sunset:'Untergang',
       daylight:(h,m)=>`noch ${h}:${m} h Tageslicht`,
       till_sunrise:(h,m)=>`Sonnenaufgang in ${h}:${m} h`,
+      moonrise:'geht auf', moonset:'geht unter',
       moon:['Neumond','zunehmende Sichel','erstes Viertel','zunehmender Mond','Vollmond','abnehmender Mond','letztes Viertel','abnehmende Sichel'],
       d_loc:'Standort (für Sonnenauf- und -untergang)', d_plz:'Postleitzahl',
       plz_unknown:'Postleitzahl nicht gefunden – Standort unverändert',
@@ -712,6 +777,7 @@
       sunrise:'Восход', sunset:'Закат',
       daylight:(h,m)=>`ещё ${h}:${m} ч светового дня`,
       till_sunrise:(h,m)=>`Восход через ${h}:${m} ч`,
+      moonrise:'взойдёт', moonset:'зайдёт',
       moon:['Новолуние','растущий серп','первая четверть','растущая луна','Полнолуние','убывающая луна','последняя четверть','убывающий серп'],
       d_loc:'Местоположение (для восхода и заката)', d_plz:'Почтовый индекс',
       plz_unknown:'Индекс не найден — местоположение не изменено',
@@ -830,6 +896,7 @@
     document.querySelectorAll('nav.tabs button[data-v]').forEach(x => x.classList.toggle('on', x === b));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === b.dataset.v));
     if (b.dataset.v === 'vStats') showStats();
+    if (b.dataset.v === 'vSet') ladeEinstellungen();
     window.scrollTo(0, 0);
   });
 
@@ -1190,16 +1257,15 @@
   $('btnReloadStats').onclick = refreshStats;
 
   // ---------- Einstellungen ----------
-  const dlg = $('dlg');
-  $('btnSettings').onclick = () => {
+  const zuReiter = id => document.querySelector(`nav.tabs button[data-v="${id}"]`).click();
+  // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
+  function ladeEinstellungen(){
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
     $('inPlz').value = cfg.plz; zeigeOrt();
     $('findResultDlg').innerHTML = '';
     $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? t('pw_saved') : t('ph_pw');
-    dlg.showModal();
-  };
-  $('btnCancel').onclick = () => dlg.close();
-  $('btnX').onclick = () => dlg.close();
+  }
+  $('btnCancel').onclick = () => zuReiter('vLive');
   $('btnSave').onclick = async () => {
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
@@ -1220,7 +1286,7 @@
     const changed = mail !== cloud.mail || pw;
     if (mail) { cloud.mail = mail; store.set('zMail', mail); }
     if (pw) { cloud.pw = pw; store.set('zPw', pw); }
-    demo = false; dlg.close(); start();
+    demo = false; zuReiter('vLive'); start();
     if (changed && cloud.mail && cloud.pw) {
       try { await cloudLogin(); toast(t('login_ok')); showToday(); }
       catch (e) { toast(t('login_fail') + e.message, 5000); }
@@ -1229,7 +1295,7 @@
   $('btnLogout').onclick = () => {
     ['zMail','zPw','zToken','zNode','zDev'].forEach(store.del);
     Object.assign(cloud, {mail:'', pw:'', token:'', node:'', devId:''});
-    stats = null; store.del('zStats'); dlg.close(); toast(t('login_deleted'));
+    stats = null; store.del('zStats'); toast(t('login_deleted'));
     showToday(); showStats();
   };
 
@@ -1513,19 +1579,30 @@
     $('sunrise').textContent = t('sunrise') + ' ' + hm(rise); $('sunset').textContent = t('sunset') + ' ' + hm(set);
 
     const nacht = f < 0 || f > 1;
-    $('moon').setAttribute('opacity', nacht ? 1 : 0);
     if (nacht) {
       // Nach Sonnenuntergang zählt der Aufgang von morgen
       const naechster = f > 1 ? sunTimes(new Date(+now + 86400000)).rise : rise;
       const bis = Math.max(0, Math.round((naechster - now) / 60000));
       $('daylight').textContent = t('till_sunrise', Math.floor(bis/60), String(bis%60).padStart(2,'0'));
-      const ph = mondPhase(now);
+
+      const ph = mondPhase(now), mz = mondZeiten(now);
       $('moonLit').setAttribute('d', mondPfad(ph, 12));
-      $('moonTxt').textContent = t('moon')[Math.round(ph*8) % 8];
+      $('moon').setAttribute('opacity', mz.oben ? 1 : 0);
+      if (mz.oben) {
+        const mf = (now - mz.auf) / (mz.unter - mz.auf);
+        const [mx, my] = pt(Math.max(0, Math.min(1, mf)));
+        $('moonPos').setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
+        $('moonTxt').textContent = `${t('moon')[Math.round(ph*8) % 8]} · ${t('moonset')} ${hm(new Date(mz.unter))}`;
+      } else {
+        $('moonTxt').textContent = mz.naechsterAuf
+          ? `${t('moon')[Math.round(ph*8) % 8]} · ${t('moonrise')} ${hm(new Date(mz.naechsterAuf))}`
+          : t('moon')[Math.round(ph*8) % 8];
+      }
     } else if (f > 0 && f < 1) {
+      $('moon').setAttribute('opacity', 0); $('moonTxt').textContent = '';
       const left = Math.round((set - now)/60000);
       $('daylight').textContent = t('daylight', Math.floor(left/60), String(left%60).padStart(2,'0'));
-    } else $('daylight').textContent = '';
+    } else { $('daylight').textContent = ''; $('moon').setAttribute('opacity', 0); $('moonTxt').textContent = ''; }
   }
 
   function zeigeOrt(){
