@@ -69,6 +69,15 @@
   .card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   .card-head .info{font-size:12px;color:var(--muted);text-align:right}
   .tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  /* Gross und Sehr gross: eine Kachel pro Zeile, Wert rechts statt unter dem Namen */
+  .gross .wrap{padding-left:11px;padding-right:11px}
+  .gross .tiles{grid-template-columns:1fr;gap:10px}
+  .gross .tile{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    column-gap:14px;row-gap:4px;padding:14px 16px;border-radius:18px}
+  .gross .tile .t{flex:1 1 auto;font-size:14px}
+  .gross .tile .v{order:2;text-align:right;white-space:nowrap}
+  .gross .tile .s{order:3;flex:1 0 100%;text-align:right}
+  .gross .tile .trow{flex:1 0 100%}
   .tile{background:var(--card);border:1px solid var(--line2);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:6px}
   .tile .t{font-size:12.5px;color:var(--muted)}
   .tile .v{font-family:var(--num);font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -82,7 +91,10 @@
   /* ---------- Sonnenbogen ---------- */
   .sun{padding:0 4px;display:flex;flex-direction:column;gap:4px}
   .sun svg{width:100%;height:auto;display:block}
-  .sunrow{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+  .sunrow{display:flex;justify-content:space-between;flex-wrap:wrap;column-gap:14px;row-gap:2px;font-size:12px;color:var(--muted)}
+  .sunrow #daylight{text-align:center}
+  .gross .sunrow{justify-content:center;text-align:center}
+  .gross .sunrow #daylight{flex:1 0 100%;order:-1}
   .sunrow #daylight{color:var(--muted2)}
   .moontxt{font-size:11px;fill:var(--dim);font-family:Inter,system-ui,sans-serif}
 
@@ -90,14 +102,16 @@
   .flow{padding:16px 12px 10px}
   .flow .card-head{padding:0 8px 4px}
   .flow svg{width:100%;height:auto;display:block}
-  .node-label{font-size:12px;fill:var(--muted);font-family:Inter,system-ui,sans-serif}
-  .node-sub{font-size:12.5px;fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
-  .node-val{font-size:19px;font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
+  .node-label{font-size:calc(12px * min(var(--zoom,1), 1.2));fill:var(--muted);font-family:Inter,system-ui,sans-serif}
+  .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
+  .node-val{font-size:calc(19px * var(--zoom,1));font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
   .node-val.small{font-size:17px}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
   .wire.on{stroke-dasharray:2 10;animation:flow 1.1s linear infinite}
   .wire.rev{animation-direction:reverse}
+  .wire.on.dual{stroke-dasharray:2 22}
+  .wire.on.dual.b{animation-delay:-.55s}
   @keyframes flow{to{stroke-dashoffset:-24}}
 
   /* ---------- Akku ---------- */
@@ -109,7 +123,7 @@
   .bat-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;text-align:right}
   .bat-right .kwh{font-size:14px;color:var(--muted)}
   .bat-right .kwh b{font-family:var(--num);font-size:20px;font-weight:600;color:var(--text)}
-  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--batText);font-size:12px;font-weight:500}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;text-align:center;border-radius:99px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--batText);font-size:12px;font-weight:500}
   .chip.idle{background:var(--card2);color:var(--muted2)}
   .bar{height:10px;border-radius:99px;background:var(--card2);position:relative}
   .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--bat);transition:width .6s}
@@ -247,6 +261,12 @@
     border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre}
   .diagrow{display:flex;gap:8px;margin-top:8px}
   .diagrow .btn{flex:1}
+  .steps{display:flex;gap:4px;margin-bottom:6px}
+  .steps i{flex:1;height:4px;border-radius:2px;background:var(--line);transition:background .25s}
+  .steps i.on{background:var(--bat)}
+  .steps i.run{background:var(--bat);opacity:.45;animation:pulse 1s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.9}}
+  .stepnote{font-size:11.5px;color:var(--muted);margin-bottom:8px;min-height:15px}
   .zrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
   .zrow:first-of-type{border-top:0}
   .zrow>span{color:var(--muted);font-size:13px}
@@ -254,11 +274,11 @@
   .zrow>b.dim{color:var(--muted);font-weight:500}
   .zrow>b.warn{color:var(--warn)} .zrow>b.ok{color:var(--ok)}
   .zhint{color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px}
+  .zsec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 2px -4px}
+  .zsec b{font-size:15px;font-weight:600}
+  .zsec span{font-size:12px;color:var(--muted)}
   .setcard{padding:16px 18px}
   .setcard .dsec:first-child{border-top:0;padding-top:0;margin-top:0}
-  .dfoot{display:flex;gap:8px;margin-top:4px}
-  .dfoot .btn{flex:1;height:48px}
-  .dfoot .btn.primary{height:48px;font-size:14px}
 
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 100px);background:var(--card2);border:1px solid var(--line);
     padding:11px 16px;border-radius:14px;font-size:14px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
@@ -341,8 +361,8 @@
       <svg viewBox="0 0 350 250" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
         <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/>
-        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/>
-        <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/>
+        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/>
+        <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/><path id="wBat2" class="wire" d="M175 150 V186"/>
 
         <circle cx="175" cy="38" r="28" fill="var(--solarBg)" stroke="var(--solarLn)" stroke-width="5"/>
         <circle id="pvRing" cx="175" cy="38" r="28" fill="none" stroke="var(--solar)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 38)"/>
@@ -396,7 +416,7 @@
       <div class="tile"><span class="t" data-i18n="out_limit">Ausgangslimit</span><span class="v" id="cOutLimit" data-i18n="dash_w">– W</span><span class="s" id="cMax">&nbsp;</span></div>
       <div class="tile"><span class="t" data-i18n="mode">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
       <div class="tile" style="gap:8px"><span class="t" data-i18n="temp">Temperatur</span><div class="trow"><span data-i18n="electronics">Wechselrichter</span><b id="cTemp">– °C</b></div><div class="trow"><span data-i18n="bat">Akku</span><b id="cPackTemp">– °C</b></div></div>
-      <div class="tile"><span class="t" data-i18n="wifi">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt" data-i18n="u_dbm">dBm</span></div>
+      <div class="tile"><span class="t" id="cWifiT" data-i18n="wifi">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt" data-i18n="u_dbm">dBm</span></div>
     </div>
   </section>
 
@@ -405,6 +425,8 @@
     <div class="pagehead">
       <div><h2 data-i18n="state">Zustand</h2><div class="sub" id="stateInfo" data-i18n="no_data">noch keine Daten</div></div>
     </div>
+
+    <div class="zsec"><b data-i18n="z_grp_bat">Speicher</b><span id="zGrpBatName"></span></div>
 
     <div class="card" id="zCardSolar">
       <div class="card-head"><span class="lbl" data-i18n="solar">Solar</span><span class="info" id="zPvN"></span></div>
@@ -472,6 +494,24 @@
       <div class="zrow"><span data-i18n="z_stamp">Daten vom Gerät</span><b id="zStamp">–</b></div>
       <div class="zhint" data-i18n="z_local">Alle Werte kommen direkt aus dem Speicher im WLAN. Dafür ist kein Zendure-Konto nötig.</div>
     </div>
+
+    <div id="zMeterBlock" style="display:none;flex-direction:column;gap:12px">
+      <div class="zsec"><b data-i18n="z_grp_meter">Smart Meter</b><span id="zGrpMeterName"></span></div>
+
+      <div class="card">
+        <div class="card-head"><span class="lbl" data-i18n="z_device">Gerät</span></div>
+        <div class="zrow"><span data-i18n="z_prod">Modell</span><b id="mProd">–</b></div>
+        <div class="zrow"><span data-i18n="z_sn">Seriennummer</span><b id="mSn">–</b></div>
+        <div class="zrow"><span data-i18n="wifi">WLAN</span><b id="mRssi">–</b></div>
+        <div class="zrow"><span data-i18n="z_stamp">Daten vom Gerät</span><b id="mStamp">–</b></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><span class="lbl" data-i18n="z_values">Werte</span><span class="badge" data-i18n="prov">vorläufig</span></div>
+        <div id="mWerte"></div>
+        <div class="zhint" data-i18n="z_meter_hint">Die Bedeutung dieser Felder ist noch nicht zugeordnet – sie stehen hier mit den Namen, die das Gerät selbst verwendet.</div>
+      </div>
+    </div>
   </section>
 
   <!-- ================= STEUERUNG ================= -->
@@ -531,6 +571,8 @@
       Geräte&#8209;Nummern und Namen sind gekürzt.</div>
     <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Bericht auslesen</button>
     <div class="diagbox" id="diagBox" style="display:none">
+      <div class="steps" id="diagSteps" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div class="stepnote" id="diagStep"></div>
       <textarea id="diagOut" readonly></textarea>
       <div class="diagrow">
         <button class="btn" id="btnDiagCopy" data-i18n="d_copy">Kopieren</button>
@@ -540,10 +582,7 @@
   </div>
 
     </div>
-  <div class="dfoot">
-    <button class="btn" id="btnCancel" data-i18n="d_cancel">Abbrechen</button>
-    <button class="btn primary" id="btnSave" data-i18n="d_save">Speichern</button>
-  </div>  </section>
+ </section>
 
   <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
 </div>
@@ -579,6 +618,7 @@
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
   let demo = false, timer = null, fails = 0, last = null, lastOk = null;
+  let lastMeter = null, meterOk = null, meterFails = 0;
   const $ = id => document.getElementById(id);
   // ---------- Standort ----------
   // Grobe Mittelpunkte der deutschen Postleitzahl-Gebiete (erste zwei Ziffern).
@@ -721,6 +761,12 @@
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
       d_size:'Schriftgröße', sz_normal:'Normal', sz_big:'Groß', sz_xl:'Sehr groß',
+      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte',
+      dg_1:'1 von 4 · Speicher wird ausgelesen', dg_2:'2 von 4 · Suche im WLAN',
+      dg_2b:'2 von 4 · Suche läuft, etwa 20 Sekunden', dg_3:'3 von 4 · Zweites Gerät',
+      dg_4:'Fertig – jetzt teilen', dg_err:'Abgebrochen',
+      wifi_of:n=>`WLAN · ${n}`,
+      z_meter_hint:'Die Bedeutung dieser Felder ist noch nicht zugeordnet – sie stehen hier mit den Namen, die das Gerät selbst verwendet.',
       d_meter:'Smart Meter (optional)', ph_meter:'wird bei der Suche gefunden',
       dev_found_n:n=>`${n} Gerät${n>1?'e':''} im WLAN gefunden`,
       pv_quiet:'Einzelwerte fehlen',
@@ -841,6 +887,12 @@
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
       d_size:'Размер шрифта', sz_normal:'Обычный', sz_big:'Крупный', sz_xl:'Очень крупный',
+      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения',
+      dg_1:'1 из 4 · чтение накопителя', dg_2:'2 из 4 · поиск в сети Wi-Fi',
+      dg_2b:'2 из 4 · идёт поиск, около 20 секунд', dg_3:'3 из 4 · второе устройство',
+      dg_4:'Готово — теперь поделиться', dg_err:'Прервано',
+      wifi_of:n=>`Wi-Fi · ${n}`,
+      z_meter_hint:'Значение этих полей пока не определено — они указаны под теми именами, которые использует само устройство.',
       d_meter:'Умный счётчик (необязательно)', ph_meter:'определяется при поиске',
       dev_found_n:n=>`Найдено ${n} ${n===1?'устройство':n<5?'устройства':'устройств'} в сети`,
       pv_quiet:'нет данных по входам',
@@ -973,10 +1025,11 @@
     const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), ms);
     try { return await fetch(url, {...opts, signal: ctrl.signal, cache: 'no-store'}); } finally { clearTimeout(to); }
   }
-  async function fetchReport(){
+  async function fetchReport(ip){
     if (demo) return demoData();
+    ip = ip || cfg.ip;
     const viaHelper = !isApp && location.protocol === 'http:';
-    const url = viaHelper ? `/api/report?ip=${encodeURIComponent(cfg.ip)}` : `http://${cfg.ip}/properties/report`;
+    const url = viaHelper ? `/api/report?ip=${encodeURIComponent(ip)}` : `http://${ip}/properties/report`;
     const r = await http(url);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return await r.json();
@@ -999,10 +1052,18 @@
   }
 
   // ---------- Anzeige Live ----------
-  function setWire(id, watts, reverse, color){
-    const el = $(id), on = watts > 2;
-    el.classList.toggle('on', on); el.classList.toggle('rev', !!reverse);
-    el.style.stroke = on ? color : '';
+  // Eine Leitung, bis zu zwei Quellen: dann laufen zwei Punktspuren versetzt ineinander,
+  // z. B. gruen, gelb, gruen – statt dass eine Farbe die andere verdeckt.
+  function setWire(id, watts, reverse, farben, id2){
+    const cols = [].concat(farben), on = watts > 2, el = $(id);
+    const zwei = on && cols.length > 1;
+    el.classList.toggle('on', on); el.classList.toggle('rev', !!reverse); el.classList.toggle('dual', zwei);
+    el.style.stroke = on ? cols[0] : '';
+    const b = id2 ? $(id2) : null;
+    if (!b) return;
+    b.classList.toggle('on', zwei); b.classList.toggle('rev', !!reverse);
+    b.classList.toggle('dual', zwei); b.classList.add('b');
+    b.style.stroke = zwei ? cols[1] : '';
   }
   const tempC = raw => raw ? (raw - 2731) / 10 : null;
   const de1 = x => x.toFixed(1).replace('.', ',');
@@ -1030,8 +1091,9 @@
       $('tPv1').textContent = t('pv_quiet');
       $('tPv2').textContent = '';
     } else if (pv[2] != null || pv[3] != null) {
-      $('tPv1').textContent = `PV1 ${wz(pv[0])} · PV2 ${wz(pv[1])} ${t('u_w')}`;
-      $('tPv2').textContent = `PV3 ${wz(pv[2])} · PV4 ${wz(pv[3])} ${t('u_w')}`;
+      // Einheit weglassen: sie steht schon am Gesamtwert, und vier Werte brauchen den Platz
+      $('tPv1').textContent = `PV1 ${wz(pv[0])} · PV2 ${wz(pv[1])}`;
+      $('tPv2').textContent = `PV3 ${wz(pv[2])} · PV4 ${wz(pv[3])}`;
     } else {
       $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
       $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
@@ -1057,10 +1119,23 @@
     if (charge > 0) { batW = charge; batTxt = t('bat_charge'); }
     else if (discharge > 0) { batW = discharge; batTxt = t('bat_discharge'); batRev = true; }
     $('tBat').textContent = fmtW(batW); $('tBatState').textContent = batTxt;
+    // Die Leitung traegt die Farbe des Knotens, AUS dem der Strom kommt.
+    // Sonne in den Akku ist also gelb, nicht gruen; Akku ins Haus ist gruen.
+    // Speisen mehrere Quellen gleichzeitig, gewinnt die groesste.
+    // Alle Quellen, die gerade einspeisen – die staerkste zuerst, hoechstens zwei werden gezeigt.
+    const quellen = [
+      {w: solar,     c: 'var(--solar)'},   // von den Modulen
+      {w: grid,      c: 'var(--grid)'},    // aus dem Netz
+      {w: discharge, c: 'var(--bat)'}      // aus dem Akku
+    ].filter(x => x.w > 2).sort((a, b) => b.w - a.w).map(x => x.c);
+    const ausHaus = quellen.length ? quellen.slice(0, 2) : ['var(--home)'];
+    // Beim Laden kommt der Strom von Sonne oder Netz, nie aus dem Akku selbst.
+    const ausLaden = quellen.filter(c => c !== 'var(--bat)').slice(0, 2);
     setWire('wSolar', solar, false, 'var(--solar)');
-    setWire('wHome', home, false, 'var(--home)');
-    setWire('wGrid', grid, false, 'var(--grid)');
-    setWire('wBat', batW, batRev, 'var(--bat)');
+    setWire('wGrid',  grid,  false, 'var(--grid)');
+    setWire('wBat',   batW,  batRev,
+            discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']), 'wBat2');
+    setWire('wHome',  home,  false, ausHaus, 'wHome2');
 
     // Akku-Karte
     $('cSoc').textContent = soc;
@@ -1090,10 +1165,21 @@
     const te = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
     $('cTemp').textContent = te == null ? '– °C' : `${Math.round(te)} °C`;
     $('cPackTemp').textContent = tp == null ? '– °C' : `${Math.round(tp)} °C`;
+    $('cWifiT').textContent = cfg.meterIp ? t('wifi_of', t('z_grp_bat')) : t('wifi');
     $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') : '–';
     const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
     $('cVolt').textContent = p.BatVolt ? t('dbm_bat', de1(p.BatVolt/100)) : t('u_dbm');
+    zeigeZustand();
+  }
+
+  // Smart Meter getrennt abfragen – scheitert es, bleibt der Speicher davon unberuehrt
+  async function holeMeter(){
+    if (!cfg.meterIp || demo) { if (lastMeter) { lastMeter = null; zeigeZustand(); } return; }
+    try {
+      lastMeter = await fetchReport(cfg.meterIp);
+      meterOk = new Date(); meterFails = 0;
+    } catch { meterFails++; if (meterFails >= 3) lastMeter = null; }
     zeigeZustand();
   }
 
@@ -1107,6 +1193,7 @@
       lastOk = new Date();
       setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : '') + lastOk.toLocaleTimeString(LOC()));
       $('foot').textContent = demo ? t('foot_demo') : t('foot_live', cfg.ip, cfg.interval);
+      holeMeter();   // zweites Geraet nebenher, ein Fehler dort stoert die Live-Werte nicht
     } catch (e) {
       fails++; setStatus('err', lastOk ? t('offline') + ' ' + hm(lastOk) : t('offline'));
       if (fails === 2) autoSuche('verloren');
@@ -1165,12 +1252,35 @@
   const de2 = x => x.toFixed(2).replace('.', ',');
   const volt = v => nz(v) ? de2(v / 100) + ' ' + t('u_v') : null;
 
+  // Das zweite Geraet: Felder kennen wir noch nicht, deshalb mit den Namen des Geraets
+  function zeigeMeter(){
+    const blk = $('zMeterBlock'); if (!blk) return;
+    const m = lastMeter, an = !!(cfg.meterIp && m);
+    blk.style.display = an ? 'flex' : 'none';
+    if (!an) return;
+    const p = m.properties || {};
+    const setz = (id, v) => { const e = $(id); e.textContent = v == null ? '–' : v; e.className = v == null ? 'dim' : ''; };
+    $('zGrpMeterName').textContent = m.product ? prodName(m.product) : cfg.meterIp;
+    setz('mProd', m.product ? prodName(m.product) : null);
+    setz('mSn', m.sn ? '…' + String(m.sn).slice(-4) : null);
+    setz('mRssi', (p.rssi != null && !isNaN(p.rssi)) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
+    setz('mStamp', (m.timestamp != null && !isNaN(m.timestamp)) ? new Date(m.timestamp * 1000).toLocaleTimeString(LOC())
+        : (meterOk ? hm(meterOk) : null));
+    const zeilen = Object.entries(p)
+      .filter(([, v]) => v !== null && typeof v !== 'object')
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `<div class="zrow"><span>${esc(k)}</span><b>${esc(String(v))}</b></div>`);
+    $('mWerte').innerHTML = zeilen.length ? zeilen.join('') : `<div class="zhint">${t('no_data')}</div>`;
+  }
+
   function zeigeZustand(){
     const d = last, p = d?.properties || {}, pk = (d?.packData || [])[0] || {};
     const s = (id, val, cls) => { const e = $(id); if (!e) return;
       e.textContent = val == null ? '–' : val; e.className = val == null ? 'dim' : (cls || ''); };
 
     $('stateInfo').textContent = !d ? t('no_data') : (lastOk ? t('state_as_of', hm(lastOk)) : t('state_live'));
+    $('zGrpBatName').textContent = d?.product ? prodName(d.product) : '';
+    zeigeMeter();
 
     // Solar – zwei oder vier Eingaenge, je nach Modell
     const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
@@ -1278,27 +1388,39 @@
     $('inPlz').value = cfg.plz; zeigeOrt();
     $('findResultDlg').innerHTML = '';
   }
-  $('btnCancel').onclick = () => zuReiter('vLive');
-  $('btnSave').onclick = async () => {
+  // Kein Speichern-Knopf: jedes Feld wird uebernommen, sobald man es verlaesst.
+  // Sprache, Darstellung und Schriftgroesse wirken ohnehin schon sofort.
+  function uebernehmen(){
+    const alteIp = cfg.ip, altesIntervall = cfg.interval;
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
+    $('inIp').value = cfg.ip;
     cfg.meterIp = ($('inMeterIp').value || '').trim();
-    store.set('meterIp', cfg.meterIp);
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
     cfg.peak = Math.max(50, Number($('inPeak').value) || 800);
+    cfg.interval = Math.max(3, Number($('inInt').value) || 5);
+    $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
     const plz = String($('inPlz').value || '').replace(/\D/g, '').slice(0, 5);
     if (plz !== cfg.plz) {
-      cfg.plz = plz;
+      cfg.plz = plz; $('inPlz').value = plz;
       const o = plzOrt(plz);
       if (o) { cfg.lat = o[0]; cfg.lon = o[1]; }
       else if (!plz) { cfg.lat = ORT0[0]; cfg.lon = ORT0[1]; }
       else toast(t('plz_unknown'), 4000);
     }
-    cfg.interval = Math.max(3, Number($('inInt').value) || 5);
-    store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('peak', cfg.peak); store.set('interval', cfg.interval);
+    store.set('ip', cfg.ip); store.set('meterIp', cfg.meterIp); store.set('cap', cfg.cap);
+    store.set('peak', cfg.peak); store.set('interval', cfg.interval);
     store.set('plz', cfg.plz); store.set('lat', cfg.lat); store.set('lon', cfg.lon);
     drawSun();
-    demo = false; zuReiter('vLive'); start();
-  };
+    if (last) render(last);
+    // Nur neu verbinden, wenn sich wirklich etwas daran geaendert hat
+    if (cfg.ip !== alteIp || cfg.interval !== altesIntervall) { demo = false; start(); }
+    else zeigeZustand();
+  }
+  ['inIp','inMeterIp','inCap','inPeak','inPlz','inInt'].forEach(id => {
+    const e = $(id); if (!e) return;
+    e.addEventListener('change', uebernehmen);
+    e.addEventListener('keydown', ev => { if (ev.key === 'Enter') e.blur(); });
+  });
 
   // ---------- Diagnose (vorübergehend, nur lesen) ----------
   const cut = v => { const t = String(v ?? ''); return t.length > 4 ? '…' + t.slice(-4) : t; };
@@ -1358,20 +1480,65 @@
     const log = (...a) => L.push(a.join(' '));
     const zeig = () => { $('diagOut').value = L.join('\n'); };
     $('diagBox').style.display = 'block';
-    $('btnDiag').disabled = true;
+    // Waehrend des Laufs darf nichts geteilt werden – sonst geht ein halber Bericht raus
+    ['btnDiag', 'btnDiagCopy', 'btnDiagShare'].forEach(id => $(id).disabled = true);
+    const balken = $('diagSteps').children;
+    const schritt = (n, text) => {
+      for (let i = 0; i < balken.length; i++) {
+        balken[i].classList.toggle('on', i < n);
+        balken[i].classList.toggle('run', i === n);
+      }
+      $('diagStep').textContent = text || '';
+    };
+    schritt(0, t('dg_1'));
     L.push('Balkonstrom-Diagnose  ' + new Date().toLocaleString('de-DE'));  // Protokoll bleibt deutsch
     L.push('App-Version __APPVERSION__');
     zeig();
     try {
       if (!cfg.ip) log('\n== Speicher: keine IP eingetragen (Einstellungen → Gerät im WLAN)');
       else { await berichte(log, 'Speicher', cfg.ip); zeig(); }
-      if (cfg.meterIp) { await berichte(log, 'Zweites Gerät / Smart Meter', cfg.meterIp); }
-      else log('\n== Zweites Gerät: keine IP eingetragen – bei Anlagen mit Smart Meter die Suche laufen lassen');
+      schritt(1, t('dg_2'));
+      // Was die Suche bisher gefunden hat – sonst weiss niemand, ob sie ueberhaupt lief
+      const at = Number(store.get('devsAt', 0));
+      log('\n== Suche im WLAN ==');
+      if (!at) log(' bisher nie gelaufen');
+      else {
+        log(' zuletzt ' + new Date(at).toLocaleString('de-DE') + ', ' + gefunden.length + ' Gerät(e):');
+        gefunden.forEach(d => log('  ·', d.product || '?', cut(d.ip), d.sn ? 'SN ' + cut(d.sn) : ''));
+      }
+      zeig();
+
+      // Ist kein zweites Gerät bekannt, jetzt selbst nachsehen – der Knopf soll alles erledigen
+      if (!cfg.meterIp) {
+        if (!isApp) log(' (Suche nur in der App möglich)');
+        else {
+          log(' suche jetzt im ganzen Netz, das dauert etwa 20 Sekunden …'); zeig();
+          schritt(1, t('dg_2b'));
+          try {
+            const devs = await discover();
+            merkeListe(devs);
+            log(` gefunden: ${devs.length} Gerät(e)`);
+            devs.forEach(d => log('  ·', d.product || '?', cut(d.ip), d.sn ? 'SN ' + cut(d.sn) : ''));
+            const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
+            if (andere.length === 1) {
+              cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
+              log(' zweites Gerät übernommen:', andere[0].product || '?');
+            } else if (andere.length > 1) log(' mehrere weitere Geräte – bitte in den Einstellungen auswählen');
+            else log(' kein weiteres Zendure-Gerät im Netz gefunden');
+          } catch (e) { log(' Suche fehlgeschlagen: ' + (e.message || e)); }
+          zeig();
+        }
+      }
+
+      schritt(2, t('dg_3'));
+      if (cfg.meterIp) await berichte(log, 'Zweites Gerät / Smart Meter', cfg.meterIp);
       log('\n== Ende ==');
+      schritt(4, t('dg_4'));
     } catch (e) {
       log('\nABBRUCH: ' + (e.message || e));
+      schritt(4, t('dg_err'));
     } finally {
-      zeig(); $('btnDiag').disabled = false;
+      zeig(); ['btnDiag', 'btnDiagCopy', 'btnDiagShare'].forEach(id => $(id).disabled = false);
       $('diagOut').scrollTop = $('diagOut').scrollHeight;
     }
   }
@@ -1447,9 +1614,12 @@
   const DEV_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="11" rx="2.5"/><path d="M21 11v3"/><path d="m12 9-3 4h4l-2 3"/></svg>';
   function prodName(p){
     if (!p) return t('zendure_dev');
-    const m = p.match(/^solarFlow(.*)$/i); if (!m) return p;
-    return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2')
+    const m = p.match(/^solarFlow(.*)$/i);
+    if (m) return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2')
       .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2')).trim();
+    // andere Zendure-Geraete, z. B. smartMeter3CT -> Smart Meter 3CT
+    return (p.charAt(0).toUpperCase() + p.slice(1))
+      .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2').trim();
   }
   const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   async function discover(){
@@ -1525,7 +1695,8 @@
     $('inIp').value = d.ip;
     const m = devs ? (devs.filter(x => x !== d && !istSpeicher(x))[0] || null) : null;
     if (m) $('inMeterIp').value = m.ip;
-    $('findResultDlg').innerHTML = `<div class="hint">${t('found_save', esc(prodName(d.product)), esc(d.ip))}`
+    uebernehmen();
+    $('findResultDlg').innerHTML = `<div class="hint">${t('found_at', esc(prodName(d.product)), esc(d.ip))}`
       + (m ? '<br>' + t('found_meter', esc(prodName(m.product)), esc(m.ip)) : '') + '</div>';
   });
 
@@ -1604,6 +1775,7 @@
   let zoom = store.get('zoom', '1');
   function setzeZoom(){
     document.documentElement.style.setProperty('--zoom', zoom);
+    document.documentElement.classList.toggle('gross', Number(zoom) > 1);
     document.querySelectorAll('#sizeSel button').forEach(b => b.classList.toggle('on', b.dataset.z === zoom));
   }
   document.querySelectorAll('#sizeSel button').forEach(b => b.onclick = () => {
