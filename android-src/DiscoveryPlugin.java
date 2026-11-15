@@ -38,7 +38,11 @@ import org.json.JSONObject;
 /**
  * Sucht Zendure-Geräte im WLAN:
  * 1. per mDNS (Dienst "_zendure._tcp", so meldet sich das Gerät laut zenSDK-Doku),
- * 2. falls nichts gefunden: alle Adressen im eigenen WLAN-Netz (max. /24) auf /properties/report abfragen.
+ * 2. danach IMMER alle Adressen im eigenen WLAN-Netz (max. /24) auf /properties/report abfragen.
+ *
+ * Der zweite Schritt lief frueher nur, wenn mDNS nichts fand. Dadurch blieb ein zweites
+ * Zendure-Geraet (z. B. das Smart Meter 3CT) unsichtbar, sobald der Speicher sich per
+ * mDNS gemeldet hatte. Jetzt werden beide Wege zusammengefuehrt.
  */
 @CapacitorPlugin(name = "Discovery")
 public class DiscoveryPlugin extends Plugin {
@@ -53,9 +57,10 @@ public class DiscoveryPlugin extends Plugin {
                 int[] net = ownIpv4();
                 if (net == null) { call.reject("Das Handy ist nicht mit einem WLAN verbunden."); return; }
                 Map<String, JSObject> found = new LinkedHashMap<>();
-                String via = "mdns";
                 try { mdns(mdnsMs, found); } catch (Exception ignored) { }
-                if (found.isEmpty()) { via = "scan"; scan(net, found); }
+                int perMdns = found.size();
+                scan(net, found);                      // immer, damit stille Geraete nicht fehlen
+                String via = perMdns > 0 ? (found.size() > perMdns ? "mdns+scan" : "mdns") : "scan";
                 JSArray arr = new JSArray();
                 for (JSObject o : found.values()) arr.put(o);
                 JSObject ret = new JSObject();
@@ -153,7 +158,9 @@ public class DiscoveryPlugin extends Plugin {
             c.setReadTimeout(2500);
             if (c.getResponseCode() != 200) return null;
             JSONObject j = new JSONObject(read(c.getInputStream()));
-            if (!j.has("properties")) return null;
+            // Der Speicher liefert "properties". Was ein Smart Meter liefert, wissen wir nicht –
+            // deshalb reicht eines der drei Kennzeichen, sonst faende die Suche es nie.
+            if (!j.has("properties") && !j.has("sn") && !j.has("product")) return null;
             JSObject o = new JSObject();
             o.put("ip", ip);
             o.put("sn", j.optString("sn", ""));

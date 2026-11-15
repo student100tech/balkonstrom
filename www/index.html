@@ -500,6 +500,9 @@
     <label class="f" for="inIp" data-i18n="d_ip">IP-Adresse des SolarFlow</label>
     <div class="iprow"><input id="inIp" inputmode="decimal" data-i18n-ph="ph_ip" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="d_search">Suchen</span></button></div>
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
+    <label class="f" for="inMeterIp" data-i18n="d_meter">Smart Meter (optional)</label>
+    <input id="inMeterIp" inputmode="decimal" data-i18n-ph="ph_meter" placeholder="wird bei der Suche gefunden">
+    <div class="hint" data-i18n="d_meter_hint">Nur bei Anlagen mit Smart Meter 3CT. Die Suche trägt es selbst ein, wenn sie ein zweites Zendure-Gerät findet.</div>
     <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
     <div class="hint" id="capHint"></div>
@@ -562,6 +565,7 @@
   };
   let cfg = {
     ip: store.get('ip', ''),
+    meterIp: store.get('meterIp', ''),
     cap: Number(store.get('cap', 1920)),
     plz: store.get('plz', ''),
     lat: Number(store.get('lat', ORT0[0])),
@@ -711,6 +715,10 @@
       foot_live:(ip,s)=>`Direkt vom Gerät im WLAN (${ip}) · alle ${s} s`,
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
+      d_meter:'Smart Meter (optional)', ph_meter:'wird bei der Suche gefunden',
+      d_meter_hint:'Nur bei Anlagen mit Smart Meter 3CT. Die Suche trägt es selbst ein, wenn sie ein zweites Zendure-Gerät findet.',
+      found_two:(a,b,ip)=>`${a} gefunden – und ein zweites Gerät: ${b} (${ip})`,
+      found_meter:(n,ip)=>`Zweites Gerät gefunden: ${n} · ${ip}`,
       d_cap_hint:n=>`Das Gerät meldet ${n} Akkupack${n>1?'s':''}. Die Kapazität selbst steht nicht im Bericht – bei den gängigen Packs sind es 1920 Wh pro Stück.`,
       state:'Zustand', no_data:'noch keine Daten', u_v:'V', u_a:'A', u_mv:'mV',
       state_live:'Live vom Gerät', state_as_of:x=>`Stand ${x}`,
@@ -822,6 +830,10 @@
       foot_live:(ip,s)=>`Напрямую с устройства в сети Wi-Fi (${ip}) · каждые ${s} с`,
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
+      d_meter:'Умный счётчик (необязательно)', ph_meter:'определяется при поиске',
+      d_meter_hint:'Только для систем со счётчиком Smart Meter 3CT. Поиск впишет его сам, если найдёт второе устройство Zendure.',
+      found_two:(a,b,ip)=>`Найден ${a} — и второе устройство: ${b} (${ip})`,
+      found_meter:(n,ip)=>`Найдено второе устройство: ${n} · ${ip}`,
       d_cap_hint:n=>`Устройство сообщает ${n} ${n===1?'батарейный блок':n<5?'батарейных блока':'батарейных блоков'}. Самой ёмкости в отчёте нет — у обычных блоков это 1920 Вт·ч за штуку.`,
       state:'Состояние', no_data:'пока нет данных', u_v:'В', u_a:'А', u_mv:'мВ',
       state_live:'Онлайн с устройства', state_as_of:x=>`на ${x}`,
@@ -1191,7 +1203,7 @@
   const zuReiter = id => document.querySelector(`nav.tabs button[data-v="${id}"]`).click();
   // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
   function ladeEinstellungen(){
-    $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    $('inIp').value = cfg.ip; $('inMeterIp').value = cfg.meterIp; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
     const pn = Number(last?.properties?.packNum) || 0;
     $('capHint').textContent = pn ? t('d_cap_hint', pn) : '';
     $('inPlz').value = cfg.plz; zeigeOrt();
@@ -1200,6 +1212,8 @@
   $('btnCancel').onclick = () => zuReiter('vLive');
   $('btnSave').onclick = async () => {
     cfg.ip = ($('inIp').value || '').trim() || cfg.ip;
+    cfg.meterIp = ($('inMeterIp').value || '').trim();
+    store.set('meterIp', cfg.meterIp);
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
     cfg.peak = Math.max(50, Number($('inPeak').value) || 800);
     const plz = String($('inPlz').value || '').replace(/\D/g, '').slice(0, 5);
@@ -1229,6 +1243,47 @@
     for (let i = 0; i < zeilen.length; i += pro) log(ein + zeilen.slice(i, i + pro).join('  '));
   };
 
+  // Ein Geraet vollstaendig ausgeben – fuer Speicher und Smart Meter dasselbe
+  async function berichte(log, titel, ip){
+    log(`\n== ${titel} (${'…' + String(ip).split('.').slice(-1)[0]}) ==`);
+    try {
+      const r = await http(`http://${ip}/properties/report`, {}, 8000);
+      const d = await r.json();
+      const p = d.properties || {};
+      log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
+
+      const oben = flach(d).filter(z => !z.startsWith('properties='));
+      if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
+
+      const felder = flach(p);
+      log(` -- ${felder.length} Felder in properties --`);
+      spalten(log, felder, 4, '  ');
+
+      const packs = Array.isArray(p.packData) ? p.packData
+                  : Array.isArray(d.packData) ? d.packData : [];
+      if (packs.length) {
+        log(` -- packData: ${packs.length} Pack(s) --`);
+        packs.forEach((pk, i) => {
+          if (!pk || typeof pk !== 'object') return;
+          log(`  Pack ${i + 1}:`);
+          spalten(log, flach(pk), 4, '   ');
+          Object.entries(pk).forEach(([k, v]) => {
+            if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+          });
+        });
+      }
+
+      for (const [quelle, obj] of [['properties', p], ['oben', d]])
+        Object.entries(obj).forEach(([k, v]) => {
+          if (k === 'packData' || k === 'properties') return;
+          if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+          else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
+        });
+    } catch (e) {
+      log(' nicht erreichbar (' + (e.message || e) + ')');
+    }
+  }
+
   async function runDiagnose(){
     const L = [];
     const log = (...a) => L.push(a.join(' '));
@@ -1239,41 +1294,13 @@
     L.push('App-Version __APPVERSION__');
     zeig();
     try {
-      if (!cfg.ip) { log('\n== Gerät im WLAN: keine IP eingetragen (Einstellungen → Gerät im WLAN)'); return; }
-      const r = await http(`http://${cfg.ip}/properties/report`, {}, 8000);
-      const d = await r.json();
-      const p = d.properties || {};
-      log('\n== Gerät im WLAN ==');
-      log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
-
-      const oben = flach(d).filter(z => !z.startsWith('properties='));
-      if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
-
-      log(' -- alle Felder in properties --');
-      spalten(log, flach(p), 4, '  ');
-
-      const packs = Array.isArray(p.packData) ? p.packData
-                  : Array.isArray(d.packData) ? d.packData : [];
-      log(` -- packData: ${packs.length} Pack(s) --`);
-      packs.forEach((pk, i) => {
-        if (!pk || typeof pk !== 'object') return;
-        log(`  Pack ${i + 1}:`);
-        spalten(log, flach(pk), 4, '   ');
-        Object.entries(pk).forEach(([k, v]) => {
-          if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-        });
-      });
-
-      // sonstige Listen und verschachtelte Objekte
-      for (const [quelle, obj] of [['properties', p], ['oben', d]])
-        Object.entries(obj).forEach(([k, v]) => {
-          if (k === 'packData' || k === 'properties') return;
-          if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-          else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
-        });
+      if (!cfg.ip) log('\n== Speicher: keine IP eingetragen (Einstellungen → Gerät im WLAN)');
+      else { await berichte(log, 'Speicher', cfg.ip); zeig(); }
+      if (cfg.meterIp) { await berichte(log, 'Zweites Gerät / Smart Meter', cfg.meterIp); }
+      else log('\n== Zweites Gerät: keine IP eingetragen – bei Anlagen mit Smart Meter die Suche laufen lassen');
       log('\n== Ende ==');
     } catch (e) {
-      log('\n== Gerät im WLAN: nicht erreichbar (' + (e.message || e) + ')');
+      log('\nABBRUCH: ' + (e.message || e));
     } finally {
       zeig(); $('btnDiag').disabled = false;
       $('diagOut').scrollTop = $('diagOut').scrollHeight;
@@ -1371,15 +1398,17 @@
     out.innerHTML = `<div class="hint">${t('find_wait')}</div>`;
     try {
       const devs = await discover();
+      const speicher = devs.filter(istSpeicher);
       if (!devs.length) {
         out.innerHTML = `<div class="hint">${t('find_none')}</div>`;
-      } else if (devs.length === 1) {
+      } else if (devs.length === 1 || speicher.length === 1) {
+        // Genau ein Speicher: den nehmen, alles andere als Smart Meter merken
         out.innerHTML = '';
-        onPick(devs[0]);
+        onPick(speicher.length === 1 ? speicher[0] : devs[0], devs);
       } else {
         out.innerHTML = `<div class="hint">${t('find_many')}</div>` + devs.map((d, i) =>
           `<button class="devbtn" data-i="${i}"><span class="di">${DEV_ICON}</span><span><b>${esc(prodName(d.product))}</b><small>${esc(d.ip)}${d.sn ? ' · SN …' + esc(d.sn.slice(-5)) : ''}</small></span></button>`).join('');
-        out.querySelectorAll('.devbtn').forEach(b => b.onclick = () => { out.innerHTML = ''; onPick(devs[Number(b.dataset.i)]); });
+        out.querySelectorAll('.devbtn').forEach(b => b.onclick = () => { out.innerHTML = ''; onPick(devs[Number(b.dataset.i)], devs); });
       }
     } catch (e) {
       out.innerHTML = `<div class="hint warn">${esc(e?.message || e)}</div>`;
@@ -1387,16 +1416,29 @@
       sp.remove(); ico.style.display = ''; label.textContent = old; btn.disabled = false;
     }
   }
-  function useIp(d){
+  const istSpeicher = d => /^solarflow/i.test(String(d && d.product || ''));
+  // Ein gefundenes Geraet, das kein Speicher ist, ist der Kandidat fuers Smart Meter.
+  function merkeZweites(devs, speicher){
+    const andere = devs.filter(d => d !== speicher && !istSpeicher(d));
+    if (!andere.length) return null;
+    cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
+    return andere[0];
+  }
+  function useIp(d, devs){
     cfg.ip = d.ip; store.set('ip', cfg.ip); demo = false; fails = 0;
-    toast(t('found_at', prodName(d.product), d.ip));
+    const m = devs ? merkeZweites(devs, d) : null;
+    toast(m ? t('found_two', prodName(d.product), prodName(m.product), m.ip)
+            : t('found_at', prodName(d.product), d.ip), m ? 5000 : 2600);
     start();
   }
   $('btnFind').onclick = () => runFind($('btnFind'), $('findResult'), useIp);
   $('btnManual').onclick = () => $('btnSettings').click();
-  $('btnFindDlg').onclick = () => runFind($('btnFindDlg'), $('findResultDlg'), d => {
+  $('btnFindDlg').onclick = () => runFind($('btnFindDlg'), $('findResultDlg'), (d, devs) => {
     $('inIp').value = d.ip;
-    $('findResultDlg').innerHTML = `<div class="hint">${t('found_save', esc(prodName(d.product)), esc(d.ip))}</div>`;
+    const m = devs ? (devs.filter(x => x !== d && !istSpeicher(x))[0] || null) : null;
+    if (m) $('inMeterIp').value = m.ip;
+    $('findResultDlg').innerHTML = `<div class="hint">${t('found_save', esc(prodName(d.product)), esc(d.ip))}`
+      + (m ? '<br>' + t('found_meter', esc(prodName(m.product)), esc(m.ip)) : '') + '</div>';
   });
 
   // ---------- Sonnenbogen ----------
