@@ -52,6 +52,7 @@ public class DiscoveryPlugin extends Plugin {
     @PluginMethod
     public void search(PluginCall call) {
         final int mdnsMs = call.getInt("mdnsMs", 4000);
+        final int passes = Math.max(1, Math.min(3, call.getInt("passes", 1)));
         new Thread(() -> {
             try {
                 int[] net = ownIpv4();
@@ -59,7 +60,9 @@ public class DiscoveryPlugin extends Plugin {
                 Map<String, JSObject> found = new LinkedHashMap<>();
                 try { mdns(mdnsMs, found); } catch (Exception ignored) { }
                 int perMdns = found.size();
-                scan(net, found);                      // immer, damit stille Geraete nicht fehlen
+                // Immer absuchen, damit stille Geraete nicht fehlen. Mehrere Durchlaeufe,
+                // weil ein beschaeftigtes Geraet eine einzelne Anfrage verschlucken kann.
+                for (int i = 0; i < passes; i++) scan(net, found);
                 String via = perMdns > 0 ? (found.size() > perMdns ? "mdns+scan" : "mdns") : "scan";
                 JSArray arr = new JSArray();
                 for (JSObject o : found.values()) arr.put(o);

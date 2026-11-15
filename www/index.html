@@ -37,7 +37,8 @@
   html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
   body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 96px)}
   button{font-family:inherit}
-  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 20px;display:flex;flex-direction:column;gap:12px}
+  .wrap{max-width:480px;margin:0 auto;padding:18px 16px 20px;display:flex;flex-direction:column;gap:12px;zoom:var(--zoom,1)}
+  body{padding-bottom:calc(96px * var(--zoom,1))}
   .num{font-family:var(--num);font-weight:600;font-variant-numeric:tabular-nums}
   .lbl{font-size:13px;color:var(--muted);font-weight:500}
   .muted{color:var(--muted)}
@@ -222,10 +223,10 @@
   .switch input:focus-visible + span{outline:2px solid var(--bat);outline-offset:2px}
 
   /* ---------- Navigation ---------- */
-  nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);width:min(calc(100vw - 32px),448px);height:68px;
+  nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);width:min(calc(100vw - 32px),448px);height:calc(68px * var(--zoom,1));
     display:flex;gap:6px;padding:6px;background:var(--navBg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;z-index:5}
-  nav.tabs button{flex:1;background:none;border:0;color:var(--muted);border-radius:18px;font-size:12px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
-  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button{flex:1;background:none;border:0;color:var(--muted);border-radius:18px;font-size:calc(12px * var(--zoom,1));font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
+  nav.tabs button svg{width:calc(22px * var(--zoom,1));height:calc(22px * var(--zoom,1))}
   nav.tabs button.on{background:var(--tabon);color:var(--text);font-weight:600}
   nav.tabs button.on svg{color:var(--bat)}
 
@@ -412,6 +413,7 @@
       <div class="zrow" id="zRowPv2"><span>PV2</span><b id="zPv2">–</b></div>
       <div class="zrow" id="zRowPv3"><span>PV3</span><b id="zPv3">–</b></div>
       <div class="zrow" id="zRowPv4"><span>PV4</span><b id="zPv4">–</b></div>
+      <div class="zhint" id="zPvNote"></div>
     </div>
 
     <div class="card">
@@ -453,8 +455,8 @@
       <div class="card-head"><span class="lbl" data-i18n="z_op">Betrieb</span></div>
       <div class="zrow"><span data-i18n="mode">Modus</span><b id="zMode">–</b></div>
       <div class="zrow"><span data-i18n="z_packstate">Akkupack</span><b id="zPackState">–</b></div>
-      <div class="zrow"><span data-i18n="z_availchg">Frei zum Laden</span><b id="zAvailChg">–</b></div>
-      <div class="zrow"><span data-i18n="z_availdis">Frei zum Entladen</span><b id="zAvailDis">–</b></div>
+      <div class="zrow" id="zRowAvChg"><span data-i18n="z_availchg">Frei zum Laden</span><b id="zAvailChg">–</b></div>
+      <div class="zrow" id="zRowAvDis"><span data-i18n="z_availdis">Frei zum Entladen</span><b id="zAvailDis">–</b></div>
       <div class="zrow"><span data-i18n="z_derate">Gedrosselt</span><b id="zDerate">–</b></div>
       <div class="zrow"><span data-i18n="z_fault">Störung</span><b id="zFault">–</b></div>
       <div class="zrow" id="zRowOff"><span data-i18n="z_offgrid">Off-Grid-Dose</span><b id="zOffGrid">–</b></div>
@@ -486,6 +488,8 @@
   <div class="dsec">
     <div class="dtitle" data-i18n="d_theme">Darstellung</div>
     <div class="selrow" id="themeSel"><button data-t="auto" data-i18n="th_auto">Automatisch</button><button data-t="light" data-i18n="th_light">Hell</button><button data-t="dark" data-i18n="th_dark">Dunkel</button></div>
+    <div class="f" style="margin-top:14px" data-i18n="d_size">Schriftgröße</div>
+    <div class="selrow" id="sizeSel"><button data-z="1" data-i18n="sz_normal">Normal</button><button data-z="1.15" data-i18n="sz_big">Groß</button><button data-z="1.3" data-i18n="sz_xl">Sehr groß</button></div>
   </div>
 
   <div class="dsec">
@@ -500,6 +504,7 @@
     <label class="f" for="inIp" data-i18n="d_ip">IP-Adresse des SolarFlow</label>
     <div class="iprow"><input id="inIp" inputmode="decimal" data-i18n-ph="ph_ip" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="d_search">Suchen</span></button></div>
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
+    <div id="devList"></div>
     <label class="f" for="inMeterIp" data-i18n="d_meter">Smart Meter (optional)</label>
     <input id="inMeterIp" inputmode="decimal" data-i18n-ph="ph_meter" placeholder="wird bei der Suche gefunden">
     <div class="hint" data-i18n="d_meter_hint">Nur bei Anlagen mit Smart Meter 3CT. Die Suche trägt es selbst ein, wenn sie ein zweites Zendure-Gerät findet.</div>
@@ -690,7 +695,7 @@
       u_w:'W', u_p:'%', u_dbm:'dBm', zero_w:'0 W',
       connecting:'Verbinde…', not_connected:'Nicht verbunden', offline:'Offline', demo_pfx:'Demo ',
       setup_h:'SolarFlow verbinden',
-      setup_p:'Die App sucht deinen SolarFlow im WLAN. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.',
+      setup_p:'Die App sucht deinen SolarFlow im WLAN – das läuft beim ersten Start von selbst. Dein Handy muss dafür im selben WLAN sein wie der SolarFlow.',
       find_btn:'SolarFlow suchen', manual_ip:'IP-Adresse selbst eingeben',
       sunrise:'Aufgang', sunset:'Untergang',
       daylight:(h,m)=>`noch ${h}:${m} h Tageslicht`,
@@ -715,7 +720,12 @@
       foot_live:(ip,s)=>`Direkt vom Gerät im WLAN (${ip}) · alle ${s} s`,
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
+      d_size:'Schriftgröße', sz_normal:'Normal', sz_big:'Groß', sz_xl:'Sehr groß',
       d_meter:'Smart Meter (optional)', ph_meter:'wird bei der Suche gefunden',
+      dev_found_n:n=>`${n} Gerät${n>1?'e':''} im WLAN gefunden`,
+      pv_quiet:'Einzelwerte fehlen',
+      pv_quiet_long:'Das Gerät meldet die Einzelwerte erst ab etwa 10 W je Eingang. Darunter kommt nur die Gesamtleistung.',
+      pv_diff:s0=>`Die Einzelwerte ergeben zusammen ${s0} – das Gerät misst die Summe getrennt.`,
       d_meter_hint:'Nur bei Anlagen mit Smart Meter 3CT. Die Suche trägt es selbst ein, wenn sie ein zweites Zendure-Gerät findet.',
       found_two:(a,b,ip)=>`${a} gefunden – und ein zweites Gerät: ${b} (${ip})`,
       found_meter:(n,ip)=>`Zweites Gerät gefunden: ${n} · ${ip}`,
@@ -805,7 +815,7 @@
       u_w:'Вт', u_p:'%', u_dbm:'дБм', zero_w:'0 Вт',
       connecting:'Подключение…', not_connected:'Нет подключения', offline:'Не в сети', demo_pfx:'Демо ',
       setup_h:'Подключить SolarFlow',
-      setup_p:'Приложение ищет SolarFlow в сети Wi-Fi. Телефон должен быть в той же сети Wi-Fi, что и SolarFlow.',
+      setup_p:'Приложение ищет SolarFlow в сети Wi-Fi — при первом запуске это происходит само. Телефон должен быть в той же сети Wi-Fi, что и SolarFlow.',
       find_btn:'Найти SolarFlow', manual_ip:'Ввести IP-адрес вручную',
       sunrise:'Восход', sunset:'Закат',
       daylight:(h,m)=>`ещё ${h}:${m} ч светового дня`,
@@ -830,7 +840,12 @@
       foot_live:(ip,s)=>`Напрямую с устройства в сети Wi-Fi (${ip}) · каждые ${s} с`,
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
+      d_size:'Размер шрифта', sz_normal:'Обычный', sz_big:'Крупный', sz_xl:'Очень крупный',
       d_meter:'Умный счётчик (необязательно)', ph_meter:'определяется при поиске',
+      dev_found_n:n=>`Найдено ${n} ${n===1?'устройство':n<5?'устройства':'устройств'} в сети`,
+      pv_quiet:'нет данных по входам',
+      pv_quiet_long:'Устройство отдаёт значения по входам примерно от 10 Вт на вход. Ниже приходит только общая мощность.',
+      pv_diff:s0=>`Сумма по входам — ${s0}; общую мощность устройство измеряет отдельно.`,
       d_meter_hint:'Только для систем со счётчиком Smart Meter 3CT. Поиск впишет его сам, если найдёт второе устройство Zendure.',
       found_two:(a,b,ip)=>`Найден ${a} — и второе устройство: ${b} (${ip})`,
       found_meter:(n,ip)=>`Найдено второе устройство: ${n} · ${ip}`,
@@ -1009,7 +1024,12 @@
     // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
     const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
     const wz = v => Math.round(Number(v) || 0);
-    if (pv[2] != null || pv[3] != null) {
+    const pvSumme = pv.reduce((a, v) => a + (Number(v) || 0), 0);
+    if (pv.some(v => v != null) && pvSumme === 0 && solar > 2) {
+      // Geraet meldet eine Gesamtleistung, aber keine Einzelwerte
+      $('tPv1').textContent = t('pv_quiet');
+      $('tPv2').textContent = '';
+    } else if (pv[2] != null || pv[3] != null) {
       $('tPv1').textContent = `PV1 ${wz(pv[0])} · PV2 ${wz(pv[1])} ${t('u_w')}`;
       $('tPv2').textContent = `PV3 ${wz(pv[2])} · PV4 ${wz(pv[3])} ${t('u_w')}`;
     } else {
@@ -1089,18 +1109,54 @@
       $('foot').textContent = demo ? t('foot_demo') : t('foot_live', cfg.ip, cfg.interval);
     } catch (e) {
       fails++; setStatus('err', lastOk ? t('offline') + ' ' + hm(lastOk) : t('offline'));
+      if (fails === 2) autoSuche('verloren');
       if (fails >= 2 && !$('msgFind')) {
         showMsg(t('no_conn_html', cfg.ip));
         $('msgFind').onclick = () => { showMsg(''); $('setup').style.display = 'flex'; window.scrollTo(0, 0); runFind($('btnFind'), $('findResult'), useIp); };
       }
     }
   }
+  let sucheLaeuft = false, letzteSuche = 0;
+  // Sucht von selbst: beim ersten Start ohne IP und wenn das Geraet nicht mehr antwortet
+  // (neue IP nach einem Neustart des Routers). Hoechstens alle zwei Minuten.
+  async function autoSuche(grund){
+    if (!isApp || sucheLaeuft || Date.now() - letzteSuche < 120000) return;
+    sucheLaeuft = true; letzteSuche = Date.now();
+    try {
+      if (grund === 'setup') { $('setup').style.display = 'flex'; }
+      await runFind($('btnFind'), $('findResult'), useIp);
+    } catch {}
+    finally { sucheLaeuft = false; }
+  }
+
+  // Einmalig im Hintergrund nachsehen, ob noch ein zweites Zendure-Geraet im Netz haengt.
+  // Noetig fuer alle, die die App schon vorher eingerichtet hatten: dort laeuft die
+  // Erstsuche nie wieder, und das Smart Meter waere nie gefunden worden.
+  let stillGeprueft = false;
+  async function stilleSuche(){
+    if (!isApp || sucheLaeuft || stillGeprueft || store.get('devsAt', '')) return;
+    stillGeprueft = true; sucheLaeuft = true;
+    try {
+      const devs = await discover();
+      if (!devs.length) return;
+      merkeListe(devs);
+      if (cfg.meterIp) return;
+      const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
+      if (andere.length === 1) {
+        cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
+        toast(t('found_meter', prodName(andere[0].product), andere[0].ip), 6000);
+      }
+    } catch {}
+    finally { sucheLaeuft = false; }
+  }
+
   function start(){
     clearInterval(timer);
     const needSetup = !cfg.ip && !demo;
     $('setup').style.display = needSetup ? 'flex' : 'none';
-    if (needSetup) { setStatus('err', t('not_connected')); showMsg(''); return; }
+    if (needSetup) { setStatus(isApp ? 'demo' : 'err', isApp ? t('searching') : t('not_connected')); showMsg(''); autoSuche('setup'); return; }
     tick(); timer = setInterval(tick, cfg.interval * 1000);
+    setTimeout(stilleSuche, 4000);   // erst die Live-Werte, dann in Ruhe nachsehen
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
@@ -1119,12 +1175,19 @@
     // Solar – zwei oder vier Eingaenge, je nach Modell
     const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
     const anz = pv.filter(v => nz(v)).length;
-    s('zPvAll', nz(p.solarInputPower) ? fmtW(p.solarInputPower) : null);
+    const gesamt = nz(p.solarInputPower) ? Number(p.solarInputPower) : null;
+    const summe = pv.reduce((a, v) => a + (nz(v) ? Number(v) : 0), 0);
+    // Es kommt vor, dass das Geraet eine Gesamtleistung meldet, die Einzelstraenge aber auf 0
+    // stehen. Dann lieber nichts zeigen als vier Nullen, die nach Ausfall aussehen.
+    const stumm = anz > 0 && summe === 0 && gesamt > 2;
+    s('zPvAll', gesamt == null ? null : fmtW(gesamt));
     pv.forEach((v, i) => {
       const r = $('zRowPv' + (i + 1));
-      if (r) r.style.display = nz(v) ? '' : 'none';
+      if (r) r.style.display = (nz(v) && !stumm) ? '' : 'none';
       s('zPv' + (i + 1), nz(v) ? fmtW(v) : null);
     });
+    const abw = gesamt != null && summe > 0 && Math.abs(gesamt - summe) > Math.max(5, gesamt * 0.08);
+    $('zPvNote').textContent = stumm ? t('pv_quiet_long') : abw ? t('pv_diff', fmtW(summe)) : '';
     $('zPvN').textContent = anz ? t('z_inputs_n', anz) : '';
     $('zCardSolar').style.display = anz ? '' : 'none';
 
@@ -1176,8 +1239,13 @@
     const laedt = Number(p.outputPackPower || 0), ent = Number(p.packInputPower || 0);
     s('zPackState', p.packState == null ? null
         : laedt > 0 ? t('z_charging') : ent > 0 ? t('z_discharging') : t('z_standby'));
-    s('zAvailChg', nz(p.chargeAvailPower) ? fmtW(p.chargeAvailPower) : null);
-    s('zAvailDis', nz(p.dischargeAvailPower) ? fmtW(p.dischargeAvailPower) : null);
+    // Beide Felder stehen bei 800 Plus und Pro 2 dauerhaft auf 0 – dann sind es nur zwei
+    // Zeilen Rauschen. Nur zeigen, wenn wirklich ein Wert kommt.
+    const avc = Number(p.chargeAvailPower || 0), avd = Number(p.dischargeAvailPower || 0);
+    const zeigAv = avc > 0 || avd > 0;
+    $('zRowAvChg').style.display = zeigAv ? '' : 'none';
+    $('zRowAvDis').style.display = zeigAv ? '' : 'none';
+    if (zeigAv) { s('zAvailChg', fmtW(avc)); s('zAvailDis', fmtW(avd)); }
     s('zDerate', p.derateFlag == null ? null : (p.derateFlag ? t('z_yes') : t('z_no')), p.derateFlag ? 'warn' : '');
     const stoerung = Number(p.faultLevel || 0) || Number(p.is_error || 0);
     s('zFault', p.faultLevel == null && p.is_error == null ? null
@@ -1204,6 +1272,7 @@
   // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
   function ladeEinstellungen(){
     $('inIp').value = cfg.ip; $('inMeterIp').value = cfg.meterIp; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    zeigeGeraeteliste();
     const pn = Number(last?.properties?.packNum) || 0;
     $('capHint').textContent = pn ? t('d_cap_hint', pn) : '';
     $('inPlz').value = cfg.plz; zeigeOrt();
@@ -1386,7 +1455,7 @@
   async function discover(){
     const cap = window.Capacitor;
     if (!isApp) throw new Error(t('find_app_only'));
-    const opts = {mdnsMs: 4000};
+    const opts = {mdnsMs: 5000, passes: 2};
     const plug = cap.Plugins?.Discovery;
     const r = plug?.search ? await plug.search(opts) : await cap.nativePromise('Discovery', 'search', opts);
     return r?.devices || [];
@@ -1398,6 +1467,7 @@
     out.innerHTML = `<div class="hint">${t('find_wait')}</div>`;
     try {
       const devs = await discover();
+      if (devs.length) merkeListe(devs);
       const speicher = devs.filter(istSpeicher);
       if (!devs.length) {
         out.innerHTML = `<div class="hint">${t('find_none')}</div>`;
@@ -1417,6 +1487,23 @@
     }
   }
   const istSpeicher = d => /^solarflow/i.test(String(d && d.product || ''));
+  let gefunden = (() => { try { return JSON.parse(store.get('devs', '[]')); } catch { return []; } })();
+  function merkeListe(devs){
+    gefunden = devs.map(d => ({ip: d.ip, sn: d.sn || '', product: d.product || ''}));
+    store.set('devs', JSON.stringify(gefunden));
+    store.set('devsAt', String(Date.now()));
+    zeigeGeraeteliste();
+  }
+  function zeigeGeraeteliste(){
+    const box = $('devList'); if (!box) return;
+    if (!gefunden.length) { box.innerHTML = ''; return; }
+    const at = Number(store.get('devsAt', 0));
+    box.innerHTML = `<div class="hint">${t('dev_found_n', gefunden.length)}`
+      + (at ? ' · ' + new Date(at).toLocaleString(LOC(), {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '')
+      + '</div>' + gefunden.map(d =>
+        `<div class="hint" style="margin-top:4px">· ${esc(prodName(d.product))} — ${esc(d.ip)}`
+        + (d.sn ? ' · SN …' + esc(String(d.sn).slice(-4)) : '') + '</div>').join('');
+  }
   // Ein gefundenes Geraet, das kein Speicher ist, ist der Kandidat fuers Smart Meter.
   function merkeZweites(devs, speicher){
     const andere = devs.filter(d => d !== speicher && !istSpeicher(d));
@@ -1426,6 +1513,7 @@
   }
   function useIp(d, devs){
     cfg.ip = d.ip; store.set('ip', cfg.ip); demo = false; fails = 0;
+    $('setup').style.display = 'none'; showMsg('');
     const m = devs ? merkeZweites(devs, d) : null;
     toast(m ? t('found_two', prodName(d.product), prodName(m.product), m.ip)
             : t('found_at', prodName(d.product), d.ip), m ? 5000 : 2600);
@@ -1511,6 +1599,17 @@
     document.querySelectorAll('#themeSel button').forEach(b => b.classList.toggle('on', b.dataset.t === thema));
   }
   function waehleThema(w){ thema = w; store.set('theme', w); setzeThema(); }
+
+  // Schriftgroesse: zoom skaliert den ganzen Inhalt mit, auch die Zahlen im Energiefluss.
+  let zoom = store.get('zoom', '1');
+  function setzeZoom(){
+    document.documentElement.style.setProperty('--zoom', zoom);
+    document.querySelectorAll('#sizeSel button').forEach(b => b.classList.toggle('on', b.dataset.z === zoom));
+  }
+  document.querySelectorAll('#sizeSel button').forEach(b => b.onclick = () => {
+    zoom = b.dataset.z; store.set('zoom', zoom); setzeZoom();
+  });
+  setzeZoom();
   document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => waehleThema(b.dataset.t));
   if (dunkelAbfrage) dunkelAbfrage.addEventListener('change', () => { if (thema === 'auto') setzeThema(); });
   setzeThema();
