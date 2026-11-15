@@ -360,7 +360,7 @@
       <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
       <svg viewBox="0 0 350 250" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
-        <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/>
+        <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/><path id="wGrid2" class="wire" d="M72 126 H152"/>
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/>
         <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/><path id="wBat2" class="wire" d="M175 150 V186"/>
 
@@ -378,7 +378,7 @@
         <circle cx="46" cy="126" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="126" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 126)"/>
         <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
-        <text class="node-label" x="46" y="174" text-anchor="middle" data-i18n="grid_bat">Netz → Akku</text>
+        <text class="node-label" x="46" y="174" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
         <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
         <circle cx="304" cy="126" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
@@ -766,7 +766,10 @@
       dg_2b:'2 von 4 · Suche läuft, etwa 20 Sekunden', dg_3:'3 von 4 · Zweites Gerät',
       dg_4:'Fertig – jetzt teilen', dg_err:'Abgebrochen',
       wifi_of:n=>`WLAN · ${n}`,
-      z_meter_hint:'Die Bedeutung dieser Felder ist noch nicht zugeordnet – sie stehen hier mit den Namen, die das Gerät selbst verwendet.',
+      z_meter_hint:'Die Werte je Phase sind Scheinleistung (VA) und immer positiv – sie sagen nichts über die Richtung. Ob der Gesamtwert Bezug und Einspeisung unterscheidet, ist noch nicht bestätigt.',
+      m_total:'Netz gesamt', m_pa:'Phase A', m_pb:'Phase B', m_pc:'Phase C', u_va:'VA',
+      grid_n:'Netz', grid_draw:'Netzbezug', grid_feed:'Einspeisung',
+      m_ua:'Spannung A', m_ub:'Spannung B', m_uc:'Spannung C',
       d_meter:'Smart Meter (optional)', ph_meter:'wird bei der Suche gefunden',
       dev_found_n:n=>`${n} Gerät${n>1?'e':''} im WLAN gefunden`,
       pv_quiet:'Einzelwerte fehlen',
@@ -892,7 +895,10 @@
       dg_2b:'2 из 4 · идёт поиск, около 20 секунд', dg_3:'3 из 4 · второе устройство',
       dg_4:'Готово — теперь поделиться', dg_err:'Прервано',
       wifi_of:n=>`Wi-Fi · ${n}`,
-      z_meter_hint:'Значение этих полей пока не определено — они указаны под теми именами, которые использует само устройство.',
+      z_meter_hint:'Значения по фазам — это полная мощность (ВА), всегда положительная; направление по ним определить нельзя. Различает ли общий показатель потребление и отдачу, пока не подтверждено.',
+      m_total:'Сеть, всего', m_pa:'Фаза A', m_pb:'Фаза B', m_pc:'Фаза C', u_va:'ВА',
+      grid_n:'Сеть', grid_draw:'Из сети', grid_feed:'Отдача в сеть',
+      m_ua:'Напряжение A', m_ub:'Напряжение B', m_uc:'Напряжение C',
       d_meter:'Умный счётчик (необязательно)', ph_meter:'определяется при поиске',
       dev_found_n:n=>`Найдено ${n} ${n===1?'устройство':n<5?'устройства':'устройств'} в сети`,
       pv_quiet:'нет данных по входам',
@@ -1079,6 +1085,18 @@
     }
     const solar = p.solarInputPower ?? 0, home = p.outputHomePower ?? 0, grid = p.gridInputPower ?? 0;
     const charge = p.outputPackPower ?? 0, discharge = p.packInputPower ?? 0, soc = p.electricLevel ?? 0;
+    // Das Smart Meter misst am Netzanschluss, also hinter dem Balkonkraftwerk.
+    // Positiv heisst Bezug aus dem Netz, negativ Einspeisung. Ohne Messgeraet
+    // kennt die App nur das Netzladen des Speichers – dann bleibt alles wie bisher.
+    const mw = meterWerte();
+    const mNetz = mw ? Number(mw.total_power ?? mw.totalPower ?? mw.total_act_power) : NaN;
+    const hatMeter = Number.isFinite(mNetz);
+    const bezug = hatMeter ? Math.max(0,  mNetz) : grid;
+    const einsp = hatMeter ? Math.max(0, -mNetz) : 0;
+    // Was das Haus zieht: Abgabe des Speichers plus was ueber den Zaehler hereinkommt,
+    // minus was hinausgeht. Das Netzladen laeuft am Haus vorbei und faellt weg.
+    const hausW = hatMeter ? Math.max(0, home + mNetz - grid) : home;
+    const netzW = hatMeter ? Math.max(bezug, einsp) : grid;
 
     $('devname').textContent = d.product ? prodName(d.product, d) : 'SolarFlow';
     $('tSolar').textContent = fmtW(solar);
@@ -1098,9 +1116,11 @@
       $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
       $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
     }
-    $('tHome').textContent = fmtW(home);
-    $('tGrid').textContent = fmtW(grid);
-    $('tGrid').style.fill = grid > 2 ? '' : 'var(--muted)';
+    $('tHome').textContent = fmtW(hausW);
+    $('tGrid').textContent = fmtW(netzW);
+    $('tGrid').style.fill = netzW > 2 ? '' : 'var(--muted)';
+    if (hatMeter) $('lGrid').textContent = einsp > 2 ? t('grid_feed') : (bezug > 2 ? t('grid_draw') : t('grid_n'));
+    else $('lGrid').textContent = t('grid_bat');
     // Alle vier Kreise fuellen sich: Solar an der Modulleistung, Haus und Netz
     // an der Geraetegrenze, die der SolarFlow selbst meldet.
     const ring = (id, wert, grenze, umfang) => {
@@ -1110,8 +1130,13 @@
     };
     const grenzeAus = p.inverseMaxPower || 800;
     ring('pvRing',   solar, cfg.peak, 175.9);
-    ring('homeRing', home,  grenzeAus, 163.4);
-    ring('gridRing', grid,  p.chargeMaxLimit || grenzeAus, 163.4);
+    // Ohne Messgeraet messen Haus und Netz nur, was durch den SolarFlow laeuft –
+    // dafuer ist dessen eigene Grenze der richtige Massstab. Mit Messgeraet geht es
+    // um den ganzen Hausanschluss, und der hat keine sinnvolle Obergrenze: 11 kW
+    // Hausabsicherung wuerde den Ring bei 300 W praktisch leer lassen. Dann lieber
+    // gar nicht fuellen – die Zahl und die laufenden Punkte sagen alles Noetige.
+    ring('homeRing', hatMeter ? 0 : home,  grenzeAus, 163.4);
+    ring('gridRing', hatMeter ? 0 : grid,  p.chargeMaxLimit || grenzeAus, 163.4);
     $('tSoc').textContent = `${soc}%`;
     ring('socRing', soc, 100, 175.9);
 
@@ -1125,17 +1150,20 @@
     // Alle Quellen, die gerade einspeisen – die staerkste zuerst, hoechstens zwei werden gezeigt.
     const quellen = [
       {w: solar,     c: 'var(--solar)'},   // von den Modulen
-      {w: grid,      c: 'var(--grid)'},    // aus dem Netz
+      {w: bezug,     c: 'var(--grid)'},    // aus dem Netz
       {w: discharge, c: 'var(--bat)'}      // aus dem Akku
     ].filter(x => x.w > 2).sort((a, b) => b.w - a.w).map(x => x.c);
     const ausHaus = quellen.length ? quellen.slice(0, 2) : ['var(--home)'];
     // Beim Laden kommt der Strom von Sonne oder Netz, nie aus dem Akku selbst.
     const ausLaden = quellen.filter(c => c !== 'var(--bat)').slice(0, 2);
     setWire('wSolar', solar, false, 'var(--solar)');
-    setWire('wGrid',  grid,  false, 'var(--grid)');
+    // Einspeisung kommt aus Sonne oder Akku und laeuft nach aussen, darum rueckwaerts
+    // und in der Farbe der Quelle; Bezug laeuft nach innen und ist netzfarben.
+    setWire('wGrid', netzW, einsp > 2,
+            einsp > 2 ? (ausLaden.length ? ausLaden : ['var(--bat)']) : 'var(--grid)', 'wGrid2');
     setWire('wBat',   batW,  batRev,
             discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']), 'wBat2');
-    setWire('wHome',  home,  false, ausHaus, 'wHome2');
+    setWire('wHome',  hausW, false, ausHaus, 'wHome2');
 
     // Akku-Karte
     $('cSoc').textContent = soc;
@@ -1173,6 +1201,12 @@
     zeigeZustand();
   }
 
+  // Das Meter antwortet flach (total_power direkt), der Speicher unter properties
+  function meterWerte(){
+    if (!lastMeter) return null;
+    const p = lastMeter.properties;
+    return (p && Object.keys(p).length) ? p : lastMeter;
+  }
   // Smart Meter getrennt abfragen – scheitert es, bleibt der Speicher davon unberuehrt
   async function holeMeter(){
     if (!cfg.meterIp || demo) { if (lastMeter) { lastMeter = null; zeigeZustand(); } return; }
@@ -1180,7 +1214,7 @@
       lastMeter = await fetchReport(cfg.meterIp);
       meterOk = new Date(); meterFails = 0;
     } catch { meterFails++; if (meterFails >= 3) lastMeter = null; }
-    zeigeZustand();
+    if (last) render(last); else zeigeZustand();   // render frischt den Zustand mit auf
   }
 
   function setStatus(kind, text){ $('dot').className = 'dot ' + kind; $('status').textContent = text; }
@@ -1270,10 +1304,36 @@
     setz('mRssi', (p.rssi != null && !isNaN(p.rssi)) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
     setz('mStamp', (m.timestamp != null && !isNaN(m.timestamp)) ? new Date(m.timestamp * 1000).toLocaleTimeString(LOC())
         : (meterOk ? hm(meterOk) : null));
+    // Namen fuer die Felder, die das Smart Meter 3CT liefert. Es nutzt die Shelly-Schreibweise:
+    // act_power ist Wirkleistung in W, aprt_power Scheinleistung in VA – letztere ohne Vorzeichen.
+    const MFELD = {
+      total_power:   [t('m_total'),  t('u_w')],
+      total_act_power:[t('m_total'), t('u_w')],
+      a_act_power:   [t('m_pa'),     t('u_w')],
+      b_act_power:   [t('m_pb'),     t('u_w')],
+      c_act_power:   [t('m_pc'),     t('u_w')],
+      a_aprt_power:  [t('m_pa'),     t('u_va')],
+      b_aprt_power:  [t('m_pb'),     t('u_va')],
+      c_aprt_power:  [t('m_pc'),     t('u_va')],
+      a_voltage:     [t('m_ua'),     t('u_v')],
+      b_voltage:     [t('m_ub'),     t('u_v')],
+      c_voltage:     [t('m_uc'),     t('u_v')]
+    };
+    const rang = k => Object.keys(MFELD).indexOf(k);
     const zeilen = Object.entries(p)
-      .filter(([k, v]) => v !== null && typeof v !== 'object' && k !== 'messageId' && k !== 'timestamp')
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `<div class="zrow"><span>${esc(k)}</span><b>${esc(String(v))}</b></div>`);
+      .filter(([k, v]) => v !== null && typeof v !== 'object' && !/^(messageId|timestamp|version)$/.test(k) && !GEHEIM.test(k))
+      .sort(([a], [b]) => {
+        const ra = rang(a), rb = rang(b);
+        if (ra >= 0 && rb >= 0) return ra - rb;
+        if (ra >= 0) return -1;
+        if (rb >= 0) return 1;
+        return a.localeCompare(b);
+      })
+      .map(([k, v]) => {
+        const f = MFELD[k];
+        const name = f ? f[0] : k, wert = f ? `${v} ${f[1]}` : String(v);
+        return `<div class="zrow"><span>${esc(name)}</span><b>${esc(wert)}</b></div>`;
+      });
     $('mWerte').innerHTML = zeilen.length ? zeilen.join('') : `<div class="zhint">${t('no_data')}</div>`;
   }
 
@@ -1429,7 +1489,7 @@
   // ---------- Diagnose (vorübergehend, nur lesen) ----------
   const cut = v => { const t = String(v ?? ''); return t.length > 4 ? '…' + t.slice(-4) : t; };
   // Felder, die niemand sehen muss: Nummern, Namen, Schlüssel – werden auf die letzten 4 Zeichen gekürzt
-  const GEHEIM = /sn$|serial|mac|ssid|wifi|key$|token|secret|passw|mail|account|^ip$/i;
+  const GEHEIM = /sn$|serial|mac|ssid|wifi|key$|token|secret|passw|mail|account|deviceid|^ip$/i;
   const sicher = (k, v) => GEHEIM.test(k) ? cut(v) : v;
   const flach = o => Object.entries(o || {})
     .filter(([, v]) => v === null || typeof v !== 'object')
