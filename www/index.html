@@ -230,6 +230,13 @@
     border-radius:12px;padding:10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;line-height:1.45;white-space:pre}
   .diagrow{display:flex;gap:8px;margin-top:8px}
   .diagrow .btn{flex:1}
+  .zrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+  .zrow:first-of-type{border-top:0}
+  .zrow>span{color:var(--muted);font-size:13px}
+  .zrow>b{font-weight:600;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .zrow>b.dim{color:var(--muted);font-weight:500}
+  .zrow>b.warn{color:var(--warn)} .zrow>b.ok{color:var(--ok)}
+  .zhint{color:var(--muted);font-size:12px;line-height:1.45;margin-top:10px}
   .setcard{padding:16px 18px}
   .setcard .dsec:first-child{border-top:0;padding-top:0;margin-top:0}
   .dfoot{display:flex;gap:8px;margin-top:4px}
@@ -368,24 +375,6 @@
       </div>
     </div>
 
-    <div class="card today-card">
-      <div class="card-head"><span class="lbl" data-i18n="today">Heute</span><span class="info" id="todayInfo"></span></div>
-      <div class="four">
-        <div><span class="k"><i class="d" style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></span><span class="n" id="tdSolar">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--home)"></i><span data-i18n="m_home">Ins Haus</span></span><span class="n" id="tdHome">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--bat)"></i><span data-i18n="m_in">Geladen</span></span><span class="n" id="tdIn">–</span></div>
-        <div><span class="k"><i class="d" style="background:var(--grid)"></i><span data-i18n="m_out">Entladen</span></span><span class="n" id="tdOut">–</span></div>
-      </div>
-    </div>
-
-    <div class="card" id="cardNetzLive">
-        <div class="card-head"><span class="lbl" data-i18n="grid_live">Netz heute</span><span class="badge" data-i18n="prov">vorläufig</span></div>
-        <div class="four two">
-          <div><span class="k"><i class="d" style="background:var(--gridin)"></i><span data-i18n="m_grid_in">Netzbezug</span></span><span class="n" id="tdGridIn">–</span></div>
-          <div><span class="k"><i class="d" style="background:var(--feed)"></i><span data-i18n="m_grid_out">Einspeisung</span></span><span class="n" id="tdGridOut">–</span></div>
-        </div>
-      </div>
-
     <div class="tiles">
       <div class="tile"><span class="t" data-i18n="out_limit">Ausgangslimit</span><span class="v" id="cOutLimit" data-i18n="dash_w">– W</span><span class="s" id="cMax">&nbsp;</span></div>
       <div class="tile"><span class="t" data-i18n="mode">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
@@ -397,61 +386,62 @@
   <!-- ================= STATISTIK ================= -->
   <section class="view" id="vStats">
     <div class="pagehead">
-      <div><h2 data-i18n="stats">Statistik</h2><div class="sub" id="statsInfo" data-i18n="not_loaded">noch nicht geladen</div></div>
-      <button class="btn" id="btnReloadStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span data-i18n="refresh">Aktualisieren</span></button>
+      <div><h2 data-i18n="state">Zustand</h2><div class="sub" id="stateInfo" data-i18n="no_data">noch keine Daten</div></div>
     </div>
-    <div id="statsLogin" class="note" style="display:none;flex-direction:column">
-      <span data-i18n="stats_login_p">Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).</span>
-      <button class="btn primary wide-btn" onclick="document.getElementById('btnSettings').click()" data-i18n="stats_login_b">Zendure-Login eintragen</button>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="bat">Akku</span><span class="info" id="zPacks"></span></div>
+      <div class="zrow"><span data-i18n="z_soc">Ladestand</span><b id="zSoc">–</b></div>
+      <div class="zrow"><span data-i18n="z_energy">Gespeichert</span><b id="zEnergy">–</b></div>
+      <div class="zrow"><span data-i18n="z_packvolt">Packspannung</span><b id="zPackVolt">–</b></div>
+      <div class="zrow"><span data-i18n="z_cur">Akkustrom</span><b id="zCur">–</b></div>
+      <div class="zrow"><span data-i18n="z_power">Akkuleistung</span><b id="zPower">–</b></div>
     </div>
-    <div id="statsBody" style="display:flex;flex-direction:column;gap:12px">
-      <div class="chips" id="seg" role="tablist" data-i18n-al="al_metric" aria-label="Messwert">
-        <button data-k="solar" class="on" style="--c:var(--solar)" data-i18n="m_solar">Solar</button>
-        <button data-k="home" style="--c:var(--home)" data-i18n="m_home">Ins Haus</button>
-        <button data-k="batteryOutput" style="--c:var(--bat)" data-i18n="m_in">Geladen</button>
-        <button data-k="batteryInput" style="--c:var(--grid)" data-i18n="m_out">Entladen</button>
-        <button data-k="gridInputTotal" style="--c:var(--gridin)" data-i18n="m_grid_in">Netzbezug</button>
-        <button data-k="gridDirectTotal" style="--c:var(--feed)" data-i18n="m_grid_out">Einspeisung</button>
-      </div>
-      <div class="card">
-        <div class="sum">
-          <div>
-            <div class="lbl" id="sumLabel">–</div>
-            <div class="big"><span class="num" id="sumVal">–</span><span data-i18n="kwh">kWh</span></div>
-          </div>
-          <div class="side"><span>Ø <b id="sumAvg">–</b> <span data-i18n="per_day">kWh/Tag</span></span><span><span data-i18n="best_day">Bester Tag:</span> <b id="sumBest">–</b></span></div>
-        </div>
-        <div class="bars" id="chart"></div>
-      </div>
-      <div class="card">
-        <div class="card-head"><span class="lbl" id="dayLabel">–</span><span class="info" id="dayPeak"></span></div>
-        <div class="daychart" id="daychart"></div>
-      </div>
-      <div class="card" style="padding:18px 16px 8px">
-        <div class="card-head" style="padding:0 4px"><span class="lbl" data-i18n="daily">Tageswerte</span><span class="info" data-i18n="kwh">kWh</span></div>
-        <table id="tbl"><thead><tr><th></th><th><i class="d" style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></th><th><i class="d" style="background:var(--home)"></i><span data-i18n="th_home">Haus</span></th><th><i class="d" style="background:var(--bat)"></i><span data-i18n="th_in">Gel.</span></th><th><i class="d" style="background:var(--grid)"></i><span data-i18n="th_out">Entl.</span></th></tr></thead><tbody></tbody></table>
-      </div>
-      <div class="card">
-        <div class="card-head"><span class="lbl" data-i18n="grid_card">Netz</span><span class="badge" data-i18n="prov">vorläufig</span></div>
-        <div class="hint" data-i18n="grid_hint">Die Zuordnung der Cloud-Felder ist noch nicht bestätigt. Ohne Smart Meter bleiben die Werte 0.</div>
-        <table id="tblNetz"><thead><tr><th></th><th data-i18n="today">Heute</th><th data-i18n="d7">7 Tage</th><th data-i18n="total">Gesamt</th></tr></thead><tbody>
-          <tr><td style="text-align:left"><i class="d" style="background:var(--gridin)"></i> <span data-i18n="m_grid_in">Netzbezug</span></td><td id="nzIn0">–</td><td id="nzIn7">–</td><td id="nzInL">–</td></tr>
-          <tr><td style="text-align:left"><i class="d" style="background:var(--feed)"></i> <span data-i18n="m_grid_out">Einspeisung</span></td><td id="nzOut0">–</td><td id="nzOut7">–</td><td id="nzOutL">–</td></tr>
-        </tbody></table>
-        <div class="fieldnote">gridInputTotal · gridDirectTotal</div>
-      </div>
-      <div class="card">
-        <span class="lbl" data-i18n="lifetime">Seit Inbetriebnahme</span>
-        <div class="life">
-          <div><span class="k"><i style="background:var(--solar)"></i><span data-i18n="m_solar">Solar</span></span><span class="n"><span id="ltSolar">–</span> <small data-i18n="kwh">kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--home)"></i><span data-i18n="m_home">Ins Haus</span></span><span class="n"><span id="ltHome">–</span> <small data-i18n="kwh">kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--bat)"></i><span data-i18n="m_in">Geladen</span></span><span class="n"><span id="ltIn">–</span> <small data-i18n="kwh">kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--grid)"></i><span data-i18n="m_out">Entladen</span></span><span class="n"><span id="ltOut">–</span> <small data-i18n="kwh">kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--gridin)"></i><span data-i18n="m_grid_in">Netzbezug</span></span><span class="n"><span id="ltGridIn">–</span> <small data-i18n="kwh">kWh</small></span></div>
-          <div><span class="k"><i style="background:var(--feed)"></i><span data-i18n="m_grid_out">Einspeisung</span></span><span class="n"><span id="ltGridOut">–</span> <small data-i18n="kwh">kWh</small></span></div>
-        </div>
-      </div>
-      <details><summary data-i18n="rawdata">Rohdaten (für Fehlersuche)</summary><pre id="raw">–</pre></details>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="z_cells">Zellen</span><span class="info" id="zCellN"></span></div>
+      <div class="zrow"><span data-i18n="z_cmax">Höchste Zelle</span><b id="zCmax">–</b></div>
+      <div class="zrow"><span data-i18n="z_cmin">Niedrigste Zelle</span><b id="zCmin">–</b></div>
+      <div class="zrow"><span data-i18n="z_spread">Spreizung</span><b id="zSpread">–</b></div>
+      <div class="zhint" id="zSpreadNote"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="temp">Temperatur</span></div>
+      <div class="zrow"><span data-i18n="bat">Akku</span><b id="zTempPack">–</b></div>
+      <div class="zrow"><span data-i18n="electronics">Elektronik</span><b id="zTempEl">–</b></div>
+      <div class="zrow"><span data-i18n="z_heat">Heizung</span><b id="zHeat">–</b></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="z_limits">Grenzen</span></div>
+      <div class="zrow"><span data-i18n="z_minsoc">Entladen bis</span><b id="zMinSoc">–</b></div>
+      <div class="zrow"><span data-i18n="z_maxsoc">Laden bis</span><b id="zMaxSoc">–</b></div>
+      <div class="zrow"><span data-i18n="out_limit">Ausgangslimit</span><b id="zOutLimit">–</b></div>
+      <div class="zrow"><span data-i18n="z_inlimit">Ladeleistung aus dem Netz</span><b id="zInLimit">–</b></div>
+      <div class="zrow"><span data-i18n="z_chgmax">Maximale Ladeleistung</span><b id="zChgMax">–</b></div>
+      <div class="zrow"><span data-i18n="z_invmax">Wechselrichter maximal</span><b id="zInvMax">–</b></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="z_op">Betrieb</span></div>
+      <div class="zrow"><span data-i18n="mode">Modus</span><b id="zMode">–</b></div>
+      <div class="zrow"><span data-i18n="z_packstate">Akkupack</span><b id="zPackState">–</b></div>
+      <div class="zrow"><span data-i18n="z_availchg">Frei zum Laden</span><b id="zAvailChg">–</b></div>
+      <div class="zrow"><span data-i18n="z_availdis">Frei zum Entladen</span><b id="zAvailDis">–</b></div>
+      <div class="zrow"><span data-i18n="z_derate">Gedrosselt</span><b id="zDerate">–</b></div>
+      <div class="zrow"><span data-i18n="z_fault">Störung</span><b id="zFault">–</b></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="lbl" data-i18n="z_device">Gerät</span></div>
+      <div class="zrow"><span data-i18n="z_prod">Modell</span><b id="zProd">–</b></div>
+      <div class="zrow"><span data-i18n="z_sn">Seriennummer</span><b id="zSn">–</b></div>
+      <div class="zrow"><span data-i18n="z_sw">Software</span><b id="zSw">–</b></div>
+      <div class="zrow"><span data-i18n="wifi">WLAN</span><b id="zRssi">–</b></div>
+      <div class="zrow"><span data-i18n="z_iot">Cloud-Verbindung</span><b id="zIot">–</b></div>
+      <div class="zrow"><span data-i18n="z_stamp">Daten vom Gerät</span><b id="zStamp">–</b></div>
+      <div class="zhint" data-i18n="z_local">Alle Werte kommen direkt aus dem Speicher im WLAN. Dafür ist kein Zendure-Konto nötig.</div>
     </div>
   </section>
 
@@ -493,24 +483,12 @@
     <div class="hint" id="locHint"></div>
   </div>
 
-  <div class="dsec">
-    <div class="dtitle" style="display:flex;justify-content:space-between;align-items:center">
-      <span data-i18n="d_acct">Zendure-Konto (für Statistik)</span>
-      <button class="btn small" id="btnLogout" data-i18n="d_logout">Abmelden</button>
-    </div>
-    <label class="f" for="inMail" data-i18n="d_mail">E-Mail</label>
-    <input id="inMail" type="email" autocomplete="username" data-i18n-ph="ph_mail" placeholder="name@beispiel.de">
-    <label class="f" for="inPw" data-i18n="d_pw">Passwort</label>
-    <input id="inPw" type="password" autocomplete="current-password" placeholder="Passwort">
-    <div class="hint" data-i18n="d_pw_hint">Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.</div>
-  </div>
-
   <div class="dsec" id="secDiag">
-    <div class="dtitle" data-i18n="d_diag">Diagnose (vorübergehend)</div>
-    <div class="hint" data-i18n="d_diag_hint">Liest einmalig aus, welche Daten der Speicher im WLAN und die Zendure-Cloud bereitstellen –
-      auch Felder, die die App noch nicht kennt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten;
+    <div class="dtitle" data-i18n="d_diag">Rohbericht vom Gerät</div>
+    <div class="hint" data-i18n="d_diag_hint">Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder,
+      die die App noch nicht anzeigt. Kein Konto nötig, es wird nichts verändert.
       Geräte&#8209;Nummern und Namen sind gekürzt.</div>
-    <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Diagnose starten</button>
+    <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Bericht auslesen</button>
     <div class="diagbox" id="diagBox" style="display:none">
       <textarea id="diagOut" readonly></textarea>
       <div class="diagrow">
@@ -531,7 +509,7 @@
 
 <nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
   <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
-  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg><span data-i18n="stats">Statistik</span></button>
+  <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span data-i18n="state">Zustand</span></button>
   <button id="btnSettings" data-v="vSet" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="d_title">Einstellungen</span></button>
 </nav>
 
@@ -543,7 +521,6 @@
 (() => {
   // ---------- Grundlagen ----------
   const ORT0 = [51.2277, 6.7735];              // Düsseldorf – Vorgabe für den Sonnenbogen
-  const CLOUD = 'https://app.zendure.tech/eu'; // Zendure-App-Schnittstelle (inoffiziell)
   const NBSP = ' ';
   const store = {
     get(k, d){ try { const v = localStorage.getItem(k); return v === null ? d : v; } catch { return d; } },
@@ -700,18 +677,26 @@
       foot_demo:'Demo-Daten – keine Verbindung zum Gerät',
       foot_live:(ip,s)=>`Direkt vom Gerät im WLAN (${ip}) · alle ${s} s`,
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
-      stats:'Statistik', not_loaded:'noch nicht geladen', refresh:'Aktualisieren',
-      stats_login_p:'Für Tageswerte und Verlauf braucht die App deinen Zendure-Login (die Daten liegen in der Zendure-Cloud).',
-      stats_login_b:'Zendure-Login eintragen',
-      m_solar:'Solar', m_home:'Ins Haus', m_in:'Geladen', m_out:'Entladen',
-      last7:n=>`${n} · letzte 7 Tage`,
-      kwh:'kWh', per_day:'kWh/Tag', best_day:'Bester Tag:', daily:'Tageswerte',
-      th_home:'Haus', th_in:'Gel.', th_out:'Entl.',
-      lifetime:'Seit Inbetriebnahme', rawdata:'Rohdaten (für Fehlersuche)',
-      login_missing:'Login fehlt (⚙)', kwh_as_of:t0=>`kWh · Stand ${t0}`, load_in_stats:'laden im Reiter Statistik',
-      cloud_as_of:s=>`Zendure-Cloud · Stand ${s}`,
-      enter_login_first:'Bitte zuerst den Zendure-Login unter ⚙ eintragen',
-      loading:'lädt…', stats_updated:'Statistik aktualisiert', stats_pfx:'Statistik: ',
+      state:'Zustand', no_data:'noch keine Daten', u_v:'V', u_a:'A', u_mv:'mV',
+      state_live:'Live vom Gerät', state_as_of:x=>`Stand ${x}`,
+      kwh:'kWh',
+      z_soc:'Ladestand', z_energy:'Gespeichert', z_packvolt:'Packspannung',
+      z_cur:'Akkustrom', z_power:'Akkuleistung', z_packs_n:n=>`${n} Pack${n>1?'s':''}`,
+      z_cells:'Zellen', z_cells_n:n=>`${n} in Reihe`,
+      z_cmax:'Höchste Zelle', z_cmin:'Niedrigste Zelle', z_spread:'Spreizung',
+      z_sp_ok:'Die Zellen sind ausgeglichen.', z_sp_mid:'Leicht erhöht – im Auge behalten.',
+      z_sp_bad:'Auffällig – eine Zelle fällt ab.',
+      z_sp_base:'Die Spreizung ist der Abstand zwischen höchster und niedrigster Zelle. Das Gerät liefert nur diese beiden Werte, in Schritten von 10 mV. Aussagekräftig wird sie erst im Verlauf über Wochen.',
+      z_heat:'Heizung', z_on:'an', z_off:'aus',
+      z_limits:'Grenzen', z_minsoc:'Entladen bis', z_maxsoc:'Laden bis',
+      z_inlimit:'Ladeleistung aus dem Netz', z_chgmax:'Maximale Ladeleistung', z_invmax:'Wechselrichter maximal',
+      z_op:'Betrieb', z_packstate:'Akkupack', z_active:'aktiv', z_standby:'Bereitschaft',
+      z_availchg:'Frei zum Laden', z_availdis:'Frei zum Entladen',
+      z_derate:'Gedrosselt', z_yes:'ja', z_no:'nein',
+      z_fault:'Störung', z_nofault:'keine', z_fault_n:n=>`Stufe ${n}`,
+      z_device:'Gerät', z_prod:'Modell', z_sn:'Seriennummer', z_sw:'Software',
+      z_iot:'Cloud-Verbindung', z_online:'verbunden', z_stamp:'Daten vom Gerät',
+      z_local:'Alle Werte kommen direkt aus dem Speicher im WLAN. Dafür ist kein Zendure-Konto nötig.',
       ctl:'Steuerung', ctl_sub:'Änderungen gehen direkt an den SolarFlow',
       ctl_note:'Ist in der Zendure-App eine Automatik aktiv (z. B. Energieplan), kann sie deine Einstellung wieder überschreiben.',
       out_power:'Ausgangsleistung ins Haus', now_dash:'aktuell –',
@@ -734,9 +719,9 @@
       d_cap:'Akku-Kapazität (Wh)', d_peak:'Modulleistung gesamt (Wp)', d_int:'Aktualisierung alle … Sekunden (min. 3)',
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
-      d_diag:'Diagnose (vorübergehend)',
-      d_diag_hint:'Liest einmalig aus, welche Daten der Speicher im WLAN und die Zendure-Cloud bereitstellen – auch Felder, die die App noch nicht kennt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte-Nummern und Namen sind gekürzt.',
-      d_diag_run:'Diagnose starten', d_copy:'Kopieren', d_share:'Teilen',
+      d_diag:'Rohbericht vom Gerät',
+      d_diag_hint:'Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder, die die App noch nicht anzeigt. Kein Konto nötig, es wird nichts verändert. Geräte-Nummern und Namen sind gekürzt.',
+      d_diag_run:'Bericht auslesen', d_copy:'Kopieren', d_share:'Teilen',
       d_cancel:'Abbrechen', d_save:'Speichern',
       ph_ip:'z. B. 192.168.178.xx', ph_mail:'name@beispiel.de', ph_pw:'Passwort',
       pw_saved:'•••••• (gespeichert)',
@@ -797,18 +782,27 @@
       foot_demo:'Демо-данные — нет связи с устройством',
       foot_live:(ip,s)=>`Напрямую с устройства в сети Wi-Fi (${ip}) · каждые ${s} с`,
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
-      stats:'Статистика', not_loaded:'ещё не загружено', refresh:'Обновить',
-      stats_login_p:'Для дневных значений и истории нужен вход в учётную запись Zendure — эти данные хранятся в облаке Zendure.',
-      stats_login_b:'Ввести данные Zendure',
-      m_solar:'Солнце', m_home:'В дом', m_in:'Заряжено', m_out:'Разряжено',
-      last7:n=>`${n} · последние 7 дней`,
-      kwh:'кВт·ч', per_day:'кВт·ч/сут.', best_day:'Лучший день:', daily:'По дням',
-      th_home:'Дом', th_in:'Зар.', th_out:'Разр.',
-      lifetime:'За всё время', rawdata:'Исходные данные (для диагностики)',
-      login_missing:'нет входа (⚙)', kwh_as_of:t0=>`кВт·ч · на ${t0}`, load_in_stats:'загрузить во вкладке «Статистика»',
-      cloud_as_of:s=>`Облако Zendure · на ${s}`,
-      enter_login_first:'Сначала введите данные Zendure в ⚙',
-      loading:'загрузка…', stats_updated:'Статистика обновлена', stats_pfx:'Статистика: ',
+      state:'Состояние', no_data:'пока нет данных', u_v:'В', u_a:'А', u_mv:'мВ',
+      state_live:'Онлайн с устройства', state_as_of:x=>`на ${x}`,
+      kwh:'кВт·ч',
+      z_soc:'Заряд', z_energy:'Накоплено', z_packvolt:'Напряжение батареи',
+      z_cur:'Ток батареи', z_power:'Мощность батареи',
+      z_packs_n:n=>`${n} ${n===1?'блок':n<5?'блока':'блоков'}`,
+      z_cells:'Ячейки', z_cells_n:n=>`${n} последовательно`,
+      z_cmax:'Максимальная ячейка', z_cmin:'Минимальная ячейка', z_spread:'Разброс',
+      z_sp_ok:'Ячейки сбалансированы.', z_sp_mid:'Слегка повышен — стоит понаблюдать.',
+      z_sp_bad:'Заметный разброс — одна ячейка отстаёт.',
+      z_sp_base:'Разброс — это разница между самой высокой и самой низкой ячейкой. Устройство отдаёт только эти два значения, с шагом 10 мВ. Показателен он только в динамике за недели.',
+      z_heat:'Подогрев', z_on:'вкл.', z_off:'выкл.',
+      z_limits:'Пределы', z_minsoc:'Разряжать до', z_maxsoc:'Заряжать до',
+      z_inlimit:'Мощность заряда из сети', z_chgmax:'Максимальная мощность заряда', z_invmax:'Инвертор, максимум',
+      z_op:'Работа', z_packstate:'Батарейный блок', z_active:'активен', z_standby:'ожидание',
+      z_availchg:'Доступно для заряда', z_availdis:'Доступно для разряда',
+      z_derate:'Ограничение мощности', z_yes:'да', z_no:'нет',
+      z_fault:'Неисправность', z_nofault:'нет', z_fault_n:n=>`уровень ${n}`,
+      z_device:'Устройство', z_prod:'Модель', z_sn:'Серийный номер', z_sw:'Прошивка',
+      z_iot:'Связь с облаком', z_online:'подключено', z_stamp:'Данные с устройства',
+      z_local:'Все значения поступают напрямую с накопителя в домашней сети. Учётная запись Zendure не нужна.',
       ctl:'Управление', ctl_sub:'Изменения сразу уходят на SolarFlow',
       ctl_note:'Если в приложении Zendure включена автоматика (например, план энергопотребления), она может перезаписать вашу настройку.',
       out_power:'Мощность выдачи в дом', now_dash:'сейчас –',
@@ -831,9 +825,9 @@
       d_cap:'Ёмкость аккумулятора (Вт·ч)', d_peak:'Мощность модулей всего (Вт·п)', d_int:'Обновление каждые … секунд (мин. 3)',
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
-      d_diag:'Диагностика (временно)',
-      d_diag_hint:'Один раз считывает, какие данные отдают накопитель в домашней сети и облако Zendure — включая поля, которые приложение пока не знает. Ничего не изменяется. В результате нет данных для входа, номера и названия устройств сокращены.',
-      d_diag_run:'Запустить диагностику', d_copy:'Копировать', d_share:'Поделиться',
+      d_diag:'Полный отчёт устройства',
+      d_diag_hint:'Один раз считывает полный отчёт накопителя в домашней сети — включая поля, которые приложение пока не показывает. Учётная запись не нужна, ничего не изменяется. Номера и названия устройств сокращены.',
+      d_diag_run:'Считать отчёт', d_copy:'Копировать', d_share:'Поделиться',
       d_cancel:'Отмена', d_save:'Сохранить',
       ph_ip:'напр. 192.168.178.xx', ph_mail:'name@example.com', ph_pw:'Пароль',
       pw_saved:'•••••• (сохранён)',
@@ -883,7 +877,8 @@
     lang = l; store.set('lang', l);
     applyStatic();
     if (last) render(last);
-    showToday(); showStats(); showUpdate(); drawSun();
+    ['zMail','zPw','zToken','zNode','zDev','zStats'].forEach(store.del);  // Konto wird nicht mehr gebraucht
+  zeigeZustand(); showUpdate(); drawSun();
   }
   const fmtW = w => (w == null || isNaN(w)) ? ('– ' + t('u_w')) : `${Math.round(w)} ${t('u_w')}`;
   const kwh = (wh, dig = 2) => (wh/1000).toLocaleString(LOC(), {minimumFractionDigits:dig, maximumFractionDigits:dig});
@@ -896,7 +891,7 @@
   document.querySelectorAll('nav.tabs button[data-v]').forEach(b => b.onclick = () => {
     document.querySelectorAll('nav.tabs button[data-v]').forEach(x => x.classList.toggle('on', x === b));
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === b.dataset.v));
-    if (b.dataset.v === 'vStats') showStats();
+    if (b.dataset.v === 'vStats') zeigeZustand();
     if (b.dataset.v === 'vSet') ladeEinstellungen();
     window.scrollTo(0, 0);
   });
@@ -924,7 +919,11 @@
     return {sn:'DEMO', product:'solarFlow800Plus', properties:{solarInputPower:solar, solarPower1:pv1, solarPower2:pv2,
       outputHomePower:out, outputPackPower:charge, packInputPower:dis, gridInputPower: p.acMode === 1 ? (p.inputLimit||0) : 0, electricLevel:62,
       remainOutTime: dis ? 540 : 59940, hyperTmp:2911, BatVolt:5120, acMode: p.acMode ?? 2, inputLimit: p.inputLimit ?? 0, outputLimit: out,
-      socSet: p.socSet ?? 1000, minSoc: p.minSoc ?? 100, inverseMaxPower:800, chargeMaxLimit:800, rssi:-58}, packData:[{maxTemp:2891}]};
+      socSet: p.socSet ?? 1000, minSoc: p.minSoc ?? 100, inverseMaxPower:800, chargeMaxLimit:800, rssi:-58,
+      packNum:1, packState:1, faultLevel:0, is_error:0, heatState:0, derateFlag:0,
+      chargeAvailPower:800, dischargeAvailPower:800, IOTState:2},
+      timestamp: Math.floor(Date.now()/1000),
+      packData:[{maxTemp:2891, maxVol:331, minVol:329, totalVol:4965, batcur:12, power:60, socLevel:62, softVersion:4354, state:1}]};
   }
 
   // ---------- Anzeige Live ----------
@@ -1004,6 +1003,7 @@
     const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
     $('cVolt').textContent = p.BatVolt ? t('dbm_bat', de1(p.BatVolt/100)) : t('u_dbm');
+    zeigeZustand();
   }
 
   function setStatus(kind, text){ $('dot').className = 'dot ' + kind; $('status').textContent = text; }
@@ -1033,229 +1033,74 @@
   }
   document.addEventListener('visibilitychange', () => { if (document.hidden) clearInterval(timer); else start(); });
 
-  // ---------- Zendure-Cloud (Statistik) ----------
-  // Hinweis: In der Cloud heißt Laden 'batteryOutput' und Entladen 'batteryInput'
-  // (abgeglichen mit der Zendure-App am 10.11.2026: Geladen 1,41 kWh / Entladen 593 Wh).
-  const cloud = {
-    mail: store.get('zMail', ''), pw: store.get('zPw', ''),
-    token: store.get('zToken', ''), node: store.get('zNode', ''), devId: store.get('zDev', '')
-  };
-  const H = tok => {
-    const h = {'Content-Type':'application/json','Accept':'*/*','Accept-Language':'de-DE','appVersion':'4.3.1','User-Agent':'Zendure/4.3.1 (iPhone; iOS 14.4.2; Scale/3.00)'};
-    if (tok) h['Blade-Auth'] = 'bearer ' + tok; else { h['Authorization'] = 'Basic Q29uc3VtZXJBcHA6NX4qUmRuTnJATWg0WjEyMw=='; h['Blade-Auth'] = 'bearer (null)'; }
-    return h;
-  };
-  async function cpost(url, body, tok){
-    const r = await http(url, {method:'POST', headers: H(tok), body: JSON.stringify(body)}, 15000);
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || (j.success === false && j.code !== 200)) { const e = new Error(j.msg || ('HTTP ' + r.status)); e.status = r.status; throw e; }
-    return j;
-  }
-  async function cloudLogin(){
-    if (!cloud.mail || !cloud.pw) throw new Error(t('e_nologin'));
-    const j = await cpost(CLOUD + '/auth/app/token', {password: cloud.pw, account: cloud.mail, appId:'121c83f761305d6cf7e', appType:'iOS', grantType:'password', tenantId:''});
-    cloud.token = j.data?.accessToken || ''; let node = j.data?.serverNodeUrl || CLOUD;
-    if (!node.startsWith('http')) node = 'https://' + node;
-    cloud.node = node;
-    const d = await cpost(CLOUD + '/productModule/device/queryDeviceListByConsumerId', {}, cloud.token);
-    const list = d.data || [];
-    const dev = list.find(x => /800/.test(x.productName || '')) || list[0];
-    if (!dev) throw new Error(t('e_nodev'));
-    cloud.devId = String(dev.id);
-    store.set('zToken', cloud.token); store.set('zNode', cloud.node); store.set('zDev', cloud.devId);
-  }
-  async function energy(date){
-    const body = {aceId:'', deviceId: /^\d+$/.test(cloud.devId) ? Number(cloud.devId) : cloud.devId, beginDate: date || '', endDate: date || '', zone:'Europe/Berlin', type: date ? 0 : ''};
-    try { return (await cpost(cloud.node + '/tdengine/device/solarFlow/energy', body, cloud.token)).data || {}; }
-    catch (e) { await cloudLogin(); return (await cpost(cloud.node + '/tdengine/device/solarFlow/energy', body, cloud.token)).data || {}; }
-  }
-  async function electric(date){
-    const body = {aceId:'', deviceId: /^\d+$/.test(cloud.devId) ? Number(cloud.devId) : cloud.devId, beginDate: date || '', endDate: date || '', zone:'Europe/Berlin', type: date ? 0 : ''};
-    return (await cpost(cloud.node + '/tdengine/device/solarFlow/electric', body, cloud.token)).data || {};
-  }
-  async function ensureCloud(){ if (!cloud.token || !cloud.devId || !cloud.node) await cloudLogin(); }
-  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  // ---------- Zustand (alles lokal aus dem Geraet, ohne Konto) ----------
+  const nz = v => v != null && v !== '' && !isNaN(v);
+  const de2 = x => x.toFixed(2).replace('.', ',');
+  const volt = v => nz(v) ? de2(v / 100) + ' ' + t('u_v') : null;
 
-  function demoDay(i){ const s = 1800 + Math.round(900*Math.sin(i*1.3));
-    return {solar:s, home:s*0.85, batteryOutput:s*0.45, batteryInput:s*0.38, gridInputTotal:s*0.2, gridDirectTotal:s*0.3}; }
+  function zeigeZustand(){
+    const d = last, p = d?.properties || {}, pk = (d?.packData || [])[0] || {};
+    const s = (id, val, cls) => { const e = $(id); if (!e) return;
+      e.textContent = val == null ? '–' : val; e.className = val == null ? 'dim' : (cls || ''); };
 
-  // Welcher Minutenwert-Kanal gehört zu welchem Messwert.
-  // Am 11.11.2026 gegen die Tagessummen geprüft: Kanal 1+5 = PV1+PV2, 2 = Entladen, 3 = Ins Haus, 4 = Geladen.
-  const CH = {solar:['1','5'], batteryInput:['2'], home:['3'], batteryOutput:['4']};
-  const STEP = 5;   // Minuten je Stützstelle – 288 Punkte statt 1440 schonen den Speicher
-  function reihe(arr){
-    if (!Array.isArray(arr) || arr.length < 60) return null;
-    const out = [];
-    for (let i = 0; i < arr.length; i += STEP) {
-      let sum = 0, n = 0;
-      for (let j = i; j < Math.min(i + STEP, arr.length); j++) { sum += Number(arr[j] && arr[j].data) || 0; n++; }
-      out.push(n ? Math.round(sum / n) : 0);
-    }
-    return out;
-  }
-  function kurven(raw){
-    const src = raw && raw.data && typeof raw.data === 'object' ? raw.data : null;
-    if (!src) return null;
-    const out = {};
-    for (const [m, chs] of Object.entries(CH)) {
-      const teile = chs.map(c => reihe(src[c])).filter(Boolean);
-      if (!teile.length) continue;
-      out[m] = teile[0].map((_, i) => teile.reduce((a, r) => a + (r[i] || 0), 0));
-    }
-    return Object.keys(out).length ? out : null;
-  }
-  function demoKurve(i){
-    const o = {}, n = Math.ceil(1440 / STEP);
-    const bogen = (amp, von, bis) => Array.from({length:n}, (_, k) => {
-      const h = k * STEP / 60;
-      return h < von || h > bis ? 0 : Math.round(amp * Math.sin(Math.PI * (h - von) / (bis - von)));
-    });
-    o.solar = bogen(420 + i*40, 8.5, 17);
-    o.batteryOutput = bogen(300 + i*30, 9.5, 15.5);
-    o.home = Array.from({length:n}, () => 90 + Math.round(40*Math.random()));
-    o.batteryInput = o.home.map((v, k) => (o.solar[k] > 120 ? 0 : v));
-    return o;
+    $('stateInfo').textContent = !d ? t('no_data') : (lastOk ? t('state_as_of', hm(lastOk)) : t('state_live'));
+
+    // Akku
+    const soc = nz(p.electricLevel) ? p.electricLevel : null;
+    s('zSoc', soc == null ? null : soc + ' %');
+    s('zEnergy', soc == null ? null : `${kwh(cfg.cap * soc / 100)} / ${kwh(cfg.cap)} ${t('kwh')}`);
+    s('zPackVolt', volt(nz(pk.totalVol) ? pk.totalVol : p.BatVolt));
+    s('zCur', nz(pk.batcur) ? de1(pk.batcur / 10) + ' ' + t('u_a') : null);
+    s('zPower', nz(pk.power) ? fmtW(pk.power) : null);
+    $('zPacks').textContent = nz(p.packNum) ? t('z_packs_n', p.packNum) : '';
+
+    // Zellen – der Bericht liefert nur Hoechst- und Tiefstwert, keine Einzelzellen
+    const mx = nz(pk.maxVol) ? pk.maxVol : null, mn = nz(pk.minVol) ? pk.minVol : null;
+    s('zCmax', volt(mx)); s('zCmin', volt(mn));
+    if (mx != null && mn != null && mx > 0) {
+      const sp = mx - mn;                       // Hundertstel-Volt
+      const cls = sp <= 3 ? 'ok' : sp <= 7 ? '' : 'warn';
+      s('zSpread', (sp * 10) + ' ' + t('u_mv'), cls);
+      $('zSpreadNote').textContent = (sp <= 3 ? t('z_sp_ok') : sp <= 7 ? t('z_sp_mid') : t('z_sp_bad')) + ' ' + t('z_sp_base');
+      // Zellenzahl aus Packspannung und mittlerer Zellspannung
+      const mitte = (mx + mn) / 2, tv = nz(pk.totalVol) ? pk.totalVol : null;
+      const n = tv && mitte ? Math.round(tv / mitte) : 0;
+      $('zCellN').textContent = n >= 4 && n <= 32 ? t('z_cells_n', n) : '';
+    } else { s('zSpread', null); $('zSpreadNote').textContent = ''; $('zCellN').textContent = ''; }
+
+    // Temperatur
+    const te = tempC(p.hyperTmp), tp = tempC(pk.maxTemp);
+    s('zTempPack', tp == null ? null : Math.round(tp) + ' °C');
+    s('zTempEl', te == null ? null : Math.round(te) + ' °C');
+    s('zHeat', p.heatState == null ? null : (p.heatState ? t('z_on') : t('z_off')), p.heatState ? 'warn' : '');
+
+    // Grenzen
+    s('zMinSoc', nz(p.minSoc) ? (p.minSoc / 10) + ' %' : null);
+    s('zMaxSoc', nz(p.socSet) ? (p.socSet / 10) + ' %' : null);
+    s('zOutLimit', nz(p.outputLimit) ? fmtW(p.outputLimit) : null);
+    s('zInLimit', nz(p.inputLimit) ? fmtW(p.inputLimit) : null);
+    s('zChgMax', nz(p.chargeMaxLimit) ? fmtW(p.chargeMaxLimit) : null);
+    s('zInvMax', nz(p.inverseMaxPower) ? fmtW(p.inverseMaxPower) : null);
+
+    // Betrieb
+    s('zMode', p.acMode === 1 ? t('mode_grid') : p.acMode === 2 ? t('mode_home') : null);
+    s('zPackState', p.packState == null ? null : (p.packState ? t('z_active') : t('z_standby')));
+    s('zAvailChg', nz(p.chargeAvailPower) ? fmtW(p.chargeAvailPower) : null);
+    s('zAvailDis', nz(p.dischargeAvailPower) ? fmtW(p.dischargeAvailPower) : null);
+    s('zDerate', p.derateFlag == null ? null : (p.derateFlag ? t('z_yes') : t('z_no')), p.derateFlag ? 'warn' : '');
+    const stoerung = Number(p.faultLevel || 0) || Number(p.is_error || 0);
+    s('zFault', p.faultLevel == null && p.is_error == null ? null
+        : (stoerung ? t('z_fault_n', p.faultLevel ?? p.is_error) : t('z_nofault')), stoerung ? 'warn' : 'ok');
+
+    // Geraet
+    s('zProd', d?.product ? prodName(d.product) : null);
+    s('zSn', d?.sn ? '…' + String(d.sn).slice(-4) : null);
+    s('zSw', nz(pk.softVersion) ? String(pk.softVersion) : null);
+    s('zRssi', nz(p.rssi) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
+    s('zIot', p.IOTState == null ? null : (p.IOTState === 2 ? t('z_online') : String(p.IOTState)));
+    s('zStamp', nz(d?.timestamp) ? new Date(d.timestamp * 1000).toLocaleTimeString(LOC()) : null);
   }
 
-  // Statistik wird NUR auf Knopfdruck aus der Cloud geladen und auf dem Handy zwischengespeichert.
-  let stats = null, metric = 'solar', loading = false;
-  const METRIC = {
-    solar: {k:'m_solar', col:'var(--solar)'}, home: {k:'m_home', col:'var(--home)'},
-    batteryOutput: {k:'m_in', col:'var(--bat)'}, batteryInput: {k:'m_out', col:'var(--grid)'},
-    // vorläufig: Feldzuordnung noch nicht bestätigt, ohne Smart Meter bleiben die Werte 0
-    gridInputTotal: {k:'m_grid_in', col:'var(--gridin)'}, gridDirectTotal: {k:'m_grid_out', col:'var(--feed)'}
-  };
-  let dayIdx = 6;
-  function loadCache(){
-    try { const c = JSON.parse(store.get('zStats', 'null')); if (!c) return;
-      c.days.forEach(x => x.date = new Date(x.date)); c.at = new Date(c.at); stats = c; } catch {}
-  }
-  const hasLogin = () => demo || (cloud.mail && cloud.pw);
-  function showToday(){
-    const td = stats?.days?.[6];
-    const isToday = td && iso(td.date) === iso(new Date());
-    const d = isToday ? td.d : null;
-    $('tdSolar').textContent = d ? kwh(d.solar || 0) : '–'; $('tdHome').textContent = d ? kwh(d.home || 0) : '–';
-    $('tdIn').textContent = d ? kwh(d.batteryOutput || 0) : '–'; $('tdOut').textContent = d ? kwh(d.batteryInput || 0) : '–';
-    $('tdGridIn').textContent = d ? kwh(d.gridInputTotal || 0) : '–';
-    $('tdGridOut').textContent = d ? kwh(d.gridDirectTotal || 0) : '–';
-    $('todayInfo').textContent = !hasLogin() ? t('login_missing') : (stats && isToday ? t('kwh_as_of', hm(stats.at)) : t('load_in_stats'));
-  }
-  function showStats(){
-    $('statsLogin').style.display = hasLogin() ? 'none' : 'flex';
-    $('statsBody').style.display = hasLogin() ? 'flex' : 'none';
-    $('statsInfo').textContent = stats ? t('cloud_as_of', stats.at.toLocaleString(LOC(),{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})) : t('not_loaded');
-    drawStats();
-  }
-  async function refreshStats(){
-    if (loading) return;
-    if (!hasLogin()) { toast(t('enter_login_first')); return; }
-    loading = true; $('btnReloadStats').disabled = true;
-    $('statsInfo').textContent = t('loading'); $('todayInfo').textContent = t('loading');
-    try {
-      if (!demo) await ensureCloud();
-      const days = [], raws = {};
-      for (let i = 6; i >= 0; i--) {
-        const dt = new Date(); dt.setHours(12, 0, 0, 0); dt.setDate(dt.getDate() - i);
-        const roh = demo ? demoDay(i) : await energy(iso(dt));
-        const {data, energyVos, ...d} = roh;          // Minutenwerte getrennt halten
-        if (i === 0) raws.heute = d;
-        days.push({date: dt, d, c: demo ? demoKurve(i) : kurven(roh)});
-      }
-      // Ladestand-Kurve: eigene Abfrage, nur für heute
-      try {
-        const e = demo ? null : await electric(iso(new Date()));
-        const soc = demo ? null : reihe(e && e.energyVos);
-        if (soc) days[6].soc = soc;
-      } catch {}
-      const life = demo ? {solar:48210, home:41022, batteryOutput:20130, batteryInput:17702, gridInputTotal:0, gridDirectTotal:0} : await energy(null);
-      const {data: _d2, energyVos: _e2, ...lifeSlim} = life; raws.gesamt = lifeSlim;
-      stats = {days, life, at: new Date()};
-      if (!demo) store.set('zStats', JSON.stringify(stats));
-      $('raw').textContent = JSON.stringify(raws, null, 1).slice(0, 6000);
-      toast(t('stats_updated'));
-    } catch (e) { toast(t('stats_pfx') + e.message, 4500); }
-    finally { loading = false; $('btnReloadStats').disabled = false; showToday(); showStats(); }
-  }
-  const wd = d => d.toLocaleDateString(LOC(), {weekday:'short'}).replace('.', '');
-  function drawStats(){
-    const m = METRIC[metric];
-    $('sumLabel').textContent = t('last7', t(m.k));
-    if (!stats) { $('chart').innerHTML = ''; $('sumVal').textContent = '–'; $('sumAvg').textContent = '–'; $('sumBest').textContent = '–'; return; }
-    const vals = stats.days.map(x => (x.d[metric] || 0) / 1000);
-    const total = vals.reduce((a, b) => a + b, 0);
-    const bi = vals.indexOf(Math.max(...vals));
-    const f1 = v => v.toLocaleString(LOC(), {minimumFractionDigits:1, maximumFractionDigits:1});
-    const f2 = v => v.toLocaleString(LOC(), {minimumFractionDigits:2, maximumFractionDigits:2});
-    $('sumVal').textContent = f1(total);
-    $('sumAvg').textContent = f2(total / 7);
-    $('sumBest').textContent = `${bi === 6 ? t('today') : wd(stats.days[bi].date)} ${f2(vals[bi])}`;
-    const max = Math.max(0.5, ...vals), H = 140;
-    $('chart').innerHTML = stats.days.map((x, i) => {
-      const h = Math.max(4, Math.round(H * vals[i] / max));
-      return `<div class="bc${i === dayIdx ? ' sel' : ''}" data-i="${i}" role="button" tabindex="0"><div class="bw"><span>${f1(vals[i])}</span><i style="height:${h}px;background:${m.col}"></i></div><em>${i === 6 ? t('today') : wd(x.date)}</em></div>`;
-    }).join('');
-    // Antippen eines Balkens schaltet den Tagesverlauf darunter um
-    $('chart').querySelectorAll('.bc').forEach(b => b.onclick = () => { dayIdx = Number(b.dataset.i); drawStats(); });
-    $('tbl').querySelector('tbody').innerHTML = stats.days.slice().reverse().map((x, i) =>
-      `<tr${i === 0 ? ' class="cur"' : ''}><td>${i === 0 ? t('today') : wd(x.date) + ' ' + x.date.toLocaleDateString(LOC(),{day:'2-digit', month:'2-digit'})}</td><td>${kwh(x.d.solar||0)}</td><td>${kwh(x.d.home||0)}</td><td>${kwh(x.d.batteryOutput||0)}</td><td>${kwh(x.d.batteryInput||0)}</td></tr>`).join('');
-    const l = stats.life;
-    $('ltSolar').textContent = kwh(l.solar || 0, 1); $('ltHome').textContent = kwh(l.home || 0, 1);
-    $('ltIn').textContent = kwh(l.batteryOutput || 0, 1); $('ltOut').textContent = kwh(l.batteryInput || 0, 1);
-    $('ltGridIn').textContent = kwh(l.gridInputTotal || 0, 1); $('ltGridOut').textContent = kwh(l.gridDirectTotal || 0, 1);
-    drawNetz(); drawDay();
-  }
-
-  // Netz-Karte – vorläufig, solange die Feldzuordnung nicht bestätigt ist
-  function drawNetz(){
-    const ids = ['nzIn0','nzIn7','nzInL','nzOut0','nzOut7','nzOutL'];
-    if (!stats) { ids.forEach(i => $(i).textContent = '–'); return; }
-    const sum = k => stats.days.reduce((a, x) => a + (x.d[k] || 0), 0);
-    const heute = stats.days[6].d, l = stats.life;
-    $('nzIn0').textContent  = kwh(heute.gridInputTotal  || 0); $('nzIn7').textContent  = kwh(sum('gridInputTotal'));
-    $('nzInL').textContent  = kwh(l.gridInputTotal  || 0, 1);
-    $('nzOut0').textContent = kwh(heute.gridDirectTotal || 0); $('nzOut7').textContent = kwh(sum('gridDirectTotal'));
-    $('nzOutL').textContent = kwh(l.gridDirectTotal || 0, 1);
-  }
-
-  // Tagesverlauf aus den Minutenwerten der Cloud
-  function drawDay(){
-    const box = $('daychart');
-    if (!stats) { box.innerHTML = ''; $('dayLabel').textContent = '–'; $('dayPeak').textContent = ''; return; }
-    if (dayIdx > stats.days.length - 1) dayIdx = stats.days.length - 1;
-
-    const m = METRIC[metric], tag = stats.days[dayIdx];
-    const name = dayIdx === 6 ? t('today')
-      : wd(tag.date) + ' ' + tag.date.toLocaleDateString(LOC(), {day:'2-digit', month:'2-digit'});
-    $('dayLabel').textContent = t('day_curve', name);
-    const pts = tag.c && tag.c[metric];
-    if (!pts || !pts.some(v => v)) { box.innerHTML = `<div class="hint">${t('no_curve')}</div>`; $('dayPeak').textContent = ''; return; }
-
-    const W = 300, H = 110, n = pts.length, max = Math.max(10, ...pts);
-    $('dayPeak').textContent = t('peak', fmtW(max));
-    const X = i => (i / (n - 1)) * W, Y = v => H - (v / max) * H;
-    const line = pts.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
-    const grid = [0, 6, 12, 18, 24].map(h => {
-      const x = (h / 24) * W;
-      return `<line class="gl" x1="${x}" y1="0" x2="${x}" y2="${H}"/>` +
-             `<text class="hx" x="${x}" y="${H + 13}" text-anchor="${h === 0 ? 'start' : h === 24 ? 'end' : 'middle'}">${h}</text>`;
-    }).join('');
-    const soc = tag.soc && tag.soc.length
-      ? `<path class="soc" d="${tag.soc.map((v, i) => `${i ? 'L' : 'M'}${((i/(tag.soc.length-1))*W).toFixed(1)} ${(H - (Math.max(0, Math.min(100, v))/100)*H).toFixed(1)}`).join(' ')}"/>` : '';
-    box.innerHTML =
-      `<svg viewBox="0 -4 ${W} ${H + 22}" preserveAspectRatio="none" role="img" aria-label="${t('day_curve', t(m.k))}">
-         ${grid}
-         <path d="${line} L${W} ${H} L0 ${H} Z" fill="${m.col}" opacity=".16"/>
-         <path d="${line}" fill="none" stroke="${m.col}" stroke-width="1.8" stroke-linejoin="round"/>
-         ${soc}
-       </svg>
-       <div class="dlegend"><span><i style="background:${m.col}"></i>${t(m.k)}</span>` +
-      (soc ? `<span><i style="background:var(--muted)"></i>${t('soc_line')} %</span>` : '') + `</div>`;
-  }
-  document.querySelectorAll('#seg button').forEach(b => b.onclick = () => {
-    metric = b.dataset.k; document.querySelectorAll('#seg button').forEach(x => x.classList.toggle('on', x === b)); drawStats();
-  });
-  $('btnReloadStats').onclick = refreshStats;
 
   // ---------- Einstellungen ----------
   const zuReiter = id => document.querySelector(`nav.tabs button[data-v="${id}"]`).click();
@@ -1264,7 +1109,6 @@
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
     $('inPlz').value = cfg.plz; zeigeOrt();
     $('findResultDlg').innerHTML = '';
-    $('inMail').value = cloud.mail; $('inPw').value = ''; $('inPw').placeholder = cloud.pw ? t('pw_saved') : t('ph_pw');
   }
   $('btnCancel').onclick = () => zuReiter('vLive');
   $('btnSave').onclick = async () => {
@@ -1283,21 +1127,7 @@
     store.set('ip', cfg.ip); store.set('cap', cfg.cap); store.set('peak', cfg.peak); store.set('interval', cfg.interval);
     store.set('plz', cfg.plz); store.set('lat', cfg.lat); store.set('lon', cfg.lon);
     drawSun();
-    const mail = $('inMail').value.trim(), pw = $('inPw').value;
-    const changed = mail !== cloud.mail || pw;
-    if (mail) { cloud.mail = mail; store.set('zMail', mail); }
-    if (pw) { cloud.pw = pw; store.set('zPw', pw); }
     demo = false; zuReiter('vLive'); start();
-    if (changed && cloud.mail && cloud.pw) {
-      try { await cloudLogin(); toast(t('login_ok')); showToday(); }
-      catch (e) { toast(t('login_fail') + e.message, 5000); }
-    }
-  };
-  $('btnLogout').onclick = () => {
-    ['zMail','zPw','zToken','zNode','zDev'].forEach(store.del);
-    Object.assign(cloud, {mail:'', pw:'', token:'', node:'', devId:''});
-    stats = null; store.del('zStats'); toast(t('login_deleted'));
-    showToday(); showStats();
   };
 
   // ---------- Diagnose (vorübergehend, nur lesen) ----------
@@ -1312,35 +1142,6 @@
     for (let i = 0; i < zeilen.length; i += pro) log(ein + zeilen.slice(i, i + pro).join('  '));
   };
 
-  async function cget(url, tok){
-    const r = await http(url, {headers: H(tok)}, 20000);
-    const j = await r.json().catch(() => ({}));
-    return {st: r.status, j};
-  }
-
-  function kanaele(L, data){
-    if (!data || typeof data !== 'object') { L('   (keine Daten)'); return; }
-    const reihen = data.data && typeof data.data === 'object' ? {...data.data} : {};
-    if (Array.isArray(data.energyVos) && data.energyVos.length) reihen.energyVos = data.energyVos;
-    const keys = Object.keys(reihen).sort((a, b) => (a.length - b.length) || a.localeCompare(b));
-    const leer = [];
-    for (const k of keys) {
-      const arr = reihen[k];
-      if (!Array.isArray(arr)) continue;
-      const w = arr.map(p => Number(p && p.data) || 0);
-      const nz = w.filter(x => x !== 0);
-      if (!nz.length) { leer.push(k); continue; }
-      const neg = nz.filter(x => x < 0).length;
-      const t0 = (arr.find(p => Number(p && p.data)) || {}).dateTime || '';
-      L(`   Kanal ${String(k).padStart(9)}: n=${w.length} ≠0=${nz.length} min=${Math.min(...nz).toFixed(1)} max=${Math.max(...nz).toFixed(1)}`
-        + ` Σ/60=${(w.reduce((a, b) => a + b, 0) / 60).toFixed(1)}` + (neg ? ` NEGATIV=${neg}` : '') + (t0 ? ` ab ${t0}` : ''));
-    }
-    if (leer.length) L('   leer: ' + leer.join(', '));
-    const felder = Object.entries(data).filter(([, v]) => v !== null && typeof v !== 'object')
-      .map(([k, v]) => `${k}=${v}`).join(' ');
-    if (felder) L('   Felder: ' + felder);
-  }
-
   async function runDiagnose(){
     const L = [];
     const log = (...a) => L.push(a.join(' '));
@@ -1351,119 +1152,41 @@
     L.push('App-Version __APPVERSION__');
     zeig();
     try {
-      // 1) Gerät im eigenen WLAN
-      if (cfg.ip) {
-        try {
-          const r = await http(`http://${cfg.ip}/properties/report`, {}, 5000);
-          const d = await r.json();
-          const p = d.properties || {};
-          log('\n== Gerät im WLAN ==');
-          log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
-          log(' ' + ['solarInputPower','outputHomePower','gridInputPower','outputPackPower','packInputPower',
-                     'electricLevel','acMode','outputLimit','inputLimit','socSet','minSoc','inverseMaxPower']
-                    .map(k => `${k}=${p[k]}`).join(' '));
-          const extra = Object.keys(p).filter(k => /meter|grid|phase|ct|reverse|hems/i.test(k)).map(k => `${k}=${p[k]}`);
-          if (extra.length) log(' Netz-Felder:', extra.join(' '));
+      if (!cfg.ip) { log('\n== Gerät im WLAN: keine IP eingetragen (Einstellungen → Gerät im WLAN)'); return; }
+      const r = await http(`http://${cfg.ip}/properties/report`, {}, 8000);
+      const d = await r.json();
+      const p = d.properties || {};
+      log('\n== Gerät im WLAN ==');
+      log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
 
-          // Vollständiger Rohbericht – zeigt auch Felder, die wir noch nicht kennen
-          const oben = flach(d).filter(z => !z.startsWith('properties='));
-          if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
+      const oben = flach(d).filter(z => !z.startsWith('properties='));
+      if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
 
-          log(' -- alle Felder in properties --');
-          spalten(log, flach(p), 4, '  ');
+      log(' -- alle Felder in properties --');
+      spalten(log, flach(p), 4, '  ');
 
-          const packs = Array.isArray(p.packData) ? p.packData
-                      : Array.isArray(d.packData) ? d.packData : [];
-          log(` -- packData: ${packs.length} Pack(s) --`);
-          packs.forEach((pk, i) => {
-            if (!pk || typeof pk !== 'object') return;
-            log(`  Pack ${i + 1}:`);
-            spalten(log, flach(pk), 4, '   ');
-            Object.entries(pk).forEach(([k, v]) => {
-              if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-            });
-          });
-
-          // sonstige Listen und verschachtelte Objekte (hier könnten Zellspannungen stecken)
-          for (const [quelle, obj] of [['properties', p], ['oben', d]])
-            Object.entries(obj).forEach(([k, v]) => {
-              if (k === 'packData' || k === 'properties') return;
-              if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-              else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
-            });
-        } catch (e) { log('\n== Gerät im WLAN: nicht erreichbar (' + (e.message || e) + ')'); }
-      } else log('\n== Gerät im WLAN: keine IP eingetragen (Einstellungen → Speicher im WLAN)');
-      zeig();
-
-      // 2) Anmeldung – nimmt auch gerade eingetippte Daten, ohne vorher zu speichern
-      const mail = ($('inMail').value || '').trim() || cloud.mail;
-      const pw = $('inPw').value || cloud.pw;
-      if (!mail || !pw) { log('\n== Zendure-Konto: kein Login eingetragen – bitte oben E-Mail und Passwort eintragen.'); zeig(); return; }
-      const lj = await cpost(CLOUD + '/auth/app/token', {password: pw, account: mail,
-        appId:'121c83f761305d6cf7e', appType:'iOS', grantType:'password', tenantId:''});
-      const tok = lj.data?.accessToken || '';
-      let node = lj.data?.serverNodeUrl || CLOUD;
-      if (!node.startsWith('http')) node = 'https://' + node;
-      log('\n== Anmeldung bei Zendure: OK');
-      zeig();
-
-      // 3) Geräte einsammeln (eigene + geteilte)
-      const geraete = {};
-      const merke = o => {
-        if (Array.isArray(o)) return o.forEach(merke);
-        if (!o || typeof o !== 'object') return;
-        for (const k of ['deviceId', 'id']) {
-          const v = o[k];
-          if (v != null && /^\d{5,}$/.test(String(v)))
-            geraete[String(v)] = geraete[String(v)] || (o.productName || o.deviceName || o.name || '?');
-        }
-        Object.values(o).forEach(merke);
-      };
-      const hatWert = v => v != null && String(v) !== '0' && String(v) !== '';
-      const eigen = await cpost(CLOUD + '/productModule/device/queryDeviceListByConsumerId', {}, tok);
-      log(' Eigene Geräte:', (eigen.data || []).length);
-      (eigen.data || []).forEach(d => log('  ·', d.productName || '?', cut(d.id), 'SN', cut(d.snNumber),
-        'meter=' + (hatWert(d.meterId) ? 'ja ' + cut(d.meterId) : 'nein'),
-        'hems=' + (hatWert(d.hemsId) ? 'ja ' + cut(d.hemsId) : 'nein'),
-        'productType=' + (d.productType ?? '?'), 'phase=' + (d.phase ?? '-'), 'gridState=' + (d.gridState ?? '-')));
-      merke(eigen.data);
-      // Smart Meter und HEMS hängen als eigene Nummern am Gerät – ebenfalls abfragen
-      (eigen.data || []).forEach(d => {
-        if (hatWert(d.meterId)) geraete[String(d.meterId)] = 'SmartMeter (meterId)';
-        if (hatWert(d.hemsId)) geraete[String(d.hemsId)] = 'HEMS (hemsId)';
+      const packs = Array.isArray(p.packData) ? p.packData
+                  : Array.isArray(d.packData) ? d.packData : [];
+      log(` -- packData: ${packs.length} Pack(s) --`);
+      packs.forEach((pk, i) => {
+        if (!pk || typeof pk !== 'object') return;
+        log(`  Pack ${i + 1}:`);
+        spalten(log, flach(pk), 4, '   ');
+        Object.entries(pk).forEach(([k, v]) => {
+          if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+        });
       });
-      for (const [name, pfad] of [['Mit mir geteilt', '/product/devicesharerecord/pageQueryAcceptShareRecord'],
-                                   ['Von mir geteilt', '/product/devicesharerecord/pageQueryShareRecord']]) {
-        const {st, j} = await cget(`${CLOUD}${pfad}?current=1&size=50`, tok);
-        const recs = j.data?.records || [];
-        log(` ${name}: HTTP ${st}, ${recs.length} Einträge`);
-        recs.forEach(r => log('  ·', r.productName || r.deviceName || '?', cut(r.deviceId || r.id)));
-        merke(j.data);
-      }
-      zeig();
 
-      // 4) Daten pro Gerät (gestern)
-      const g = new Date(); g.setDate(g.getDate() - 1); const tag = iso(g);
-      for (const [id, name] of Object.entries(geraete)) {
-        log(`\n== ${name} ${cut(id)} · ${tag} ==`);
-        try {
-          const {st, j} = await cget(`${CLOUD}/panel/grid/detail?deviceId=${id}`, tok);
-          const d = j.data;
-          if (st === 200 && d && (typeof d !== 'object' || Object.keys(d).length))
-            log(' Netz-Einstellung:', JSON.stringify(d).slice(0, 400));
-        } catch {}
-        for (const ep of ['energy', 'electric']) {
-          try {
-            const r = await cpost(`${node}/tdengine/device/solarFlow/${ep}`,
-              {aceId:'', deviceId: Number(id), beginDate: tag, endDate: tag, zone:'Europe/Berlin', type: 0}, tok);
-            log(` ${ep}:`); kanaele(log, r.data);
-          } catch (e) { log(` ${ep}: Fehler – ${e.message || e}`); }
-          zeig();
-        }
-      }
+      // sonstige Listen und verschachtelte Objekte
+      for (const [quelle, obj] of [['properties', p], ['oben', d]])
+        Object.entries(obj).forEach(([k, v]) => {
+          if (k === 'packData' || k === 'properties') return;
+          if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+          else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
+        });
       log('\n== Ende ==');
     } catch (e) {
-      log('\nABBRUCH: ' + (e.message || e));
+      log('\n== Gerät im WLAN: nicht erreichbar (' + (e.message || e) + ')');
     } finally {
       zeig(); $('btnDiag').disabled = false;
       $('diagOut').scrollTop = $('diagOut').scrollHeight;
@@ -1653,7 +1376,7 @@
   if (location.search.includes('demo')) demo = true;
   if (!isApp && location.protocol === 'https:') demo = true;  // Vorschau
   start();
-  loadCache(); showToday();
+  zeigeZustand();
   if (isApp) setTimeout(() => checkUpdate().catch(() => {}), 3000);   // still im Hintergrund, Punkt am ⚙ bei neuer Version
 })();
 </script>
