@@ -507,8 +507,9 @@
 
   <div class="dsec" id="secDiag">
     <div class="dtitle" data-i18n="d_diag">Diagnose (vorübergehend)</div>
-    <div class="hint" data-i18n="d_diag_hint">Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte
-      bereitstellt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte&#8209;Nummern sind gekürzt.</div>
+    <div class="hint" data-i18n="d_diag_hint">Liest einmalig aus, welche Daten der Speicher im WLAN und die Zendure-Cloud bereitstellen –
+      auch Felder, die die App noch nicht kennt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten;
+      Geräte&#8209;Nummern und Namen sind gekürzt.</div>
     <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Diagnose starten</button>
     <div class="diagbox" id="diagBox" style="display:none">
       <textarea id="diagOut" readonly></textarea>
@@ -734,7 +735,7 @@
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
       d_diag:'Diagnose (vorübergehend)',
-      d_diag_hint:'Liest einmalig aus, welche Daten die Zendure-Cloud für die eigenen und die geteilten Geräte bereitstellt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte-Nummern sind gekürzt.',
+      d_diag_hint:'Liest einmalig aus, welche Daten der Speicher im WLAN und die Zendure-Cloud bereitstellen – auch Felder, die die App noch nicht kennt. Es wird nichts verändert. Das Ergebnis enthält keine Zugangsdaten; Geräte-Nummern und Namen sind gekürzt.',
       d_diag_run:'Diagnose starten', d_copy:'Kopieren', d_share:'Teilen',
       d_cancel:'Abbrechen', d_save:'Speichern',
       ph_ip:'z. B. 192.168.178.xx', ph_mail:'name@beispiel.de', ph_pw:'Passwort',
@@ -831,7 +832,7 @@
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
       d_diag:'Диагностика (временно)',
-      d_diag_hint:'Один раз считывает, какие данные облако Zendure отдаёт по своим и по общим устройствам. Ничего не изменяется. В результате нет данных для входа, номера устройств сокращены.',
+      d_diag_hint:'Один раз считывает, какие данные отдают накопитель в домашней сети и облако Zendure — включая поля, которые приложение пока не знает. Ничего не изменяется. В результате нет данных для входа, номера и названия устройств сокращены.',
       d_diag_run:'Запустить диагностику', d_copy:'Копировать', d_share:'Поделиться',
       d_cancel:'Отмена', d_save:'Сохранить',
       ph_ip:'напр. 192.168.178.xx', ph_mail:'name@example.com', ph_pw:'Пароль',
@@ -1301,6 +1302,15 @@
 
   // ---------- Diagnose (vorübergehend, nur lesen) ----------
   const cut = v => { const t = String(v ?? ''); return t.length > 4 ? '…' + t.slice(-4) : t; };
+  // Felder, die niemand sehen muss: Nummern, Namen, Schlüssel – werden auf die letzten 4 Zeichen gekürzt
+  const GEHEIM = /sn$|serial|mac|ssid|wifi|key$|token|secret|passw|mail|account|^ip$/i;
+  const sicher = (k, v) => GEHEIM.test(k) ? cut(v) : v;
+  const flach = o => Object.entries(o || {})
+    .filter(([, v]) => v === null || typeof v !== 'object')
+    .map(([k, v]) => `${k}=${sicher(k, v)}`).sort();
+  const spalten = (log, zeilen, pro, ein) => {
+    for (let i = 0; i < zeilen.length; i += pro) log(ein + zeilen.slice(i, i + pro).join('  '));
+  };
 
   async function cget(url, tok){
     const r = await http(url, {headers: H(tok)}, 20000);
@@ -1354,8 +1364,35 @@
                     .map(k => `${k}=${p[k]}`).join(' '));
           const extra = Object.keys(p).filter(k => /meter|grid|phase|ct|reverse|hems/i.test(k)).map(k => `${k}=${p[k]}`);
           if (extra.length) log(' Netz-Felder:', extra.join(' '));
+
+          // Vollständiger Rohbericht – zeigt auch Felder, die wir noch nicht kennen
+          const oben = flach(d).filter(z => !z.startsWith('properties='));
+          if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
+
+          log(' -- alle Felder in properties --');
+          spalten(log, flach(p), 4, '  ');
+
+          const packs = Array.isArray(p.packData) ? p.packData
+                      : Array.isArray(d.packData) ? d.packData : [];
+          log(` -- packData: ${packs.length} Pack(s) --`);
+          packs.forEach((pk, i) => {
+            if (!pk || typeof pk !== 'object') return;
+            log(`  Pack ${i + 1}:`);
+            spalten(log, flach(pk), 4, '   ');
+            Object.entries(pk).forEach(([k, v]) => {
+              if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+            });
+          });
+
+          // sonstige Listen und verschachtelte Objekte (hier könnten Zellspannungen stecken)
+          for (const [quelle, obj] of [['properties', p], ['oben', d]])
+            Object.entries(obj).forEach(([k, v]) => {
+              if (k === 'packData' || k === 'properties') return;
+              if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
+              else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
+            });
         } catch (e) { log('\n== Gerät im WLAN: nicht erreichbar (' + (e.message || e) + ')'); }
-      } else log('\n== Gerät im WLAN: keine IP eingetragen');
+      } else log('\n== Gerät im WLAN: keine IP eingetragen (Einstellungen → Speicher im WLAN)');
       zeig();
 
       // 2) Anmeldung – nimmt auch gerade eingetippte Daten, ohne vorher zu speichern
