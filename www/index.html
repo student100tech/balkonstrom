@@ -15,7 +15,23 @@
     --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
     --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#8E9AAF; --warn:#F87171; --ok:#4ADE80;
     --gridin:#F87171; --feed:#60A5FA;
+    --onbat:#052219; --onfeed:#07213d; --tabon:#232838;
+    --solarBg:#1E1A12; --solarLn:#3A3124; --gridBg:#161A22; --gridLn:#2A303C;
+    --homeBg:#18162A; --homeLn:#2B2745; --batBg:#112420; --batLn:#21342F;
+    --moon:#C9D4E8; --noteBg:#12161F; --noteTx:#A8AFBD; --navBg:rgba(22,25,33,.92);
+    --errBg:#3a1f25; --errLn:#6b2a33; --errTx:#fecaca; --errBtn:#4a2229; --errBtnLn:#7a3340;
     --num:"Space Grotesk",Inter,system-ui,sans-serif;
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F5F9; --card:#FFFFFF; --card2:#EDF0F6; --card3:#F8FAFD; --line:#DCE1EA; --line2:#E7EBF2; --line3:#C5CCD9;
+    --text:#10131A; --muted:#5C6475; --muted2:#39414F; --dim:#8A92A3;
+    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#5B6678; --warn:#C62828; --ok:#0A7D5E;
+    --gridin:#C62828; --feed:#1D4ED8;
+    --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E2E7F1;
+    --solarBg:#FFF5E4; --solarLn:#EBD3A6; --gridBg:#EEF1F6; --gridLn:#CBD2DE;
+    --homeBg:#F1EEFF; --homeLn:#D3C9F8; --batBg:#E3F6F0; --batLn:#AFE2D4;
+    --moon:#6F7A8C; --noteBg:#EDF1F8; --noteTx:#49515F; --navBg:rgba(255,255,255,.92);
+    --errBg:#FDECEC; --errLn:#F2BDBA; --errTx:#8E1C17; --errBtn:#FAD6D4; --errBtnLn:#E8A29E;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
@@ -92,7 +108,7 @@
   .bat-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;text-align:right}
   .bat-right .kwh{font-size:14px;color:var(--muted)}
   .bat-right .kwh b{font-family:var(--num);font-size:20px;font-weight:600;color:var(--text)}
-  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:rgba(61,219,176,.12);color:var(--batText);font-size:12px;font-weight:500}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--batText);font-size:12px;font-weight:500}
   .chip.idle{background:var(--card2);color:var(--muted2)}
   .bar{height:10px;border-radius:99px;background:var(--card2);position:relative}
   .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--bat);transition:width .6s}
@@ -103,7 +119,7 @@
   .today-card{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
   .four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
   .four.two{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .badge{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#07213d;background:var(--feed);border-radius:99px;padding:3px 9px}
+  .badge{font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--onfeed);background:var(--feed);border-radius:99px;padding:3px 9px}
   .fieldnote{margin-top:10px;font-size:11px;color:var(--dim);font-family:ui-monospace,monospace;word-break:break-all}
   .daychart{margin-top:4px}
   .daychart svg{display:block;width:100%;height:150px;overflow:visible}
@@ -119,8 +135,8 @@
   i.d{display:inline-block;width:6px;height:6px;border-radius:50%;flex:none}
 
   /* ---------- Hinweise ---------- */
-  .msg{background:#3a1f25;border:1px solid #6b2a33;color:#fecaca;border-radius:16px;padding:12px 14px;font-size:13.5px;display:none;line-height:1.4}
-  .note{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px;background:#12161F;border:1px solid var(--line2);font-size:12.5px;line-height:1.45;color:#A8AFBD}
+  .msg{background:var(--errBg);border:1px solid var(--errLn);color:var(--errTx);border-radius:16px;padding:12px 14px;font-size:13.5px;display:none;line-height:1.4}
+  .note{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border-radius:18px;background:var(--noteBg);border:1px solid var(--line2);font-size:12.5px;line-height:1.45;color:var(--noteTx)}
   .note svg{flex:none;width:18px;height:18px;margin-top:1px}
   .hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.4}
   .foot{font-size:12px;color:var(--dim);text-align:center;padding-top:4px}
@@ -128,17 +144,17 @@
   /* ---------- Knöpfe ---------- */
   .btn{height:44px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--text);font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
   .btn svg{width:17px;height:17px}
-  .btn.primary{height:50px;border:0;border-radius:16px;background:var(--bat);color:#052219;font-size:15px;font-weight:600}
+  .btn.primary{height:50px;border:0;border-radius:16px;background:var(--bat);color:var(--onbat);font-size:15px;font-weight:600}
   .btn.secondary{height:50px;border-radius:16px;border-color:var(--line3);background:var(--card2);font-size:15px;font-weight:600}
   /* Übernehmen-Knopf: grau, solange nichts geändert wurde – grün, sobald der Regler vom Gerätewert abweicht */
   .btn.apply{height:50px;border-radius:16px;border-color:var(--line3);background:var(--card2);color:var(--dim);font-size:15px;font-weight:600}
-  .btn.apply.on{border-color:transparent;background:var(--bat);color:#052219}
+  .btn.apply.on{border-color:transparent;background:var(--bat);color:var(--onbat)}
   .btn:disabled{cursor:default}
   .resetable{color:var(--muted2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
   .btn.small{height:34px;padding:0 12px;font-size:12.5px;border-radius:10px}
   .btn:disabled{opacity:.5}
   .wide-btn{width:100%}
-  .btn.update{background:var(--bat);border-color:var(--bat);color:#052219;font-weight:600}
+  .btn.update{background:var(--bat);border-color:var(--bat);color:var(--onbat);font-weight:600}
 
   /* ---------- Statistik ---------- */
   .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
@@ -207,10 +223,10 @@
 
   /* ---------- Navigation ---------- */
   nav.tabs{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 16px);width:min(calc(100vw - 32px),448px);height:68px;
-    display:flex;gap:6px;padding:6px;background:rgba(22,25,33,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;z-index:5}
+    display:flex;gap:6px;padding:6px;background:var(--navBg);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;z-index:5}
   nav.tabs button{flex:1;background:none;border:0;color:var(--muted);border-radius:18px;font-size:12px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}
   nav.tabs button svg{width:22px;height:22px}
-  nav.tabs button.on{background:#232838;color:var(--text);font-weight:600}
+  nav.tabs button.on{background:var(--tabon);color:var(--text);font-weight:600}
   nav.tabs button.on svg{color:var(--bat)}
 
   /* ---------- Einstellungen ---------- */
@@ -248,7 +264,7 @@
   .toast.show{opacity:1}
   /* ---------- Gerätesuche ---------- */
   .setup{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:26px 20px 18px}
-  .setup .ic{width:64px;height:64px;border-radius:20px;background:rgba(61,219,176,.12);color:var(--bat);display:flex;align-items:center;justify-content:center}
+  .setup .ic{width:64px;height:64px;border-radius:20px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--bat);display:flex;align-items:center;justify-content:center}
   .setup .ic svg{width:30px;height:30px}
   .setup h3{font-family:var(--num);font-size:21px;font-weight:600}
   .setup p{font-size:13px;color:var(--muted);line-height:1.5;max-width:300px}
@@ -257,10 +273,10 @@
   .found{width:100%;display:flex;flex-direction:column;gap:8px;text-align:left}
   .found:empty{display:none}
   .found .hint{margin:0;text-align:center}
-  .found .warn{color:#fecaca}
+  .found .warn{color:var(--errTx)}
   .devbtn{width:100%;min-height:56px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card3);color:var(--text);text-align:left;cursor:pointer}
   .devbtn:hover,.devbtn:focus-visible{border-color:var(--bat)}
-  .devbtn .di{width:36px;height:36px;border-radius:11px;background:rgba(61,219,176,.12);color:var(--bat);display:flex;align-items:center;justify-content:center;flex:none}
+  .devbtn .di{width:36px;height:36px;border-radius:11px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--bat);display:flex;align-items:center;justify-content:center;flex:none}
   .devbtn .di svg{width:18px;height:18px}
   .devbtn b{display:block;font-size:14px;font-weight:600}
   .devbtn small{display:block;font-size:12px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
@@ -269,10 +285,10 @@
   .iprow .btn{height:46px;border-radius:12px;flex:none}
   .spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex:none}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .msg .btn{margin-top:10px;height:40px;background:#4a2229;border-color:#7a3340;color:#fecaca}
-  .langsel{display:flex;gap:8px}
-  .langsel button{flex:1;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--muted2);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
-  .langsel button.on{border-color:transparent;background:var(--bat);color:#052219}
+  .msg .btn{margin-top:10px;height:40px;background:var(--errBtn);border-color:var(--errBtnLn);color:var(--errTx)}
+  .langsel,.selrow{display:flex;gap:8px}
+  .langsel button,.selrow button{flex:1;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--muted2);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .langsel button.on,.selrow button.on{border-color:transparent;background:var(--bat);color:var(--onbat)}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -311,7 +327,7 @@
         <g id="moon" opacity="0">
           <g id="moonPos" transform="translate(179 30)">
             <circle r="12.5" fill="none" stroke="var(--line3)" stroke-width="1"/>
-            <path id="moonLit" d="" fill="#C9D4E8"/>
+            <path id="moonLit" d="" fill="var(--moon)"/>
           </g>
         </g>
         <text id="moonTxt" x="179" y="62" text-anchor="middle" class="moontxt"></text>
@@ -327,7 +343,7 @@
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/>
         <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/>
 
-        <circle cx="175" cy="38" r="28" fill="#1E1A12" stroke="#3A3124" stroke-width="5"/>
+        <circle cx="175" cy="38" r="28" fill="var(--solarBg)" stroke="var(--solarLn)" stroke-width="5"/>
         <circle id="pvRing" cx="175" cy="38" r="28" fill="none" stroke="var(--solar)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 38)"/>
         <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
         <text class="node-label" x="134" y="34" text-anchor="end" data-i18n="solar">Solar</text>
@@ -338,19 +354,19 @@
         <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
         <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
 
-        <circle cx="46" cy="126" r="26" fill="#161A22" stroke="#2A303C" stroke-width="5"/>
+        <circle cx="46" cy="126" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="126" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 126)"/>
         <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
         <text class="node-label" x="46" y="174" text-anchor="middle" data-i18n="grid_bat">Netz → Akku</text>
         <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
-        <circle cx="304" cy="126" r="26" fill="#18162A" stroke="#2B2745" stroke-width="5"/>
+        <circle cx="304" cy="126" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
         <circle id="homeRing" cx="304" cy="126" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 126)"/>
         <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
         <text class="node-label" x="304" y="174" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
         <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
 
-        <circle cx="175" cy="214" r="28" fill="#112420" stroke="#21342F" stroke-width="5"/>
+        <circle cx="175" cy="214" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
         <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
         <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
         <text class="node-label" x="216" y="208" id="tBatState" data-i18n="bat">Akku</text>
@@ -378,7 +394,7 @@
     <div class="tiles">
       <div class="tile"><span class="t" data-i18n="out_limit">Ausgangslimit</span><span class="v" id="cOutLimit" data-i18n="dash_w">– W</span><span class="s" id="cMax">&nbsp;</span></div>
       <div class="tile"><span class="t" data-i18n="mode">Modus</span><span class="v" id="cMode" style="font-size:18px;line-height:1.25">–</span><span class="s" id="cInLimit">&nbsp;</span></div>
-      <div class="tile" style="gap:8px"><span class="t" data-i18n="temp">Temperatur</span><div class="trow"><span data-i18n="electronics">Elektronik</span><b id="cTemp">– °C</b></div><div class="trow"><span data-i18n="bat">Akku</span><b id="cPackTemp">– °C</b></div></div>
+      <div class="tile" style="gap:8px"><span class="t" data-i18n="temp">Temperatur</span><div class="trow"><span data-i18n="electronics">Wechselrichter</span><b id="cTemp">– °C</b></div><div class="trow"><span data-i18n="bat">Akku</span><b id="cPackTemp">– °C</b></div></div>
       <div class="tile"><span class="t" data-i18n="wifi">WLAN</span><div style="display:flex;align-items:flex-end;gap:10px"><span class="v" id="cRssi">–</span><span class="bars4" id="rssiBars" aria-hidden="true"><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span></div><span class="s" id="cVolt" data-i18n="u_dbm">dBm</span></div>
     </div>
   </section>
@@ -387,6 +403,15 @@
   <section class="view" id="vStats">
     <div class="pagehead">
       <div><h2 data-i18n="state">Zustand</h2><div class="sub" id="stateInfo" data-i18n="no_data">noch keine Daten</div></div>
+    </div>
+
+    <div class="card" id="zCardSolar">
+      <div class="card-head"><span class="lbl" data-i18n="solar">Solar</span><span class="info" id="zPvN"></span></div>
+      <div class="zrow"><span data-i18n="z_pvtotal">Gesamt</span><b id="zPvAll">–</b></div>
+      <div class="zrow" id="zRowPv1"><span>PV1</span><b id="zPv1">–</b></div>
+      <div class="zrow" id="zRowPv2"><span>PV2</span><b id="zPv2">–</b></div>
+      <div class="zrow" id="zRowPv3"><span>PV3</span><b id="zPv3">–</b></div>
+      <div class="zrow" id="zRowPv4"><span>PV4</span><b id="zPv4">–</b></div>
     </div>
 
     <div class="card">
@@ -409,8 +434,9 @@
     <div class="card">
       <div class="card-head"><span class="lbl" data-i18n="temp">Temperatur</span></div>
       <div class="zrow"><span data-i18n="bat">Akku</span><b id="zTempPack">–</b></div>
-      <div class="zrow"><span data-i18n="electronics">Elektronik</span><b id="zTempEl">–</b></div>
+      <div class="zrow"><span data-i18n="electronics">Wechselrichter</span><b id="zTempEl">–</b></div>
       <div class="zrow"><span data-i18n="z_heat">Heizung</span><b id="zHeat">–</b></div>
+      <div class="zrow" id="zRowFan"><span data-i18n="z_fan">Lüfter</span><b id="zFan">–</b></div>
     </div>
 
     <div class="card">
@@ -431,6 +457,7 @@
       <div class="zrow"><span data-i18n="z_availdis">Frei zum Entladen</span><b id="zAvailDis">–</b></div>
       <div class="zrow"><span data-i18n="z_derate">Gedrosselt</span><b id="zDerate">–</b></div>
       <div class="zrow"><span data-i18n="z_fault">Störung</span><b id="zFault">–</b></div>
+      <div class="zrow" id="zRowOff"><span data-i18n="z_offgrid">Off-Grid-Dose</span><b id="zOffGrid">–</b></div>
     </div>
 
     <div class="card">
@@ -457,6 +484,11 @@
   </div>
 
   <div class="dsec">
+    <div class="dtitle" data-i18n="d_theme">Darstellung</div>
+    <div class="selrow" id="themeSel"><button data-t="auto" data-i18n="th_auto">Automatisch</button><button data-t="light" data-i18n="th_light">Hell</button><button data-t="dark" data-i18n="th_dark">Dunkel</button></div>
+  </div>
+
+  <div class="dsec">
     <div class="dtitle" data-i18n="d_app">App</div>
     <div class="drow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
     <button class="btn wide-btn" id="btnUpdate" data-i18n="check_update">Nach Update suchen</button>
@@ -470,6 +502,7 @@
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
     <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
+    <div class="hint" id="capHint"></div>
     <label class="f" for="inPeak" data-i18n="d_peak">Modulleistung gesamt (Wp)</label>
     <input id="inPeak" inputmode="numeric" placeholder="800">
     <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
@@ -669,7 +702,7 @@
       lasts_until:(t0,h,m)=>`Reicht bis ${t0} · ca. ${h} h ${m} min`,
       discharging:w=>`Entlädt mit ${w}`, charging:w=>`Lädt mit ${w}`, idle:'Ruht',
       today:'Heute', charged:'Geladen', discharged:'Entladen',
-      out_limit:'Ausgangslimit', mode:'Modus', temp:'Temperatur', electronics:'Elektronik', wifi:'WLAN',
+      out_limit:'Ausgangslimit', mode:'Modus', temp:'Temperatur', electronics:'Wechselrichter', wifi:'WLAN',
       mode_grid:'Laden aus Netz', mode_home:'Abgabe ins Haus',
       max_feed:w=>`max. ${w} Einspeisung`,
       chg_power_v:w=>`Ladeleistung ${w}`, chg_max_v:w=>`Laden max. ${w}`,
@@ -677,12 +710,18 @@
       foot_demo:'Demo-Daten – keine Verbindung zum Gerät',
       foot_live:(ip,s)=>`Direkt vom Gerät im WLAN (${ip}) · alle ${s} s`,
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
+      d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
+      d_cap_hint:n=>`Das Gerät meldet ${n} Akkupack${n>1?'s':''}. Die Kapazität selbst steht nicht im Bericht – bei den gängigen Packs sind es 1920 Wh pro Stück.`,
       state:'Zustand', no_data:'noch keine Daten', u_v:'V', u_a:'A', u_mv:'mV',
       state_live:'Live vom Gerät', state_as_of:x=>`Stand ${x}`,
       kwh:'kWh',
       z_soc:'Ladestand', z_energy:'Gespeichert', z_packvolt:'Packspannung',
       z_cur:'Akkustrom', z_power:'Akkuleistung', z_packs_n:n=>`${n} Pack${n>1?'s':''}`,
       z_cells:'Zellen', z_cells_n:n=>`${n} in Reihe`,
+      z_pvtotal:'Gesamt', z_inputs_n:n=>`${n} Eingänge`,
+      z_fan:'Lüfter', z_fan_n:n=>`Stufe ${n}`,
+      z_offgrid:'Off-Grid-Dose', z_ready:'bereit',
+      z_charging:'lädt', z_discharging:'entlädt',
       z_cmax:'Höchste Zelle', z_cmin:'Niedrigste Zelle', z_spread:'Spreizung',
       z_sp_ok:'Die Zellen sind ausgeglichen.', z_sp_mid:'Leicht erhöht – im Auge behalten.',
       z_sp_bad:'Auffällig – eine Zelle fällt ab.',
@@ -774,7 +813,7 @@
       lasts_until:(t0,h,m)=>`Хватит до ${t0} · ок. ${h} ч ${m} мин`,
       discharging:w=>`Разряд ${w}`, charging:w=>`Заряд ${w}`, idle:'Покой',
       today:'Сегодня', charged:'Заряжено', discharged:'Разряжено',
-      out_limit:'Лимит выдачи', mode:'Режим', temp:'Температура', electronics:'Электроника', wifi:'Wi-Fi',
+      out_limit:'Лимит выдачи', mode:'Режим', temp:'Температура', electronics:'Инвертор', wifi:'Wi-Fi',
       mode_grid:'Зарядка от сети', mode_home:'Выдача в дом',
       max_feed:w=>`макс. выдача ${w}`,
       chg_power_v:w=>`Мощность зарядки ${w}`, chg_max_v:w=>`Зарядка макс. ${w}`,
@@ -782,6 +821,8 @@
       foot_demo:'Демо-данные — нет связи с устройством',
       foot_live:(ip,s)=>`Напрямую с устройства в сети Wi-Fi (${ip}) · каждые ${s} с`,
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
+      d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
+      d_cap_hint:n=>`Устройство сообщает ${n} ${n===1?'батарейный блок':n<5?'батарейных блока':'батарейных блоков'}. Самой ёмкости в отчёте нет — у обычных блоков это 1920 Вт·ч за штуку.`,
       state:'Состояние', no_data:'пока нет данных', u_v:'В', u_a:'А', u_mv:'мВ',
       state_live:'Онлайн с устройства', state_as_of:x=>`на ${x}`,
       kwh:'кВт·ч',
@@ -789,6 +830,10 @@
       z_cur:'Ток батареи', z_power:'Мощность батареи',
       z_packs_n:n=>`${n} ${n===1?'блок':n<5?'блока':'блоков'}`,
       z_cells:'Ячейки', z_cells_n:n=>`${n} последовательно`,
+      z_pvtotal:'Всего', z_inputs_n:n=>`${n} ${n===1?'вход':n<5?'входа':'входов'}`,
+      z_fan:'Вентилятор', z_fan_n:n=>`ступень ${n}`,
+      z_offgrid:'Автономная розетка', z_ready:'готова',
+      z_charging:'заряжается', z_discharging:'разряжается',
       z_cmax:'Максимальная ячейка', z_cmin:'Минимальная ячейка', z_spread:'Разброс',
       z_sp_ok:'Ячейки сбалансированы.', z_sp_mid:'Слегка повышен — стоит понаблюдать.',
       z_sp_bad:'Заметный разброс — одна ячейка отстаёт.',
@@ -938,13 +983,27 @@
   function render(d){
     last = d;
     const p = d.properties || {};
+    // Der Bericht nennt keine Kapazitaet, aber die Zahl der Packs. Beim ersten Mal
+    // daraus einen Vorschlag machen (1,92 kWh je Pack); eigene Eingabe bleibt unberuehrt.
+    if (!store.get('cap', '') && Number(p.packNum) > 0) {
+      cfg.cap = Number(p.packNum) * 1920;
+      store.set('cap', cfg.cap);
+    }
     const solar = p.solarInputPower ?? 0, home = p.outputHomePower ?? 0, grid = p.gridInputPower ?? 0;
     const charge = p.outputPackPower ?? 0, discharge = p.packInputPower ?? 0, soc = p.electricLevel ?? 0;
 
     $('devname').textContent = d.product ? prodName(d.product) : 'SolarFlow';
     $('tSolar').textContent = fmtW(solar);
-    $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
-    $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
+    // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
+    const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
+    const wz = v => Math.round(Number(v) || 0);
+    if (pv[2] != null || pv[3] != null) {
+      $('tPv1').textContent = `PV1 ${wz(pv[0])} · PV2 ${wz(pv[1])} ${t('u_w')}`;
+      $('tPv2').textContent = `PV3 ${wz(pv[2])} · PV4 ${wz(pv[3])} ${t('u_w')}`;
+    } else {
+      $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
+      $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
+    }
     $('tHome').textContent = fmtW(home);
     $('tGrid').textContent = fmtW(grid);
     $('tGrid').style.fill = grid > 2 ? '' : 'var(--muted)';
@@ -1045,12 +1104,27 @@
 
     $('stateInfo').textContent = !d ? t('no_data') : (lastOk ? t('state_as_of', hm(lastOk)) : t('state_live'));
 
+    // Solar – zwei oder vier Eingaenge, je nach Modell
+    const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
+    const anz = pv.filter(v => nz(v)).length;
+    s('zPvAll', nz(p.solarInputPower) ? fmtW(p.solarInputPower) : null);
+    pv.forEach((v, i) => {
+      const r = $('zRowPv' + (i + 1));
+      if (r) r.style.display = nz(v) ? '' : 'none';
+      s('zPv' + (i + 1), nz(v) ? fmtW(v) : null);
+    });
+    $('zPvN').textContent = anz ? t('z_inputs_n', anz) : '';
+    $('zCardSolar').style.display = anz ? '' : 'none';
+
     // Akku
     const soc = nz(p.electricLevel) ? p.electricLevel : null;
     s('zSoc', soc == null ? null : soc + ' %');
     s('zEnergy', soc == null ? null : `${kwh(cfg.cap * soc / 100)} / ${kwh(cfg.cap)} ${t('kwh')}`);
     s('zPackVolt', volt(nz(pk.totalVol) ? pk.totalVol : p.BatVolt));
-    s('zCur', nz(pk.batcur) ? de1(pk.batcur / 10) + ' ' + t('u_a') : null);
+    // batcur kommt als vorzeichenlose 16-Bit-Zahl; ueber 32767 heisst negativ = Entladen
+    const roh = nz(pk.batcur) ? Number(pk.batcur) : null;
+    const amp = roh == null ? null : (roh > 32767 ? roh - 65536 : roh) / 10;
+    s('zCur', amp == null ? null : de1(amp).replace('-', '−') + ' ' + t('u_a'));
     s('zPower', nz(pk.power) ? fmtW(pk.power) : null);
     $('zPacks').textContent = nz(p.packNum) ? t('z_packs_n', p.packNum) : '';
 
@@ -1073,6 +1147,9 @@
     s('zTempPack', tp == null ? null : Math.round(tp) + ' °C');
     s('zTempEl', te == null ? null : Math.round(te) + ' °C');
     s('zHeat', p.heatState == null ? null : (p.heatState ? t('z_on') : t('z_off')), p.heatState ? 'warn' : '');
+    const hatFan = p.Fanmode != null || p.Fanspeed != null;
+    $('zRowFan').style.display = hatFan ? '' : 'none';
+    if (hatFan) s('zFan', nz(p.Fanspeed) && p.Fanspeed > 0 ? t('z_fan_n', p.Fanspeed) : t('z_off'));
 
     // Grenzen
     s('zMinSoc', nz(p.minSoc) ? (p.minSoc / 10) + ' %' : null);
@@ -1084,13 +1161,21 @@
 
     // Betrieb
     s('zMode', p.acMode === 1 ? t('mode_grid') : p.acMode === 2 ? t('mode_home') : null);
-    s('zPackState', p.packState == null ? null : (p.packState ? t('z_active') : t('z_standby')));
+    const laedt = Number(p.outputPackPower || 0), ent = Number(p.packInputPower || 0);
+    s('zPackState', p.packState == null ? null
+        : laedt > 0 ? t('z_charging') : ent > 0 ? t('z_discharging') : t('z_standby'));
     s('zAvailChg', nz(p.chargeAvailPower) ? fmtW(p.chargeAvailPower) : null);
     s('zAvailDis', nz(p.dischargeAvailPower) ? fmtW(p.dischargeAvailPower) : null);
     s('zDerate', p.derateFlag == null ? null : (p.derateFlag ? t('z_yes') : t('z_no')), p.derateFlag ? 'warn' : '');
     const stoerung = Number(p.faultLevel || 0) || Number(p.is_error || 0);
     s('zFault', p.faultLevel == null && p.is_error == null ? null
         : (stoerung ? t('z_fault_n', p.faultLevel ?? p.is_error) : t('z_nofault')), stoerung ? 'warn' : 'ok');
+
+    // Off-Grid-Dose – nur der 800 Pro 2 meldet diese Felder (Zuordnung noch unbestaetigt)
+    const hatOff = p.gridOffPower != null || p.gridOffMode != null;
+    $('zRowOff').style.display = hatOff ? '' : 'none';
+    if (hatOff) s('zOffGrid', nz(p.gridOffPower) && p.gridOffPower > 0 ? fmtW(p.gridOffPower)
+        : (p.gridOffMode ? t('z_ready') : t('z_off')), p.gridOffPower > 0 ? 'ok' : '');
 
     // Geraet
     s('zProd', d?.product ? prodName(d.product) : null);
@@ -1107,6 +1192,8 @@
   // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
   function ladeEinstellungen(){
     $('inIp').value = cfg.ip; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    const pn = Number(last?.properties?.packNum) || 0;
+    $('capHint').textContent = pn ? t('d_cap_hint', pn) : '';
     $('inPlz').value = cfg.plz; zeigeOrt();
     $('findResultDlg').innerHTML = '';
   }
@@ -1265,7 +1352,8 @@
   function prodName(p){
     if (!p) return t('zendure_dev');
     const m = p.match(/^solarFlow(.*)$/i); if (!m) return p;
-    return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2').replace(/([a-z])([A-Z])/g, '$1 $2')).trim();
+    return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2')
+      .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2')).trim();
   }
   const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   async function discover(){
@@ -1369,6 +1457,21 @@
     $('locHint').textContent = `${cfg.lat.toFixed(3)}° N · ${cfg.lon.toFixed(3)}° O`;
   }
   document.querySelectorAll('.langsel button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+
+  // ---------- Darstellung hell / dunkel ----------
+  const dunkelAbfrage = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  let thema = store.get('theme', 'auto');
+  function setzeThema(){
+    const hell = thema === 'light' || (thema === 'auto' && dunkelAbfrage && !dunkelAbfrage.matches);
+    document.documentElement.dataset.theme = hell ? 'light' : 'dark';
+    const m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute('content', hell ? '#F3F5F9' : '#0A0C11');
+    document.querySelectorAll('#themeSel button').forEach(b => b.classList.toggle('on', b.dataset.t === thema));
+  }
+  function waehleThema(w){ thema = w; store.set('theme', w); setzeThema(); }
+  document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => waehleThema(b.dataset.t));
+  if (dunkelAbfrage) dunkelAbfrage.addEventListener('change', () => { if (thema === 'auto') setzeThema(); });
+  setzeThema();
   applyStatic();
   drawSun(); setInterval(drawSun, 60000);
 
