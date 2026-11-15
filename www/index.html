@@ -259,6 +259,9 @@
   .pvgrid label{display:block}
   .pvgrid span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
   .pvgrid input{margin-bottom:0}
+  #demoSel .btn{width:100%;padding:9px 6px;font-size:13px}
+  #demoSel .btn.on{background:var(--bat);border-color:var(--bat);color:#052219;font-weight:600}
+  #demoSel .btn.jetzt:not(.on){border-color:var(--bat);color:var(--bat)}
   .dtitle{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px}
   /* Der Rohbericht ist Werkzeug, nicht Alltag – zugeklappt steht nur die Zeile da.
      Die allgemeine details-Regel weiter oben setzt einen gestrichelten Kasten; hier
@@ -596,6 +599,23 @@
     <div class="hint" id="locHint"></div>
   </div>
 
+  <details class="dsec" id="secDemo">
+    <summary><span data-i18n="d_demo">Demo-Ansicht</span></summary>
+    <div class="hint" style="margin-top:8px" data-i18n="d_demo_hint">Zeigt eine erfundene Anlage mit allem,
+      was es gibt: vier Solareingänge, Smart Meter, Off-Grid-Dose, Lüfter und zwei Akkupacks.
+      Das eigene Gerät wird solange nicht abgefragt.</div>
+    <div class="pvgrid" id="demoSel" style="margin-top:10px">
+      <button class="btn" data-dz="-1" data-i18n="dz_off">Aus</button>
+      <button class="btn" data-dz="-2" data-i18n="dz_auto">Durchlauf</button>
+      <button class="btn" data-dz="0" data-i18n="dz_0">Alles zugleich</button>
+      <button class="btn" data-dz="1" data-i18n="dz_1">Mittag, Einspeisung</button>
+      <button class="btn" data-dz="2" data-i18n="dz_2">Abend, Akku stützt</button>
+      <button class="btn" data-dz="3" data-i18n="dz_3">Nacht, nur Netz</button>
+      <button class="btn" data-dz="4" data-i18n="dz_4">Laden aus dem Netz</button>
+      <button class="btn" data-dz="5" data-i18n="dz_5">Störung</button>
+    </div>
+  </details>
+
   <details class="dsec" id="secDiag">
     <summary><span data-i18n="d_diag">Rohbericht vom Gerät</span></summary>
     <div class="hint" style="margin-top:8px" data-i18n="d_diag_hint">Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder,
@@ -866,6 +886,10 @@
       d_peak_max:(m, e) => `Der Eingang selbst verträgt ${m} W; Zendure empfiehlt Module bis ${e} Wp je Eingang, weil sie ihre Nennleistung selten erreichen.`, d_int:'Aktualisierung alle … Sekunden (min. 3)',
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
+      d_demo:'Demo-Ansicht', dz_auto:'Durchlauf',
+      d_demo_hint:'Zeigt eine erfundene Anlage mit allem, was es gibt: vier Solareingänge, Smart Meter, Off-Grid-Dose, Lüfter und zwei Akkupacks. Das eigene Gerät wird solange nicht abgefragt.',
+      dz_off:'Aus', dz_0:'Alles zugleich', dz_1:'Mittag, Einspeisung',
+      dz_2:'Abend, Akku stützt', dz_3:'Nacht, nur Netz', dz_4:'Laden aus dem Netz', dz_5:'Störung',
       d_diag:'Rohbericht vom Gerät',
       d_diag_hint:'Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder, die die App noch nicht anzeigt. Kein Konto nötig, es wird nichts verändert. Geräte-Nummern und Namen sind gekürzt.',
       d_diag_run:'Bericht auslesen', d_copy:'Kopieren', d_share:'Teilen',
@@ -998,6 +1022,10 @@
       d_peak_max:(m, e) => `Сам вход рассчитан на ${m} Вт; Zendure рекомендует модули до ${e} Вт·п на вход — номинал достигается редко.`, d_int:'Обновление каждые … секунд (мин. 3)',
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
+      d_demo:'Демо-режим', dz_auto:'По кругу',
+      d_demo_hint:'Показывает вымышленную установку со всем сразу: четыре солнечных входа, умный счётчик, автономная розетка, вентилятор и два аккумуляторных блока. Своё устройство при этом не опрашивается.',
+      dz_off:'Выкл.', dz_0:'Всё сразу', dz_1:'Полдень, отдача',
+      dz_2:'Вечер, помогает АКБ', dz_3:'Ночь, только сеть', dz_4:'Заряд из сети', dz_5:'Неисправность',
       d_diag:'Полный отчёт устройства',
       d_diag_hint:'Один раз считывает полный отчёт накопителя в домашней сети — включая поля, которые приложение пока не показывает. Учётная запись не нужна, ничего не изменяется. Номера и названия устройств сокращены.',
       d_diag_run:'Считать отчёт', d_copy:'Копировать', d_share:'Поделиться',
@@ -1083,7 +1111,65 @@
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return await r.json();
   }
+  // Demo-Szenen: jede beschreibt eine vollstaendige Anlage, damit sich jeder
+  // Zustand der Oberflaeche ansehen laesst, ohne auf Wetter und Tageszeit zu warten.
+  // Geraet ist immer ein 800 Pro 2 mit zwei Akkupacks, Off-Grid-Dose und Luefter.
+  const SZENEN = [
+    { id:'alles', pv:[210, 180, 160, 140], peaks:[450, 450, 400, 400],
+      home:800, ent:180, lad:0, netz:340, soc:64,
+      extra:{ gridOffMode:1, gridOffPower:120, Fanmode:1, Fanspeed:2, hyperTmp:3121 } },
+    { id:'mittag', pv:[600, 580, 560, 520], peaks:[660, 660, 660, 660],
+      home:800, ent:0, lad:1200, netz:-450, soc:78,
+      extra:{ gridOffMode:1, gridOffPower:60, Fanmode:1, Fanspeed:3, hyperTmp:3221 } },
+    { id:'abend', pv:[0, 0, 0, 0], peaks:[450, 450, 400, 400],
+      home:215, ent:222, lad:0, netz:2, soc:24, extra:{ hyperTmp:3001 } },
+    { id:'nacht', pv:[0, 0, 0, 0], peaks:[450, 450, 400, 400],
+      home:0, ent:0, lad:0, netz:318, soc:15, extra:{ hyperTmp:2961 } },
+    { id:'laden', pv:[0, 0, 0, 0], peaks:[450, 450, 400, 400],
+      home:0, ent:0, lad:1180, netz:1380, soc:41, acMode:1, grid:1200,
+      extra:{ Fanmode:1, Fanspeed:3, hyperTmp:3191 } },
+    { id:'stoerung', pv:[40, 12, 0, 0], peaks:[450, 450, 400, 400],
+      home:160, ent:170, lad:0, netz:400, soc:9,
+      extra:{ faultLevel:3, is_error:1, derateFlag:1, heatState:1, hyperTmp:3341,
+              Fanmode:1, Fanspeed:3 }, zellen:[338, 332] }
+  ];
+  let demoNr = Number(store.get('demoNr', 0)) || 0;
+  let demoLauf = false, demoTimer = null;
+  const szene = () => SZENEN[Math.min(demoNr, SZENEN.length - 1)];
+
   function demoData(){
+    const z = szene(), pv = z.pv, solar = pv.reduce((a, b) => a + b, 0);
+    const [hoch, tief] = z.zellen || [331, 329];
+    return { sn:'DEMO', product:'solarFlow800Pro2', timestamp: Math.floor(Date.now()/1000),
+      properties: Object.assign({
+        solarInputPower:solar, solarPower1:pv[0], solarPower2:pv[1],
+        solarPower3:pv[2], solarPower4:pv[3],
+        outputHomePower:z.home, packInputPower:z.ent, outputPackPower:z.lad,
+        gridInputPower:z.grid || 0, electricLevel:z.soc,
+        remainOutTime: z.ent ? 320 : 59940, hyperTmp:3031, BatVolt:5120,
+        acMode: z.acMode || 2, inputLimit: z.acMode === 1 ? 1200 : 0, outputLimit:z.home,
+        socSet:1000, minSoc:150, inverseMaxPower:800, chargeMaxLimit:1200, rssi:-58,
+        packNum:2, packState: z.lad ? 1 : 2, faultLevel:1, is_error:0,
+        heatState:0, derateFlag:0, gridOffMode:0, gridOffPower:0,
+        Fanmode:0, Fanspeed:0, gridStandard:11, IOTState:2, bindstate:1
+      }, z.extra),
+      packData:[
+        { maxTemp:2891, maxVol:hoch, minVol:tief, totalVol:4965, batcur: z.ent ? 65509 : 24,
+          power: z.ent || z.lad || 0, socLevel:z.soc, softVersion:4354, state:1, packType:300 },
+        { maxTemp:2884, maxVol:hoch, minVol:tief, totalVol:4962, batcur: z.ent ? 65512 : 22,
+          power: z.ent || z.lad || 0, socLevel:z.soc, softVersion:4354, state:1, packType:300 }
+      ] };
+  }
+  // Passendes Smart Meter zur Szene. Die Phasen sind Scheinleistung, also ohne
+  // Vorzeichen – genau wie beim echten 3CT.
+  function demoMeter(){
+    const g = szene().netz, b = Math.abs(g);
+    return { timestamp: Math.floor(Date.now()/1000), messageId:3, deviceId:'DEMO1234',
+      a_aprt_power: Math.round(b * 0.18), b_aprt_power: Math.round(b * 0.17),
+      c_aprt_power: b - Math.round(b * 0.18) - Math.round(b * 0.17), total_power: g };
+  }
+
+  function demoDataAlt(){   // nicht mehr benutzt
     const h = new Date().getHours() + new Date().getMinutes()/60;
     const sun = Math.max(0, Math.sin((h-8)/9*Math.PI));
     const pv1 = Math.round(380*sun), pv2 = Math.round(350*sun);
@@ -1196,7 +1282,8 @@
     // Unter etwa 10 W je Eingang meldet das Geraet nur die Summe. Dann stehen
     // Striche statt Nullen, sonst sieht es aus, als laege ein Eingang still.
     const stumm = eing.some(v => v != null) && pvSumme === 0 && solar > 2;
-    zeigePv(stumm ? eing.map(() => null) : eing, cfg.peaks.slice(0, eing.length));
+    const peaks = demo ? szene().peaks : cfg.peaks;
+    zeigePv(stumm ? eing.map(() => null) : eing, peaks.slice(0, eing.length));
     if (pvN !== eing.length) { pvN = eing.length; fuellePeaks(); }
     $('tHome').textContent = fmtW(hausW);
     $('tGrid').textContent = fmtW(netzW);
@@ -1277,7 +1364,7 @@
     const te = tempC(p.hyperTmp), tp = tempC(d.packData?.[0]?.maxTemp);
     $('cTemp').textContent = te == null ? '– °C' : `${Math.round(te)} °C`;
     $('cPackTemp').textContent = tp == null ? '– °C' : `${Math.round(tp)} °C`;
-    $('cWifiT').textContent = cfg.meterIp ? t('wifi_of', t('z_grp_bat')) : t('wifi');
+    $('cWifiT').textContent = (cfg.meterIp || demo) ? t('wifi_of', t('z_grp_bat')) : t('wifi');
     $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') : '–';
     const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
@@ -1293,7 +1380,8 @@
   }
   // Smart Meter getrennt abfragen – scheitert es, bleibt der Speicher davon unberuehrt
   async function holeMeter(){
-    if (!cfg.meterIp || demo) { if (lastMeter) { lastMeter = null; zeigeZustand(); } return; }
+    if (demo) { lastMeter = demoMeter(); if (last) render(last); else zeigeZustand(); return; }
+    if (!cfg.meterIp) { if (lastMeter) { lastMeter = null; zeigeZustand(); } return; }
     try {
       lastMeter = await fetchReport(cfg.meterIp);
       meterOk = new Date(); meterFails = 0;
@@ -1310,7 +1398,8 @@
       fails = 0; showMsg('');
       lastOk = new Date();
       setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : '') + lastOk.toLocaleTimeString(LOC()));
-      $('foot').textContent = demo ? t('foot_demo') : t('foot_live', cfg.ip, cfg.interval);
+      $('foot').textContent = demo ? t('foot_demo') + ' · ' + t('dz_' + demoNr)
+                                   : t('foot_live', cfg.ip, cfg.interval);
       holeMeter();   // zweites Geraet nebenher, ein Fehler dort stoert die Live-Werte nicht
     } catch (e) {
       fails++; setStatus('err', lastOk ? t('offline') + ' ' + hm(lastOk) : t('offline'));
@@ -1373,7 +1462,7 @@
   // Das zweite Geraet: Felder kennen wir noch nicht, deshalb mit den Namen des Geraets
   function zeigeMeter(){
     const blk = $('zMeterBlock'); if (!blk) return;
-    const m = lastMeter, an = !!(cfg.meterIp && m);
+    const m = lastMeter, an = !!((cfg.meterIp || demo) && m);
     blk.style.display = an ? 'flex' : 'none';
     if (!an) return;
     // Der Speicher packt alles unter "properties", das Smart Meter 3CT liefert
@@ -1381,13 +1470,20 @@
     const p = (m.properties && Object.keys(m.properties).length) ? m.properties : m;
     const istZaehler = ('total_power' in m) || ('totalPower' in m) || ('total_power' in p);
     const name = m.product ? prodName(m.product, m) : (istZaehler ? t('meter_dev') : cfg.meterIp);
-    const setz = (id, v) => { const e = $(id); e.textContent = v == null ? '–' : v; e.className = v == null ? 'dim' : ''; };
+    // Das 3CT meldet weder Seriennummer noch WLAN-Pegel. Eine Zeile mit Strich
+    // sieht aber aus, als fehle gerade ein Wert – deshalb ganz ausblenden.
+    const setz = (id, v, pflicht) => {
+      const e = $(id), zeile = e.closest('.zrow');
+      if (v == null && !pflicht) { if (zeile) zeile.style.display = 'none'; return; }
+      if (zeile) zeile.style.display = '';
+      e.textContent = v == null ? '–' : v; e.className = v == null ? 'dim' : '';
+    };
     $('zGrpMeterName').textContent = name;
-    setz('mProd', m.product ? prodName(m.product, m) : (istZaehler ? t('meter_dev') : null));
+    setz('mProd', m.product ? prodName(m.product, m) : (istZaehler ? t('meter_dev') : null), true);
     setz('mSn', m.sn ? '…' + String(m.sn).slice(-4) : null);
     setz('mRssi', (p.rssi != null && !isNaN(p.rssi)) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
     setz('mStamp', (m.timestamp != null && !isNaN(m.timestamp)) ? new Date(m.timestamp * 1000).toLocaleTimeString(LOC())
-        : (meterOk ? hm(meterOk) : null));
+        : (meterOk ? hm(meterOk) : null), true);
     // Namen fuer die Felder, die das Smart Meter 3CT liefert. Es nutzt die Shelly-Schreibweise:
     // act_power ist Wirkleistung in W, aprt_power Scheinleistung in VA – letztere ohne Vorzeichen.
     const MFELD = {
@@ -1405,7 +1501,7 @@
     };
     const rang = k => Object.keys(MFELD).indexOf(k);
     const zeilen = Object.entries(p)
-      .filter(([k, v]) => v !== null && typeof v !== 'object' && !/^(messageId|timestamp|version)$/.test(k) && !GEHEIM.test(k))
+      .filter(([k, v]) => v !== null && typeof v !== 'object' && !/^(messageId|timestamp|version|rssi)$/.test(k) && !GEHEIM.test(k))
       .sort(([a], [b]) => {
         const ra = rang(a), rb = rang(b);
         if (ra >= 0 && rb >= 0) return ra - rb;
@@ -1540,7 +1636,7 @@
     zeigeGeraeteliste();
     const pn = Number(last?.properties?.packNum) || 0;
     $('capHint').textContent = pn ? t('d_cap_hint', pn) : '';
-    $('inPlz').value = cfg.plz; zeigeOrt();
+    $('inPlz').value = cfg.plz; zeigeOrt(); zeigeDemoWahl();
     $('findResultDlg').innerHTML = '';
   }
   // Kein Speichern-Knopf: jedes Feld wird uebernommen, sobald man es verlaesst.
@@ -1589,6 +1685,40 @@
     const grenze = MPPT_MAX[last?.product];
     $('peakSum').textContent = t('d_peak_sum', summe, n)
       + (grenze ? ' ' + t('d_peak_max', grenze, Math.round(grenze * 1.5)) : '');
+  }
+  // Demo-Szene waehlen. -1 schaltet zurueck auf das echte Geraet.
+  function zeigeDemoWahl(){
+    const aktiv = !demo ? -1 : demoLauf ? -2 : demoNr;
+    document.querySelectorAll('#demoSel .btn').forEach(b => {
+      const nr = Number(b.dataset.dz);
+      b.classList.toggle('on', nr === aktiv);
+      // Beim Durchlauf zeigt die gerade laufende Szene einen blassen Rahmen
+      b.classList.toggle('jetzt', demo && demoLauf && nr === demoNr);
+    });
+  }
+  document.querySelectorAll('#demoSel .btn').forEach(b => b.addEventListener('click', () => {
+    const nr = Number(b.dataset.dz);
+    demo = nr !== -1;
+    demoLauf = nr === -2;
+    if (nr >= 0) { demoNr = nr; store.set('demoNr', nr); }
+    store.set('demo', demo ? (demoLauf ? 'auto' : '1') : '');
+    lastMeter = null; fails = 0; meterFails = 0;
+    setzeDurchlauf();
+    zeigeDemoWahl(); showMsg(''); start();
+  }));
+  // Beim Durchlauf alle acht Sekunden zur naechsten Szene, am Ende wieder von vorn.
+  function setzeDurchlauf(){
+    clearInterval(demoTimer); demoTimer = null;
+    if (!demo || !demoLauf) return;
+    demoTimer = setInterval(() => {
+      demoNr = (demoNr + 1) % SZENEN.length;
+      store.set('demoNr', demoNr);
+      lastMeter = demoMeter();
+      render(demoData());
+      // Fusszeile hier mitziehen: der regulaere Abruf laeuft auf einer anderen Uhr
+      $('foot').textContent = t('foot_demo') + ' · ' + t('dz_' + demoNr);
+      zeigeDemoWahl();
+    }, 8000);
   }
   ['inIp','inMeterIp','inCap','inPeak0','inPeak1','inPeak2','inPeak3','inPlz','inInt'].forEach(id => {
     const e = $(id); if (!e) return;
@@ -1964,8 +2094,10 @@
   drawSun(); setInterval(drawSun, 60000);
 
   // ---------- Start ----------
+  if (store.get('demo', '')) { demo = true; demoLauf = store.get('demo', '') === 'auto'; }
   if (location.search.includes('demo')) demo = true;
   if (!isApp && location.protocol === 'https:') demo = true;  // Vorschau
+  setzeDurchlauf();
   start();
   zeigeZustand();
   if (isApp) setTimeout(() => checkUpdate().catch(() => {}), 3000);   // still im Hintergrund, Punkt am ⚙ bei neuer Version
