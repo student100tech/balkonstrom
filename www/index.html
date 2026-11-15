@@ -13,10 +13,10 @@
   :root{
     --bg:#0A0C11; --card:#13161E; --card2:#1B1F2A; --card3:#181C26; --line:#252A36; --line2:#1F2430; --line3:#2A3040;
     --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
-    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#8E9AAF; --warn:#F87171; --ok:#4ADE80;
+    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#FF8FA3; --warn:#F87171; --ok:#4ADE80;
     --gridin:#F87171; --feed:#60A5FA;
     --onbat:#052219; --onfeed:#07213d; --tabon:#232838;
-    --solarBg:#1E1A12; --solarLn:#3A3124; --gridBg:#161A22; --gridLn:#2A303C;
+    --solarBg:#1E1A12; --solarLn:#3A3124; --gridBg:#241319; --gridLn:#45242D;
     --homeBg:#18162A; --homeLn:#2B2745; --batBg:#112420; --batLn:#21342F;
     --moon:#C9D4E8; --noteBg:#12161F; --noteTx:#A8AFBD; --navBg:rgba(22,25,33,.92);
     --errBg:#3a1f25; --errLn:#6b2a33; --errTx:#fecaca; --errBtn:#4a2229; --errBtnLn:#7a3340;
@@ -25,10 +25,10 @@
   :root[data-theme="light"]{
     --bg:#F3F5F9; --card:#FFFFFF; --card2:#EDF0F6; --card3:#F8FAFD; --line:#DCE1EA; --line2:#E7EBF2; --line3:#C5CCD9;
     --text:#10131A; --muted:#5C6475; --muted2:#39414F; --dim:#8A92A3;
-    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#5B6678; --warn:#C62828; --ok:#0A7D5E;
+    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#BE123C; --warn:#C62828; --ok:#0A7D5E;
     --gridin:#C62828; --feed:#1D4ED8;
     --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E2E7F1;
-    --solarBg:#FFF5E4; --solarLn:#EBD3A6; --gridBg:#EEF1F6; --gridLn:#CBD2DE;
+    --solarBg:#FFF5E4; --solarLn:#EBD3A6; --gridBg:#FFEDF1; --gridLn:#F3C4D0;
     --homeBg:#F1EEFF; --homeLn:#D3C9F8; --batBg:#E3F6F0; --batLn:#AFE2D4;
     --moon:#6F7A8C; --noteBg:#EDF1F8; --noteTx:#49515F; --navBg:rgba(255,255,255,.92);
     --errBg:#FDECEC; --errLn:#F2BDBA; --errTx:#8E1C17; --errBtn:#FAD6D4; --errBtnLn:#E8A29E;
@@ -106,12 +106,16 @@
   .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
   .node-val{font-size:calc(19px * var(--zoom,1));font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
   .node-val.small{font-size:17px}
+  .pvlab{font-weight:500}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
-  .wire.on{stroke-dasharray:2 10;animation:flow 1.1s linear infinite}
+  /* Ein Strich alle 24 Einheiten – immer, egal wie viele Quellen speisen. In die
+     Luecke passen zwei weitere Striche, die bei 8 und 16 sitzen. Laenger als 4
+     duerfen sie nicht sein: die runden Enden legen noch die Strichbreite drauf,
+     dann beruehren sich die Striche bei drei Quellen. So behaelt jeder
+     Strom seinen Takt; kommt eine Quelle dazu, legt sie sich nur dazwischen. */
+  .wire.on{stroke-dasharray:4 20;animation:flow 1.1s linear infinite}
   .wire.rev{animation-direction:reverse}
-  .wire.on.dual{stroke-dasharray:2 22}
-  .wire.on.dual.b{animation-delay:-.55s}
   @keyframes flow{to{stroke-dashoffset:-24}}
 
   /* ---------- Akku ---------- */
@@ -251,7 +255,24 @@
   .dhead h2{font-family:var(--num);font-size:20px;font-weight:600}
   .xbtn{width:44px;height:44px;background:none;border:0;color:var(--muted);font-size:20px;border-radius:12px;cursor:pointer}
   .dsec{border-top:1px solid var(--line2);padding-top:14px;margin-top:14px}
+  .pvgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:4px}
+  .pvgrid label{display:block}
+  .pvgrid span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
+  .pvgrid input{margin-bottom:0}
   .dtitle{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px}
+  /* Der Rohbericht ist Werkzeug, nicht Alltag – zugeklappt steht nur die Zeile da.
+     Die allgemeine details-Regel weiter oben setzt einen gestrichelten Kasten; hier
+     soll der Abschnitt aber aussehen wie die anderen Einstellungsblöcke. */
+  details.dsec{border:none;border-top:1px solid var(--line2);border-radius:0;
+    padding:14px 0 0;font-size:inherit;color:inherit}
+  details.dsec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+    gap:8px;font-size:13.5px;font-weight:600;color:var(--text);
+    padding:2px 0;-webkit-tap-highlight-color:transparent}
+  details.dsec>summary::-webkit-details-marker{display:none}
+  details.dsec>summary::after{content:'';width:7px;height:7px;margin-left:auto;
+    border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+    transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s}
+  details.dsec[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
   .drow{font-size:12.5px;margin:4px 0 10px}
   label.f{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
   input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;height:46px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;font-family:inherit}
@@ -358,19 +379,24 @@
 
     <div class="card flow">
       <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
-      <svg viewBox="0 0 350 250" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
+      <svg viewBox="0 -46 350 296" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
         <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/><path id="wGrid2" class="wire" d="M72 126 H152"/>
-        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/>
+        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/><path id="wHome3" class="wire" d="M198 126 H278"/>
         <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/><path id="wBat2" class="wire" d="M175 150 V186"/>
 
-        <circle cx="175" cy="38" r="28" fill="var(--solarBg)" stroke="var(--solarLn)" stroke-width="5"/>
-        <circle id="pvRing" cx="175" cy="38" r="28" fill="none" stroke="var(--solar)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 38)"/>
+        <!-- Solar: der Ring ist in so viele Boegen geteilt, wie das Geraet Eingaenge
+             hat. Jeder Bogen fuellt sich im Uhrzeigersinn an seinem eigenen Anteil
+             der Modulleistung; die Beschriftung steht aussen am jeweiligen Bogen. -->
+        <circle cx="175" cy="38" r="30.5" fill="var(--solarBg)"/>
+        <g id="pvArcs" fill="none" stroke-width="5"></g>
         <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
-        <text class="node-label" x="134" y="34" text-anchor="end" data-i18n="solar">Solar</text>
-        <text class="node-val" x="134" y="56" text-anchor="end" id="tSolar" data-i18n="dash_w">– W</text>
-        <text class="node-sub" x="216" y="34" id="tPv1" data-i18n="pv1">PV1 – W</text>
-        <text class="node-sub" x="216" y="54" id="tPv2" data-i18n="pv2">PV2 – W</text>
+        <text class="node-label" x="175" y="-30" text-anchor="middle" data-i18n="solar">Solar</text>
+        <text class="node-val" x="175" y="-8" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
+        <text class="node-sub pvlab" id="pvL0"></text>
+        <text class="node-sub pvlab" id="pvL1"></text>
+        <text class="node-sub pvlab" id="pvL2"></text>
+        <text class="node-sub pvlab" id="pvL3"></text>
 
         <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
         <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
@@ -551,8 +577,14 @@
     <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
     <input id="inCap" inputmode="numeric" placeholder="1920">
     <div class="hint" id="capHint"></div>
-    <label class="f" for="inPeak" data-i18n="d_peak">Modulleistung gesamt (Wp)</label>
-    <input id="inPeak" inputmode="numeric" placeholder="800">
+    <label class="f" data-i18n="d_peak">Modulleistung je Eingang (Wp)</label>
+    <div class="pvgrid" id="peakGrid">
+      <label><span>PV1</span><input id="inPeak0" inputmode="numeric" placeholder="200"></label>
+      <label><span>PV2</span><input id="inPeak1" inputmode="numeric" placeholder="200"></label>
+      <label id="peakCell2"><span>PV3</span><input id="inPeak2" inputmode="numeric" placeholder="200"></label>
+      <label id="peakCell3"><span>PV4</span><input id="inPeak3" inputmode="numeric" placeholder="200"></label>
+    </div>
+    <div class="hint" id="peakSum"></div>
     <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
     <input id="inInt" inputmode="numeric" placeholder="5">
   </div>
@@ -564,9 +596,9 @@
     <div class="hint" id="locHint"></div>
   </div>
 
-  <div class="dsec" id="secDiag">
-    <div class="dtitle" data-i18n="d_diag">Rohbericht vom Gerät</div>
-    <div class="hint" data-i18n="d_diag_hint">Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder,
+  <details class="dsec" id="secDiag">
+    <summary><span data-i18n="d_diag">Rohbericht vom Gerät</span></summary>
+    <div class="hint" style="margin-top:8px" data-i18n="d_diag_hint">Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder,
       die die App noch nicht anzeigt. Kein Konto nötig, es wird nichts verändert.
       Geräte&#8209;Nummern und Namen sind gekürzt.</div>
     <button class="btn wide-btn" id="btnDiag" style="margin-top:10px" data-i18n="d_diag_run">Bericht auslesen</button>
@@ -579,7 +611,7 @@
         <button class="btn primary" id="btnDiagShare" data-i18n="d_share">Teilen</button>
       </div>
     </div>
-  </div>
+  </details>
 
     </div>
  </section>
@@ -614,7 +646,14 @@
     plz: store.get('plz', ''),
     lat: Number(store.get('lat', ORT0[0])),
     lon: Number(store.get('lon', ORT0[1])),
-    peak: Number(store.get('peak', 800)),
+    // Je Eingang eine eigene Modulleistung. Wer bisher nur eine Gesamtzahl hatte,
+    // bekommt sie gleichmaessig auf vier Eingaenge verteilt und kann sie anpassen.
+    peaks: (() => {
+      const roh = store.get('peaks', '');
+      const alt = Number(store.get('peak', 800)) || 800;
+      const l = roh ? roh.split(',').map(Number) : [];
+      return [0, 1, 2, 3].map(i => Number.isFinite(l[i]) && l[i] > 0 ? l[i] : Math.round(alt / 4));
+    })(),
     interval: Math.max(3, Number(store.get('interval', 5)))
   };
   let demo = false, timer = null, fails = 0, last = null, lastOk = null;
@@ -799,7 +838,7 @@
       z_op:'Betrieb', z_packstate:'Akkupack', z_active:'aktiv', z_standby:'Bereitschaft',
       z_availchg:'Frei zum Laden', z_availdis:'Frei zum Entladen',
       z_derate:'Gedrosselt', z_yes:'ja', z_no:'nein',
-      z_fault:'Störung', z_nofault:'keine', z_fault_n:n=>`Stufe ${n}`,
+      z_fault:'Störung', z_nofault:'keine', z_nofault1:'keine (Meldestufe 1)', z_fault_err:'ja', z_fault_n:n=>`Stufe ${n}`,
       z_device:'Gerät', z_prod:'Modell', z_sn:'Seriennummer', z_sw:'Software',
       z_iot:'Cloud-Verbindung', z_online:'verbunden', z_stamp:'Daten vom Gerät',
       z_local:'Alle Werte kommen direkt aus dem Speicher im WLAN. Dafür ist kein Zendure-Konto nötig.',
@@ -822,7 +861,9 @@
       d_title:'Einstellungen', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
       check_update:'Nach Update suchen', update_to:n=>`Jetzt updaten auf Build ${n}`,
       d_dev:'Gerät im WLAN', d_ip:'IP-Adresse des SolarFlow', d_search:'Suchen',
-      d_cap:'Akku-Kapazität (Wh)', d_peak:'Modulleistung gesamt (Wp)', d_int:'Aktualisierung alle … Sekunden (min. 3)',
+      d_cap:'Akku-Kapazität (Wh)', d_peak:'Modulleistung je Eingang (Wp)',
+      d_peak_sum:(w, n) => `Zusammen ${w} Wp an ${n} Eingängen. Daran füllt sich jeder Bogen im Solarkreis.`,
+      d_peak_max:(m, e) => `Der Eingang selbst verträgt ${m} W; Zendure empfiehlt Module bis ${e} Wp je Eingang, weil sie ihre Nennleistung selten erreichen.`, d_int:'Aktualisierung alle … Sekunden (min. 3)',
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
       d_diag:'Rohbericht vom Gerät',
@@ -929,7 +970,7 @@
       z_op:'Работа', z_packstate:'Батарейный блок', z_active:'активен', z_standby:'ожидание',
       z_availchg:'Доступно для заряда', z_availdis:'Доступно для разряда',
       z_derate:'Ограничение мощности', z_yes:'да', z_no:'нет',
-      z_fault:'Неисправность', z_nofault:'нет', z_fault_n:n=>`уровень ${n}`,
+      z_fault:'Неисправность', z_nofault:'нет', z_nofault1:'нет (уровень сигнала 1)', z_fault_err:'да', z_fault_n:n=>`уровень ${n}`,
       z_device:'Устройство', z_prod:'Модель', z_sn:'Серийный номер', z_sw:'Прошивка',
       z_iot:'Связь с облаком', z_online:'подключено', z_stamp:'Данные с устройства',
       z_local:'Все значения поступают напрямую с накопителя в домашней сети. Учётная запись Zendure не нужна.',
@@ -952,7 +993,9 @@
       d_title:'Настройки', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
       check_update:'Проверить обновление', update_to:n=>`Обновить до сборки ${n}`,
       d_dev:'Устройство в сети Wi-Fi', d_ip:'IP-адрес SolarFlow', d_search:'Найти',
-      d_cap:'Ёмкость аккумулятора (Вт·ч)', d_peak:'Мощность модулей всего (Вт·п)', d_int:'Обновление каждые … секунд (мин. 3)',
+      d_cap:'Ёмкость аккумулятора (Вт·ч)', d_peak:'Мощность модуля на каждом входе (Вт·п)',
+      d_peak_sum:(w, n) => `Всего ${w} Вт·п на ${n} входах. По этим значениям заполняется каждая дуга.`,
+      d_peak_max:(m, e) => `Сам вход рассчитан на ${m} Вт; Zendure рекомендует модули до ${e} Вт·п на вход — номинал достигается редко.`, d_int:'Обновление каждые … секунд (мин. 3)',
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
       d_diag:'Полный отчёт устройства',
@@ -1060,16 +1103,61 @@
   // ---------- Anzeige Live ----------
   // Eine Leitung, bis zu zwei Quellen: dann laufen zwei Punktspuren versetzt ineinander,
   // z. B. gruen, gelb, gruen – statt dass eine Farbe die andere verdeckt.
-  function setWire(id, watts, reverse, farben, id2){
-    const cols = [].concat(farben), on = watts > 2, el = $(id);
-    const zwei = on && cols.length > 1;
-    el.classList.toggle('on', on); el.classList.toggle('rev', !!reverse); el.classList.toggle('dual', zwei);
-    el.style.stroke = on ? cols[0] : '';
-    const b = id2 ? $(id2) : null;
-    if (!b) return;
-    b.classList.toggle('on', zwei); b.classList.toggle('rev', !!reverse);
-    b.classList.toggle('dual', zwei); b.classList.add('b');
-    b.style.stroke = zwei ? cols[1] : '';
+  // Jede Quelle bekommt eine eigene Spur auf derselben Leitung. Alle Spuren haben
+  // denselben Strichabstand; sie starten nur zeitversetzt, sodass die Striche der
+  // zweiten und dritten Quelle in den Luecken der ersten liegen.
+  // Ein Kreisbogen, Winkel in Grad, 0 = oben, im Uhrzeigersinn.
+  function bogen(cx, cy, r, a0, a1){
+    const pkt = a => { const t = (a - 90) * Math.PI / 180;
+      return [cx + r * Math.cos(t), cy + r * Math.sin(t)]; };
+    const [x0, y0] = pkt(a0), [x1, y1] = pkt(a1);
+    return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${(a1 - a0) > 180 ? 1 : 0} 1 `
+         + `${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  }
+  // Der Solarring: ein Bogen je Eingang. Die Beschriftung sitzt aussen am Bogen,
+  // beginnend rechts oben und dann im Uhrzeigersinn – wie die Boegen selbst.
+  const PV_POS = {
+    2: [[213, 42, 'start'], [137, 42, 'end']],
+    4: [[213, 18, 'start'], [213, 66, 'start'], [137, 66, 'end'], [137, 18, 'end']]
+  };
+  let pvN = 0;   // wie viele Eingaenge das Geraet meldet
+  function zeigePv(werte, grenzen){
+    const n = werte.length, g = n === 2 ? 12 : 10, grp = $('pvArcs');
+    const bereich = i => [i * 360 / n + g / 2, (i + 1) * 360 / n - g / 2];
+    if (grp.dataset.n !== String(n)) {
+      grp.innerHTML = werte.map((_, i) => {
+        const [a0, a1] = bereich(i), d = bogen(175, 38, 28, a0, a1);
+        return `<path d="${d}" stroke="var(--solarLn)" stroke-linecap="round"/>`
+             + `<path id="pvArc${i}" d="${d}" stroke="var(--solar)" stroke-linecap="butt" stroke-dasharray="0 999"/>`;
+      }).join('');
+      grp.dataset.n = String(n);
+    }
+    const pos = PV_POS[n] || PV_POS[2];
+    werte.forEach((w, i) => {
+      const [a0, a1] = bereich(i);
+      const laenge = 28 * (a1 - a0) * Math.PI / 180;
+      const f = Math.max(0, Math.min(1, (w || 0) / Math.max(25, grenzen[i] || 0)));
+      const b = $('pvArc' + i);
+      b.setAttribute('stroke-dasharray', `${(f * laenge).toFixed(2)} ${Math.ceil(laenge)}`);
+      b.setAttribute('stroke-linecap', f > 0.012 ? 'round' : 'butt');
+      const [x, y, anker] = pos[i], el = $('pvL' + i);
+      el.setAttribute('x', x); el.setAttribute('y', y); el.setAttribute('text-anchor', anker);
+      el.textContent = `PV${i + 1} ${w == null ? '–' : fmtW(w)}`;
+    });
+    for (let i = n; i < 4; i++) $('pvL' + i).textContent = '';
+  }
+
+  function setWire(ids, watts, reverse, farben){
+    const cols = [].concat(farben), an = watts > 2;
+    const spuren = [].concat(ids).map(i => $(i)).filter(Boolean);
+    const n = an ? Math.min(cols.length, spuren.length) : 0;
+    spuren.forEach((el, i) => {
+      const laeuft = i < n;
+      el.classList.toggle('on', laeuft);
+      el.classList.toggle('rev', !!reverse);
+      el.style.stroke = laeuft ? cols[i] : '';
+      el.style.animationDelay = laeuft ? (-1.1 * i / n).toFixed(3) + 's' : '';
+    });
   }
   const tempC = raw => raw ? (raw - 2731) / 10 : null;
   const de1 = x => x.toFixed(1).replace('.', ',');
@@ -1102,25 +1190,22 @@
     $('tSolar').textContent = fmtW(solar);
     // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
     const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
-    const wz = v => Math.round(Number(v) || 0);
-    const pvSumme = pv.reduce((a, v) => a + (Number(v) || 0), 0);
-    if (pv.some(v => v != null) && pvSumme === 0 && solar > 2) {
-      // Geraet meldet eine Gesamtleistung, aber keine Einzelwerte
-      $('tPv1').textContent = t('pv_quiet');
-      $('tPv2').textContent = '';
-    } else if (pv[2] != null || pv[3] != null) {
-      // Einheit weglassen: sie steht schon am Gesamtwert, und vier Werte brauchen den Platz
-      $('tPv1').textContent = `PV1 ${wz(pv[0])} · PV2 ${wz(pv[1])}`;
-      $('tPv2').textContent = `PV3 ${wz(pv[2])} · PV4 ${wz(pv[3])}`;
-    } else {
-      $('tPv1').textContent = `PV1 ${fmtW(p.solarPower1)}`;
-      $('tPv2').textContent = `PV2 ${fmtW(p.solarPower2)}`;
-    }
+    const vier = pv[2] != null || pv[3] != null;
+    const eing = vier ? pv : pv.slice(0, 2);
+    const pvSumme = eing.reduce((a, v) => a + (Number(v) || 0), 0);
+    // Unter etwa 10 W je Eingang meldet das Geraet nur die Summe. Dann stehen
+    // Striche statt Nullen, sonst sieht es aus, als laege ein Eingang still.
+    const stumm = eing.some(v => v != null) && pvSumme === 0 && solar > 2;
+    zeigePv(stumm ? eing.map(() => null) : eing, cfg.peaks.slice(0, eing.length));
+    if (pvN !== eing.length) { pvN = eing.length; fuellePeaks(); }
     $('tHome').textContent = fmtW(hausW);
     $('tGrid').textContent = fmtW(netzW);
     $('tGrid').style.fill = netzW > 2 ? '' : 'var(--muted)';
-    if (hatMeter) $('lGrid').textContent = einsp > 2 ? t('grid_feed') : (bezug > 2 ? t('grid_draw') : t('grid_n'));
-    else $('lGrid').textContent = t('grid_bat');
+    // Die Beschriftung nennt immer nur, was gerade wirklich laeuft. Ohne Messgeraet
+    // kennt die App nur das Netzladen – fliesst nichts, heisst der Knoten schlicht Netz.
+    $('lGrid').textContent =
+      hatMeter ? (einsp > 2 ? t('grid_feed') : bezug > 2 ? t('grid_draw') : t('grid_n'))
+               : (grid  > 2 ? t('grid_bat')  : t('grid_n'));
     // Alle vier Kreise fuellen sich: Solar an der Modulleistung, Haus und Netz
     // an der Geraetegrenze, die der SolarFlow selbst meldet.
     const ring = (id, wert, grenze, umfang) => {
@@ -1129,7 +1214,6 @@
       el.setAttribute('stroke-linecap', f > 0.004 ? 'round' : 'butt');   // bei 0 sonst ein Punkt
     };
     const grenzeAus = p.inverseMaxPower || 800;
-    ring('pvRing',   solar, cfg.peak, 175.9);
     // Ohne Messgeraet messen Haus und Netz nur, was durch den SolarFlow laeuft –
     // dafuer ist dessen eigene Grenze der richtige Massstab. Mit Messgeraet geht es
     // um den ganzen Hausanschluss, und der hat keine sinnvolle Obergrenze: 11 kW
@@ -1153,17 +1237,17 @@
       {w: bezug,     c: 'var(--grid)'},    // aus dem Netz
       {w: discharge, c: 'var(--bat)'}      // aus dem Akku
     ].filter(x => x.w > 2).sort((a, b) => b.w - a.w).map(x => x.c);
-    const ausHaus = quellen.length ? quellen.slice(0, 2) : ['var(--home)'];
+    const ausHaus = quellen.length ? quellen.slice(0, 3) : ['var(--home)'];
     // Beim Laden kommt der Strom von Sonne oder Netz, nie aus dem Akku selbst.
     const ausLaden = quellen.filter(c => c !== 'var(--bat)').slice(0, 2);
-    setWire('wSolar', solar, false, 'var(--solar)');
+    setWire(['wSolar'], solar, false, 'var(--solar)');
     // Einspeisung kommt aus Sonne oder Akku und laeuft nach aussen, darum rueckwaerts
     // und in der Farbe der Quelle; Bezug laeuft nach innen und ist netzfarben.
-    setWire('wGrid', netzW, einsp > 2,
-            einsp > 2 ? (ausLaden.length ? ausLaden : ['var(--bat)']) : 'var(--grid)', 'wGrid2');
-    setWire('wBat',   batW,  batRev,
-            discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']), 'wBat2');
-    setWire('wHome',  hausW, false, ausHaus, 'wHome2');
+    setWire(['wGrid', 'wGrid2'], netzW, einsp > 2,
+            einsp > 2 ? (ausLaden.length ? ausLaden : ['var(--bat)']) : 'var(--grid)');
+    setWire(['wBat', 'wBat2'], batW, batRev,
+            discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']));
+    setWire(['wHome', 'wHome2', 'wHome3'], hausW, false, ausHaus);
 
     // Akku-Karte
     $('cSoc').textContent = soc;
@@ -1421,9 +1505,15 @@
     $('zRowAvDis').style.display = zeigAv ? '' : 'none';
     if (zeigAv) { s('zAvailChg', fmtW(avc)); s('zAvailDis', fmtW(avd)); }
     s('zDerate', p.derateFlag == null ? null : (p.derateFlag ? t('z_yes') : t('z_no')), p.derateFlag ? 'warn' : '');
-    const stoerung = Number(p.faultLevel || 0) || Number(p.is_error || 0);
+    // faultLevel 1 ist bei vielen Geraeten der Normalzustand, keine Stoerung. Nur
+    // is_error oder eine Stufe ab 2 sind wirklich ein Fehler. Andere lokale
+    // Integrationen haben hier denselben Fehlalarm erzeugt und ihn so behoben.
+    const stufe = Number(p.faultLevel || 0);
+    const stoerung = Number(p.is_error || 0) > 0 || stufe >= 2;
     s('zFault', p.faultLevel == null && p.is_error == null ? null
-        : (stoerung ? t('z_fault_n', p.faultLevel ?? p.is_error) : t('z_nofault')), stoerung ? 'warn' : 'ok');
+        : stoerung ? (stufe >= 2 ? t('z_fault_n', stufe) : t('z_fault_err'))
+        : stufe === 1 ? t('z_nofault1') : t('z_nofault'),
+      stoerung ? 'warn' : 'ok');
 
     // Off-Grid-Dose – nur der 800 Pro 2 meldet diese Felder (Zuordnung noch unbestaetigt)
     const hatOff = p.gridOffPower != null || p.gridOffMode != null;
@@ -1445,7 +1535,8 @@
   const zuReiter = id => document.querySelector(`nav.tabs button[data-v="${id}"]`).click();
   // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
   function ladeEinstellungen(){
-    $('inIp').value = cfg.ip; $('inMeterIp').value = cfg.meterIp; $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    $('inIp').value = cfg.ip; $('inMeterIp').value = cfg.meterIp; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
+    fuellePeaks();
     zeigeGeraeteliste();
     const pn = Number(last?.properties?.packNum) || 0;
     $('capHint').textContent = pn ? t('d_cap_hint', pn) : '';
@@ -1460,9 +1551,13 @@
     $('inIp').value = cfg.ip;
     cfg.meterIp = ($('inMeterIp').value || '').trim();
     cfg.cap = Math.max(100, Number($('inCap').value) || 1920);
-    cfg.peak = Math.max(50, Number($('inPeak').value) || 800);
+    cfg.peaks = cfg.peaks.map((alt, i) => {
+      const roh = Number($('inPeak' + i).value);
+      return roh > 0 ? Math.min(2000, Math.round(roh)) : alt;
+    });
     cfg.interval = Math.max(3, Number($('inInt').value) || 5);
-    $('inCap').value = cfg.cap; $('inPeak').value = cfg.peak; $('inInt').value = cfg.interval;
+    $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
+    fuellePeaks();
     const plz = String($('inPlz').value || '').replace(/\D/g, '').slice(0, 5);
     if (plz !== cfg.plz) {
       cfg.plz = plz; $('inPlz').value = plz;
@@ -1472,7 +1567,7 @@
       else toast(t('plz_unknown'), 4000);
     }
     store.set('ip', cfg.ip); store.set('meterIp', cfg.meterIp); store.set('cap', cfg.cap);
-    store.set('peak', cfg.peak); store.set('interval', cfg.interval);
+    store.set('peaks', cfg.peaks.join(',')); store.set('interval', cfg.interval);
     store.set('plz', cfg.plz); store.set('lat', cfg.lat); store.set('lon', cfg.lon);
     drawSun();
     if (last) render(last);
@@ -1480,7 +1575,22 @@
     if (cfg.ip !== alteIp || cfg.interval !== altesIntervall) { demo = false; start(); }
     else zeigeZustand();
   }
-  ['inIp','inMeterIp','inCap','inPeak','inPlz','inInt'].forEach(id => {
+  // Was ein einzelner MPPT-Eingang je Modell vertraegt (Datenblatt, nicht im Bericht).
+  // Zendure empfiehlt ausdruecklich Module bis zum 1,5-fachen dieser Zahl, weil die
+  // Module ihre Nennleistung in der Praxis fast nie erreichen.
+  const MPPT_MAX = { solarFlow800Pro2: 660, solarFlow800Plus: 750, solarFlow800: 600 };
+  // Nur die Felder zeigen, die das Geraet wirklich hat, und die Summe darunter.
+  function fuellePeaks(){
+    const n = pvN || 2;
+    cfg.peaks.forEach((w, i) => { $('inPeak' + i).value = w; });
+    [2, 3].forEach(i => { $('peakCell' + i).style.display = i < n ? '' : 'none'; });
+    const summe = cfg.peaks.slice(0, n).reduce((a, b) => a + b, 0);
+    cfg.peak = summe;
+    const grenze = MPPT_MAX[last?.product];
+    $('peakSum').textContent = t('d_peak_sum', summe, n)
+      + (grenze ? ' ' + t('d_peak_max', grenze, Math.round(grenze * 1.5)) : '');
+  }
+  ['inIp','inMeterIp','inCap','inPeak0','inPeak1','inPeak2','inPeak3','inPlz','inInt'].forEach(id => {
     const e = $(id); if (!e) return;
     e.addEventListener('change', uebernehmen);
     e.addEventListener('keydown', ev => { if (ev.key === 'Enter') e.blur(); });
