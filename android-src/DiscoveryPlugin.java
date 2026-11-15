@@ -161,13 +161,17 @@ public class DiscoveryPlugin extends Plugin {
             c.setReadTimeout(2500);
             if (c.getResponseCode() != 200) return null;
             JSONObject j = new JSONObject(read(c.getInputStream()));
-            // Der Speicher liefert "properties". Was ein Smart Meter liefert, wissen wir nicht –
-            // deshalb reicht eines der drei Kennzeichen, sonst faende die Suche es nie.
-            if (!j.has("properties") && !j.has("sn") && !j.has("product")) return null;
+            // Das Smart Meter 3CT antwortet auf denselben Pfad, liefert aber eine ganz
+            // andere Struktur: total_power und die drei Phasen, ohne properties, sn oder
+            // product. Die alte Pruefung hat es deshalb weggeworfen. Auf /properties/report
+            // antwortet ohnehin nichts anderes als ein Zendure-Geraet, also reicht gueltiges JSON.
+            if (j.length() == 0) return null;
             JSObject o = new JSObject();
             o.put("ip", ip);
             o.put("sn", j.optString("sn", ""));
             o.put("product", j.optString("product", ""));
+            // Hinweis fuer die App, falls das Geraet sich nicht selbst benennt
+            o.put("meter", j.has("total_power") || j.has("totalPower"));
             return o;
         } catch (Exception e) {
             return null;

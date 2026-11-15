@@ -761,7 +761,7 @@
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
       d_size:'Schriftgröße', sz_normal:'Normal', sz_big:'Groß', sz_xl:'Sehr groß',
-      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte',
+      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte', meter_dev:'Smart Meter',
       dg_1:'1 von 4 · Speicher wird ausgelesen', dg_2:'2 von 4 · Suche im WLAN',
       dg_2b:'2 von 4 · Suche läuft, etwa 20 Sekunden', dg_3:'3 von 4 · Zweites Gerät',
       dg_4:'Fertig – jetzt teilen', dg_err:'Abgebrochen',
@@ -887,7 +887,7 @@
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
       d_size:'Размер шрифта', sz_normal:'Обычный', sz_big:'Крупный', sz_xl:'Очень крупный',
-      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения',
+      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения', meter_dev:'Умный счётчик',
       dg_1:'1 из 4 · чтение накопителя', dg_2:'2 из 4 · поиск в сети Wi-Fi',
       dg_2b:'2 из 4 · идёт поиск, около 20 секунд', dg_3:'3 из 4 · второе устройство',
       dg_4:'Готово — теперь поделиться', dg_err:'Прервано',
@@ -1080,7 +1080,7 @@
     const solar = p.solarInputPower ?? 0, home = p.outputHomePower ?? 0, grid = p.gridInputPower ?? 0;
     const charge = p.outputPackPower ?? 0, discharge = p.packInputPower ?? 0, soc = p.electricLevel ?? 0;
 
-    $('devname').textContent = d.product ? prodName(d.product) : 'SolarFlow';
+    $('devname').textContent = d.product ? prodName(d.product, d) : 'SolarFlow';
     $('tSolar').textContent = fmtW(solar);
     // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
     const pv = [p.solarPower1, p.solarPower2, p.solarPower3, p.solarPower4];
@@ -1231,7 +1231,7 @@
       const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
       if (andere.length === 1) {
         cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
-        toast(t('found_meter', prodName(andere[0].product), andere[0].ip), 6000);
+        toast(t('found_meter', prodName(andere[0].product, andere[0]), andere[0].ip), 6000);
       }
     } catch {}
     finally { sucheLaeuft = false; }
@@ -1258,16 +1258,20 @@
     const m = lastMeter, an = !!(cfg.meterIp && m);
     blk.style.display = an ? 'flex' : 'none';
     if (!an) return;
-    const p = m.properties || {};
+    // Der Speicher packt alles unter "properties", das Smart Meter 3CT liefert
+    // total_power und die Phasen direkt auf der obersten Ebene.
+    const p = (m.properties && Object.keys(m.properties).length) ? m.properties : m;
+    const istZaehler = ('total_power' in m) || ('totalPower' in m) || ('total_power' in p);
+    const name = m.product ? prodName(m.product, m) : (istZaehler ? t('meter_dev') : cfg.meterIp);
     const setz = (id, v) => { const e = $(id); e.textContent = v == null ? '–' : v; e.className = v == null ? 'dim' : ''; };
-    $('zGrpMeterName').textContent = m.product ? prodName(m.product) : cfg.meterIp;
-    setz('mProd', m.product ? prodName(m.product) : null);
+    $('zGrpMeterName').textContent = name;
+    setz('mProd', m.product ? prodName(m.product, m) : (istZaehler ? t('meter_dev') : null));
     setz('mSn', m.sn ? '…' + String(m.sn).slice(-4) : null);
     setz('mRssi', (p.rssi != null && !isNaN(p.rssi)) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
     setz('mStamp', (m.timestamp != null && !isNaN(m.timestamp)) ? new Date(m.timestamp * 1000).toLocaleTimeString(LOC())
         : (meterOk ? hm(meterOk) : null));
     const zeilen = Object.entries(p)
-      .filter(([, v]) => v !== null && typeof v !== 'object')
+      .filter(([k, v]) => v !== null && typeof v !== 'object' && k !== 'messageId' && k !== 'timestamp')
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `<div class="zrow"><span>${esc(k)}</span><b>${esc(String(v))}</b></div>`);
     $('mWerte').innerHTML = zeilen.length ? zeilen.join('') : `<div class="zhint">${t('no_data')}</div>`;
@@ -1279,7 +1283,7 @@
       e.textContent = val == null ? '–' : val; e.className = val == null ? 'dim' : (cls || ''); };
 
     $('stateInfo').textContent = !d ? t('no_data') : (lastOk ? t('state_as_of', hm(lastOk)) : t('state_live'));
-    $('zGrpBatName').textContent = d?.product ? prodName(d.product) : '';
+    $('zGrpBatName').textContent = d?.product ? prodName(d.product, d) : '';
     zeigeMeter();
 
     // Solar – zwei oder vier Eingaenge, je nach Modell
@@ -1368,7 +1372,7 @@
         : (p.gridOffMode ? t('z_ready') : t('z_off')), p.gridOffPower > 0 ? 'ok' : '');
 
     // Geraet
-    s('zProd', d?.product ? prodName(d.product) : null);
+    s('zProd', d?.product ? prodName(d.product, d) : null);
     s('zSn', d?.sn ? '…' + String(d.sn).slice(-4) : null);
     s('zSw', nz(pk.softVersion) ? String(pk.softVersion) : null);
     s('zRssi', nz(p.rssi) ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : null);
@@ -1434,42 +1438,37 @@
     for (let i = 0; i < zeilen.length; i += pro) log(ein + zeilen.slice(i, i + pro).join('  '));
   };
 
-  // Ein Geraet vollstaendig ausgeben – fuer Speicher und Smart Meter dasselbe
+  // Tiefe Kopie, in der nur Zugangsdaten gekuerzt sind – sonst bleibt alles stehen
+  function redigiere(v, schluessel){
+    if (Array.isArray(v)) return v.map(x => redigiere(x));
+    if (v && typeof v === 'object') {
+      const o = {};
+      for (const [k, w] of Object.entries(v)) o[k] = redigiere(w, k);
+      return o;
+    }
+    return (schluessel && GEHEIM.test(schluessel)) ? cut(v) : v;
+  }
+
+  // Ein Geraet vollstaendig ausgeben: lesbare Uebersicht und darunter die komplette
+  // Rohantwort. Keine Auswahl, keine Kuerzung – nur Nummern und Schluessel sind gekuerzt.
   async function berichte(log, titel, ip){
-    log(`\n== ${titel} (${'…' + String(ip).split('.').slice(-1)[0]}) ==`);
+    log(`\n== ${titel} (…${String(ip).split('.').slice(-1)[0]}) ==`);
     try {
       const r = await http(`http://${ip}/properties/report`, {}, 8000);
-      const d = await r.json();
-      const p = d.properties || {};
-      log(' Produkt:', d.product || '?', ' SN:', cut(d.sn));
+      const roh = await r.json();
+      const d = redigiere(roh);
+      const p = (d.properties && typeof d.properties === 'object') ? d.properties : {};
 
-      const oben = flach(d).filter(z => !z.startsWith('properties='));
-      if (oben.length) { log(' -- oberste Ebene --'); spalten(log, oben, 4, '  '); }
+      log(' Produkt:', d.product || '(nennt sich nicht)', ' SN:', d.sn ? d.sn : '(keine)');
+
+      const oben = flach(d);
+      if (oben.length) { log(` -- oberste Ebene (${oben.length}) --`); spalten(log, oben, 4, '  '); }
 
       const felder = flach(p);
-      log(` -- ${felder.length} Felder in properties --`);
-      spalten(log, felder, 4, '  ');
+      if (felder.length) { log(` -- properties (${felder.length}) --`); spalten(log, felder, 4, '  '); }
 
-      const packs = Array.isArray(p.packData) ? p.packData
-                  : Array.isArray(d.packData) ? d.packData : [];
-      if (packs.length) {
-        log(` -- packData: ${packs.length} Pack(s) --`);
-        packs.forEach((pk, i) => {
-          if (!pk || typeof pk !== 'object') return;
-          log(`  Pack ${i + 1}:`);
-          spalten(log, flach(pk), 4, '   ');
-          Object.entries(pk).forEach(([k, v]) => {
-            if (Array.isArray(v)) log(`   ${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-          });
-        });
-      }
-
-      for (const [quelle, obj] of [['properties', p], ['oben', d]])
-        Object.entries(obj).forEach(([k, v]) => {
-          if (k === 'packData' || k === 'properties') return;
-          if (Array.isArray(v)) log(` ${quelle}.${k}[${v.length}] = ` + JSON.stringify(v).slice(0, 600));
-          else if (v && typeof v === 'object') { log(` ${quelle}.${k}:`); spalten(log, flach(v), 4, '   '); }
-        });
+      log(' -- komplette Rohantwort --');
+      JSON.stringify(d, null, 1).split('\n').forEach(z => log('  ' + z));
     } catch (e) {
       log(' nicht erreichbar (' + (e.message || e) + ')');
     }
@@ -1480,7 +1479,6 @@
     const log = (...a) => L.push(a.join(' '));
     const zeig = () => { $('diagOut').value = L.join('\n'); };
     $('diagBox').style.display = 'block';
-    // Waehrend des Laufs darf nichts geteilt werden – sonst geht ein halber Bericht raus
     ['btnDiag', 'btnDiagCopy', 'btnDiagShare'].forEach(id => $(id).disabled = true);
     const balken = $('diagSteps').children;
     const schritt = (n, text) => {
@@ -1497,41 +1495,46 @@
     try {
       if (!cfg.ip) log('\n== Speicher: keine IP eingetragen (Einstellungen → Gerät im WLAN)');
       else { await berichte(log, 'Speicher', cfg.ip); zeig(); }
+
       schritt(1, t('dg_2'));
-      // Was die Suche bisher gefunden hat – sonst weiss niemand, ob sie ueberhaupt lief
       const at = Number(store.get('devsAt', 0));
       log('\n== Suche im WLAN ==');
       if (!at) log(' bisher nie gelaufen');
-      else {
-        log(' zuletzt ' + new Date(at).toLocaleString('de-DE') + ', ' + gefunden.length + ' Gerät(e):');
-        gefunden.forEach(d => log('  ·', d.product || '?', cut(d.ip), d.sn ? 'SN ' + cut(d.sn) : ''));
-      }
+      else log(' zuletzt ' + new Date(at).toLocaleString('de-DE') + ', ' + gefunden.length + ' Gerät(e)');
       zeig();
 
-      // Ist kein zweites Gerät bekannt, jetzt selbst nachsehen – der Knopf soll alles erledigen
-      if (!cfg.meterIp) {
-        if (!isApp) log(' (Suche nur in der App möglich)');
-        else {
-          log(' suche jetzt im ganzen Netz, das dauert etwa 20 Sekunden …'); zeig();
-          schritt(1, t('dg_2b'));
-          try {
-            const devs = await discover();
-            merkeListe(devs);
-            log(` gefunden: ${devs.length} Gerät(e)`);
-            devs.forEach(d => log('  ·', d.product || '?', cut(d.ip), d.sn ? 'SN ' + cut(d.sn) : ''));
-            const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
-            if (andere.length === 1) {
-              cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
-              log(' zweites Gerät übernommen:', andere[0].product || '?');
-            } else if (andere.length > 1) log(' mehrere weitere Geräte – bitte in den Einstellungen auswählen');
-            else log(' kein weiteres Zendure-Gerät im Netz gefunden');
-          } catch (e) { log(' Suche fehlgeschlagen: ' + (e.message || e)); }
-          zeig();
-        }
+      let devs = [];
+      if (!isApp) log(' (Suche nur in der App möglich)');
+      else {
+        schritt(1, t('dg_2b'));
+        log(' suche jetzt im ganzen Netz …'); zeig();
+        try {
+          devs = await discover();
+          merkeListe(devs);
+          log(` gefunden: ${devs.length} Gerät(e)`);
+          devs.forEach(d => log('  ·', d.ip, d.product || '(ohne Namen)', d.meter ? '· meldet total_power' : ''));
+          const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
+          if (!cfg.meterIp && andere.length === 1) {
+            cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
+            log(' als zweites Gerät übernommen:', andere[0].ip);
+          }
+        } catch (e) { log(' Suche fehlgeschlagen: ' + (e.message || e)); }
+        zeig();
       }
 
+      // Jedes gefundene Geraet auslesen, nicht nur Speicher und Meter
       schritt(2, t('dg_3'));
-      if (cfg.meterIp) await berichte(log, 'Zweites Gerät / Smart Meter', cfg.meterIp);
+      const schon = new Set([cfg.ip]);
+      const liste = devs.map(d => d.ip);
+      if (cfg.meterIp && !liste.includes(cfg.meterIp)) liste.push(cfg.meterIp);
+      for (const ip of liste) {
+        if (schon.has(ip)) continue;
+        schon.add(ip);
+        await berichte(log, 'Weiteres Gerät', ip);
+        zeig();
+      }
+      if (schon.size === 1) log('\n== Kein weiteres Gerät zum Auslesen ==');
+
       log('\n== Ende ==');
       schritt(4, t('dg_4'));
     } catch (e) {
@@ -1612,8 +1615,8 @@
   // ---------- SolarFlow im WLAN suchen ----------
   // Android-Modul "Discovery": erst mDNS (_zendure._tcp), sonst alle Adressen im WLAN abfragen.
   const DEV_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="11" rx="2.5"/><path d="M21 11v3"/><path d="m12 9-3 4h4l-2 3"/></svg>';
-  function prodName(p){
-    if (!p) return t('zendure_dev');
+  function prodName(p, d){
+    if (!p) return istMeter(d) ? t('meter_dev') : t('zendure_dev');
     const m = p.match(/^solarFlow(.*)$/i);
     if (m) return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2')
       .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2')).trim();
@@ -1647,7 +1650,7 @@
         onPick(speicher.length === 1 ? speicher[0] : devs[0], devs);
       } else {
         out.innerHTML = `<div class="hint">${t('find_many')}</div>` + devs.map((d, i) =>
-          `<button class="devbtn" data-i="${i}"><span class="di">${DEV_ICON}</span><span><b>${esc(prodName(d.product))}</b><small>${esc(d.ip)}${d.sn ? ' · SN …' + esc(d.sn.slice(-5)) : ''}</small></span></button>`).join('');
+          `<button class="devbtn" data-i="${i}"><span class="di">${DEV_ICON}</span><span><b>${esc(prodName(d.product, d))}</b><small>${esc(d.ip)}${d.sn ? ' · SN …' + esc(d.sn.slice(-5)) : ''}</small></span></button>`).join('');
         out.querySelectorAll('.devbtn').forEach(b => b.onclick = () => { out.innerHTML = ''; onPick(devs[Number(b.dataset.i)], devs); });
       }
     } catch (e) {
@@ -1657,9 +1660,11 @@
     }
   }
   const istSpeicher = d => /^solarflow/i.test(String(d && d.product || ''));
+  // Das Smart Meter nennt sich nicht selbst; die Suche markiert es anhand von total_power
+  const istMeter = d => !!(d && (d.meter || /meter/i.test(String(d.product || ''))));
   let gefunden = (() => { try { return JSON.parse(store.get('devs', '[]')); } catch { return []; } })();
   function merkeListe(devs){
-    gefunden = devs.map(d => ({ip: d.ip, sn: d.sn || '', product: d.product || ''}));
+    gefunden = devs.map(d => ({ip: d.ip, sn: d.sn || '', product: d.product || '', meter: !!d.meter}));
     store.set('devs', JSON.stringify(gefunden));
     store.set('devsAt', String(Date.now()));
     zeigeGeraeteliste();
@@ -1671,7 +1676,7 @@
     box.innerHTML = `<div class="hint">${t('dev_found_n', gefunden.length)}`
       + (at ? ' · ' + new Date(at).toLocaleString(LOC(), {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '')
       + '</div>' + gefunden.map(d =>
-        `<div class="hint" style="margin-top:4px">· ${esc(prodName(d.product))} — ${esc(d.ip)}`
+        `<div class="hint" style="margin-top:4px">· ${esc(prodName(d.product, d))} — ${esc(d.ip)}`
         + (d.sn ? ' · SN …' + esc(String(d.sn).slice(-4)) : '') + '</div>').join('');
   }
   // Ein gefundenes Geraet, das kein Speicher ist, ist der Kandidat fuers Smart Meter.
@@ -1685,8 +1690,8 @@
     cfg.ip = d.ip; store.set('ip', cfg.ip); demo = false; fails = 0;
     $('setup').style.display = 'none'; showMsg('');
     const m = devs ? merkeZweites(devs, d) : null;
-    toast(m ? t('found_two', prodName(d.product), prodName(m.product), m.ip)
-            : t('found_at', prodName(d.product), d.ip), m ? 5000 : 2600);
+    toast(m ? t('found_two', prodName(d.product, d), prodName(m.product, m), m.ip)
+            : t('found_at', prodName(d.product, d), d.ip), m ? 5000 : 2600);
     start();
   }
   $('btnFind').onclick = () => runFind($('btnFind'), $('findResult'), useIp);
@@ -1696,8 +1701,8 @@
     const m = devs ? (devs.filter(x => x !== d && !istSpeicher(x))[0] || null) : null;
     if (m) $('inMeterIp').value = m.ip;
     uebernehmen();
-    $('findResultDlg').innerHTML = `<div class="hint">${t('found_at', esc(prodName(d.product)), esc(d.ip))}`
-      + (m ? '<br>' + t('found_meter', esc(prodName(m.product)), esc(m.ip)) : '') + '</div>';
+    $('findResultDlg').innerHTML = `<div class="hint">${t('found_at', esc(prodName(d.product, d)), esc(d.ip))}`
+      + (m ? '<br>' + t('found_meter', esc(prodName(m.product, m)), esc(m.ip)) : '') + '</div>';
   });
 
   // ---------- Sonnenbogen ----------
