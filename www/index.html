@@ -105,7 +105,7 @@
   .node-label{font-size:calc(12px * min(var(--zoom,1), 1.2));fill:var(--muted);font-family:Inter,system-ui,sans-serif}
   .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
   .node-val{font-size:calc(19px * var(--zoom,1));font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
-  .node-val.small{font-size:17px}
+  .node-val.small{font-size:calc(17px * min(var(--zoom,1), 1.25))}
   .pvlab{font-weight:500}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
@@ -114,9 +114,7 @@
      duerfen sie nicht sein: die runden Enden legen noch die Strichbreite drauf,
      dann beruehren sich die Striche bei drei Quellen. So behaelt jeder
      Strom seinen Takt; kommt eine Quelle dazu, legt sie sich nur dazwischen. */
-  .wire.on{stroke-dasharray:4 20;animation:flow 1.1s linear infinite}
-  .wire.rev{animation-direction:reverse}
-  @keyframes flow{to{stroke-dashoffset:-24}}
+  .wire.on{stroke-dasharray:4 20}
 
   /* ---------- Akku ---------- */
   .bat{display:flex;flex-direction:column;gap:14px}
@@ -382,7 +380,7 @@
 
     <div class="card flow">
       <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
-      <svg viewBox="0 -46 350 296" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
+      <svg id="svgFlow" viewBox="0 -46 350 296" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
         <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/><path id="wGrid2" class="wire" d="M72 126 H152"/>
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/><path id="wHome3" class="wire" d="M198 126 H278"/>
@@ -407,15 +405,25 @@
         <circle cx="46" cy="126" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="126" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 126)"/>
         <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
-        <text class="node-label" x="46" y="174" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
-        <text class="node-val small" x="46" y="194" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
+        <text class="node-label" x="46" y="88" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
+        <text class="node-val small" x="46" y="180" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
         <circle cx="304" cy="126" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
         <circle id="homeRing" cx="304" cy="126" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 126)"/>
         <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
-        <text class="node-label" x="304" y="174" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
-        <text class="node-val small" x="304" y="194" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
+        <text class="node-label" x="304" y="88" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
+        <text class="node-val small" x="304" y="180" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
 
+        <!-- Off-Grid-Dose: haengt am Akku, deshalb links daneben an einer eigenen
+             kurzen Leitung. Nur sichtbar, wenn das Geraet die Felder meldet. -->
+        <g id="grpOff" style="display:none">
+          <path class="wbase" d="M144 214 H66"/>
+          <path id="wOff" class="wire" d="M144 214 H66"/>
+          <circle cx="40" cy="214" r="22" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
+          <g transform="translate(29 203)" fill="none" stroke="var(--home)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5"/><path d="M15 2v5"/><path d="M5 7h14v4.5a7 7 0 0 1-14 0z"/><path d="M12 18.5V22"/></g>
+          <text class="node-label" x="70" y="200" data-i18n="offgrid">Off-Grid</text>
+          <text class="node-val small" x="70" y="236" id="tOff" data-i18n="z_off">aus</text>
+        </g>
         <circle cx="175" cy="214" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
         <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
         <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
@@ -846,7 +854,7 @@
       z_cells:'Zellen', z_cells_n:n=>`${n} in Reihe`,
       z_pvtotal:'Gesamt', z_inputs_n:n=>`${n} Eingänge`,
       z_fan:'Lüfter', z_fan_n:n=>`Stufe ${n}`,
-      z_offgrid:'Off-Grid-Dose', z_ready:'bereit',
+      z_offgrid:'Off-Grid-Dose', offgrid:'Off-Grid', z_ready:'bereit',
       z_charging:'lädt', z_discharging:'entlädt',
       z_cmax:'Höchste Zelle', z_cmin:'Niedrigste Zelle', z_spread:'Spreizung',
       z_sp_ok:'Die Zellen sind ausgeglichen.', z_sp_mid:'Leicht erhöht – im Auge behalten.',
@@ -982,7 +990,7 @@
       z_cells:'Ячейки', z_cells_n:n=>`${n} последовательно`,
       z_pvtotal:'Всего', z_inputs_n:n=>`${n} ${n===1?'вход':n<5?'входа':'входов'}`,
       z_fan:'Вентилятор', z_fan_n:n=>`ступень ${n}`,
-      z_offgrid:'Автономная розетка', z_ready:'готова',
+      z_offgrid:'Автономная розетка', offgrid:'Розетка', z_ready:'готова',
       z_charging:'заряжается', z_discharging:'разряжается',
       z_cmax:'Максимальная ячейка', z_cmin:'Минимальная ячейка', z_spread:'Разброс',
       z_sp_ok:'Ячейки сбалансированы.', z_sp_mid:'Слегка повышен — стоит понаблюдать.',
@@ -1233,6 +1241,24 @@
     for (let i = n; i < 4; i++) $('pvL' + i).textContent = '';
   }
 
+  // Eine Umdrehung des Strichmusters: 24 Einheiten in 1,1 Sekunden.
+  const LAUF = 1100, STRECKE = 24;
+  // Alle Spuren werden aus derselben Uhr gezeichnet. Eine Spur weiss nur, den
+  // wievielten von wie vielen Plaetzen sie belegt – ihre Striche ergeben sich
+  // daraus. So kann keine aus dem Takt geraten, auch wenn eine Quelle erst
+  // spaeter dazukommt; es gibt keine eigene Startzeit, die verrutschen koennte.
+  function flussUhr(ts){
+    const grund = (ts % LAUF) / LAUF * STRECKE;
+    for (const el of document.querySelectorAll('.wire.on')) {
+      const platz = el._platz || 0, anzahl = el._anzahl || 1;
+      const weg = el._rueck ? -grund : grund;
+      el.style.strokeDashoffset = (-(weg + STRECKE * platz / anzahl)).toFixed(2);
+    }
+    requestAnimationFrame(flussUhr);
+  }
+  requestAnimationFrame(flussUhr);
+
+  // Hier wird nur noch gesagt, wer mitlaeuft und auf welchem Platz.
   function setWire(ids, watts, reverse, farben){
     const cols = [].concat(farben), an = watts > 2;
     const spuren = [].concat(ids).map(i => $(i)).filter(Boolean);
@@ -1240,9 +1266,8 @@
     spuren.forEach((el, i) => {
       const laeuft = i < n;
       el.classList.toggle('on', laeuft);
-      el.classList.toggle('rev', !!reverse);
       el.style.stroke = laeuft ? cols[i] : '';
-      el.style.animationDelay = laeuft ? (-1.1 * i / n).toFixed(3) + 's' : '';
+      el._platz = i; el._anzahl = n || 1; el._rueck = !!reverse;
     });
   }
   const tempC = raw => raw ? (raw - 2731) / 10 : null;
@@ -1332,6 +1357,17 @@
     // und in der Farbe der Quelle; Bezug laeuft nach innen und ist netzfarben.
     setWire(['wGrid', 'wGrid2'], netzW, einsp > 2,
             einsp > 2 ? (ausLaden.length ? ausLaden : ['var(--bat)']) : 'var(--grid)');
+    // Die Dose zieht aus dem Akku, darum laufen ihre Striche in Akkufarbe.
+    const offW = Number(p.gridOffPower || 0);
+    const hatOff = p.gridOffPower != null || p.gridOffMode != null;
+    $('grpOff').style.display = hatOff ? '' : 'none';
+    // Die Dose passt in die freie linke Spalte – das Bild muss dafuer nicht wachsen.
+    $('svgFlow').setAttribute('viewBox', '0 -46 350 296');
+    if (hatOff) {
+      $('tOff').textContent = offW > 0 ? fmtW(offW) : (p.gridOffMode ? t('z_ready') : t('z_off'));
+      $('tOff').style.fill = offW > 0 ? '' : 'var(--muted)';
+      setWire(['wOff'], offW, false, 'var(--bat)');
+    }
     setWire(['wBat', 'wBat2'], batW, batRev,
             discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']));
     setWire(['wHome', 'wHome2', 'wHome3'], hausW, false, ausHaus);
