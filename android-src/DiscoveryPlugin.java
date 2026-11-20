@@ -16,11 +16,15 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -159,13 +163,13 @@ public class DiscoveryPlugin extends Plugin {
             c = (HttpURLConnection) new URL("http://" + ip + "/properties/report").openConnection();
             c.setConnectTimeout(700);
             c.setReadTimeout(2500);
-            if (c.getResponseCode() != 200) return null;
+            if (c.getResponseCode() != 200) throw new Exception("kein 200");
             JSONObject j = new JSONObject(read(c.getInputStream()));
             // Das Smart Meter 3CT antwortet auf denselben Pfad, liefert aber eine ganz
             // andere Struktur: total_power und die drei Phasen, ohne properties, sn oder
             // product. Die alte Pruefung hat es deshalb weggeworfen. Auf /properties/report
             // antwortet ohnehin nichts anderes als ein Zendure-Geraet, also reicht gueltiges JSON.
-            if (j.length() == 0) return null;
+            if (j.length() == 0) throw new Exception("leeres JSON");
             JSObject o = new JSObject();
             o.put("ip", ip);
             o.put("sn", j.optString("sn", ""));
@@ -174,10 +178,121 @@ public class DiscoveryPlugin extends Plugin {
             o.put("meter", j.has("total_power") || j.has("totalPower"));
             return o;
         } catch (Exception e) {
-            return null;
+            // Kein Zendure-Geraet. Vielleicht spricht dort aber Modbus TCP – so meldet
+            // sich z. B. ein GoodWe-Speicher am LAN-Dongle. Port 502 ist eindeutig
+            // genug, im Heimnetz lauscht dort sonst praktisch nichts.
+            int unit = modbusUnit(ip);
+            if (unit < 0) return null;
+            JSObject o = new JSObject();
+            o.put("ip", ip);
+            o.put("sn", "");
+            o.put("product", "");
+            o.put("meter", false);
+            o.put("modbus", true);
+            o.put("unit", unit);
+            return o;
         } finally {
             if (c != null) c.disconnect();
         }
+    }
+
+    // ---------- Modbus TCP ----------
+
+    /** Probiert die ueblichen Geraeteadressen durch. Rueckgabe: die erste, die antwortet, sonst -1. */
+    private int modbusUnit(String ip) {
+        for (int unit : new int[] { 1, 247 }) {
+            int[] r = modbusRead(ip, unit, 35100, 1, 350, 1200);
+            if (r != null) return unit;                 // Antwort kam an, auch eine Fehlerantwort zaehlt
+        }
+        return -1;
+    }
+
+    /**
+     * Liest Halteregister (Funktionscode 3). Rueckgabe: die Werte, bei einer
+     * Modbus-Fehlerantwort ein leeres Feld, bei gar keiner Antwort null.
+     */
+    private int[] modbusRead(String ip, int unit, int start, int count, int connectMs, int readMs) {
+        Socket so = null;
+        try {
+            so = new Socket();
+            so.connect(new InetSocketAddress(ip, 502), connectMs);
+            so.setSoTimeout(readMs);
+            byte[] req = new byte[] {
+                0x00, 0x01,                                   // Vorgangsnummer
+                0x00, 0x00,                                   // Protokoll 0 = Modbus
+                0x00, 0x06,                                   // Laenge der folgenden Bytes
+                (byte) unit, 0x03,                            // Geraeteadresse, Funktionscode 3
+                (byte) (start >> 8), (byte) start,
+                (byte) (count >> 8), (byte) count
+            };
+            OutputStream out = so.getOutputStream();
+            out.write(req); out.flush();
+            DataInputStream in = new DataInputStream(so.getInputStream());
+            byte[] head = new byte[8];
+            in.readFully(head);
+            if (head[2] != 0 || head[3] != 0) return null;    // kein Modbus
+            int fc = head[7] & 0xFF;
+            if (fc == 0x83) { in.read(); return new int[0]; } // Fehlerantwort – Geraet spricht Modbus
+            if (fc != 0x03) return null;
+            int bytes = in.read();
+            if (bytes < 0 || bytes > 250) return null;
+            byte[] data = new byte[bytes];
+            in.readFully(data);
+            int[] regs = new int[bytes / 2];
+            for (int i = 0; i < regs.length; i++)
+                regs[i] = ((data[2 * i] & 0xFF) << 8) | (data[2 * i + 1] & 0xFF);
+            return regs;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            try { if (so != null) so.close(); } catch (Exception ignored) { }
+        }
+    }
+
+    /**
+     * Liest mehrere Registerbloecke roh aus – fuer den Diagnosebericht. Welche Register
+     * ein GoodWe-Geraet fuehrt, wissen wir noch nicht; deshalb werden die ueblichen
+     * Bereiche abgefragt und unausgewertet zurueckgegeben.
+     */
+    @PluginMethod
+    public void modbus(PluginCall call) {
+        final String ip = call.getString("ip", "");
+        new Thread(() -> {
+            try {
+                if (ip.isEmpty()) { call.reject("keine IP"); return; }
+                int unit = call.getInt("unit", 0) > 0 ? call.getInt("unit", 1) : modbusUnit(ip);
+                JSObject ret = new JSObject();
+                ret.put("ip", ip);
+                ret.put("unit", unit);
+                if (unit < 0) { ret.put("blocks", new JSArray()); call.resolve(ret); return; }
+                int[][] bereiche = {
+                    { 35000, 32 },    // Geraetetyp, Seriennummer, oft als Text
+                    { 35100, 125 },   // Laufzeitwerte 1
+                    { 35225, 125 },   // Laufzeitwerte 2
+                    { 36000, 60 },    // Akku
+                    { 37000, 30 }     // Zaehler
+                };
+                JSArray arr = new JSArray();
+                for (int[] b : bereiche) {
+                    JSObject o = new JSObject();
+                    o.put("start", b[0]);
+                    o.put("count", b[1]);
+                    int[] r = modbusRead(ip, unit, b[0], b[1], 1200, 2500);
+                    if (r == null) o.put("error", "keine Antwort");
+                    else if (r.length == 0) o.put("error", "Modbus-Fehlerantwort");
+                    else {
+                        JSArray v = new JSArray();
+                        for (int x : r) v.put(x);
+                        o.put("regs", v);
+                    }
+                    arr.put(o);
+                }
+                ret.put("blocks", arr);
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject(e.getMessage() == null ? e.toString() : e.getMessage());
+            }
+        }).start();
     }
 
     private static String read(InputStream in) throws java.io.IOException {

@@ -37,6 +37,9 @@
   html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
   body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 96px)}
   button{font-family:inherit}
+  /* … und nie abschneiden: Android rechnet seine eigene Schriftgroesse auf
+     unsere drauf, und SVG kappt ueberstehenden Text sonst am viewBox-Rand. */
+  #svgFlow{overflow:visible}
   .wrap{max-width:480px;margin:0 auto;padding:18px 16px 20px;display:flex;flex-direction:column;gap:12px;zoom:var(--zoom,1)}
   body{padding-bottom:calc(96px * var(--zoom,1))}
   .num{font-family:var(--num);font-weight:600;font-variant-numeric:tabular-nums}
@@ -106,6 +109,8 @@
   .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
   .node-val{font-size:calc(19px * var(--zoom,1));font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
   .node-val.small{font-size:calc(17px * min(var(--zoom,1), 1.25))}
+  /* Vierstellige Werte am linken und rechten Rand eine Stufe schmaler … */
+  .node-val.small.lang{font-size:calc(14.5px * min(var(--zoom,1), 1.25))}
   .pvlab{font-weight:500}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
@@ -380,7 +385,7 @@
 
     <div class="card flow">
       <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
-      <svg id="svgFlow" viewBox="0 -46 350 296" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
+      <svg id="svgFlow" viewBox="0 -56 350 306" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
         <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/><path id="wGrid2" class="wire" d="M72 126 H152"/>
         <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/><path id="wHome3" class="wire" d="M198 126 H278"/>
@@ -392,7 +397,7 @@
         <circle cx="175" cy="38" r="30.5" fill="var(--solarBg)"/>
         <g id="pvArcs" fill="none" stroke-width="5"></g>
         <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
-        <text class="node-label" x="175" y="-30" text-anchor="middle" data-i18n="solar">Solar</text>
+        <text class="node-label" x="175" y="-40" text-anchor="middle" data-i18n="solar">Solar</text>
         <text class="node-val" x="175" y="-8" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
         <text class="node-sub pvlab" id="pvL0"></text>
         <text class="node-sub pvlab" id="pvL1"></text>
@@ -427,8 +432,8 @@
         <circle cx="175" cy="214" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
         <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
         <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
-        <text class="node-label" x="216" y="208" id="tBatState" data-i18n="bat">Akku</text>
-        <text class="node-val" x="216" y="228" id="tBat" data-i18n="dash_w">– W</text>
+        <text class="node-label" x="216" y="199" id="tBatState" data-i18n="bat">Akku</text>
+        <text class="node-val" x="216" y="234" id="tBat" data-i18n="dash_w">– W</text>
       </svg>
     </div>
 
@@ -828,7 +833,7 @@
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
       d_size:'Schriftgröße', sz_normal:'Normal', sz_big:'Groß', sz_xl:'Sehr groß',
-      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte', meter_dev:'Smart Meter',
+      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte', meter_dev:'Smart Meter', modbus_dev:'Fremdgerät (Modbus)',
       dg_1:'1 von 4 · Speicher wird ausgelesen', dg_2:'2 von 4 · Suche im WLAN',
       dg_2b:'2 von 4 · Suche läuft, etwa 20 Sekunden', dg_3:'3 von 4 · Zweites Gerät',
       dg_4:'Fertig – jetzt teilen', dg_err:'Abgebrochen',
@@ -963,7 +968,7 @@
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
       d_size:'Размер шрифта', sz_normal:'Обычный', sz_big:'Крупный', sz_xl:'Очень крупный',
-      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения', meter_dev:'Умный счётчик',
+      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения', meter_dev:'Умный счётчик', modbus_dev:'Другое устройство (Modbus)',
       dg_1:'1 из 4 · чтение накопителя', dg_2:'2 из 4 · поиск в сети Wi-Fi',
       dg_2b:'2 из 4 · идёт поиск, около 20 секунд', dg_3:'3 из 4 · второе устройство',
       dg_4:'Готово — теперь поделиться', dg_err:'Прервано',
@@ -1313,6 +1318,9 @@
     $('tHome').textContent = fmtW(hausW);
     $('tGrid').textContent = fmtW(netzW);
     $('tGrid').style.fill = netzW > 2 ? '' : 'var(--muted)';
+    // Am Bildrand ist der Platz knapp: vierstellige Werte eine Stufe kleiner.
+    ['tHome', 'tGrid'].forEach(id => $(id).classList.toggle('lang',
+      ($(id).textContent.match(/\d/g) || []).length > 3));
     // Die Beschriftung nennt immer nur, was gerade wirklich laeuft. Ohne Messgeraet
     // kennt die App nur das Netzladen – fliesst nichts, heisst der Knoten schlicht Netz.
     $('lGrid').textContent =
@@ -1362,7 +1370,7 @@
     const hatOff = p.gridOffPower != null || p.gridOffMode != null;
     $('grpOff').style.display = hatOff ? '' : 'none';
     // Die Dose passt in die freie linke Spalte – das Bild muss dafuer nicht wachsen.
-    $('svgFlow').setAttribute('viewBox', '0 -46 350 296');
+    $('svgFlow').setAttribute('viewBox', '0 -56 350 306');
     if (hatOff) {
       $('tOff').textContent = offW > 0 ? fmtW(offW) : (p.gridOffMode ? t('z_ready') : t('z_off'));
       $('tOff').style.fill = offW > 0 ? '' : 'var(--muted)';
@@ -1414,6 +1422,36 @@
     const p = lastMeter.properties;
     return (p && Object.keys(p).length) ? p : lastMeter;
   }
+  // Ein Fremdgeraet, das Modbus spricht – etwa ein GoodWe-Speicher am LAN-Dongle.
+  // Welche Register es fuehrt, wissen wir nicht; deshalb werden die ueblichen
+  // Bereiche roh ausgelesen und unausgewertet in den Bericht geschrieben.
+  async function modbusBericht(log, d){
+    log(`\n== Modbus-Gerät (…${String(d.ip).split('.').pop()}) ==`);
+    log(` Geräteadresse: ${d.unit}   Port 502`);
+    let a;
+    try {
+      const cap = window.Capacitor, plug = cap?.Plugins?.Discovery, o = { ip: d.ip, unit: d.unit };
+      a = plug?.modbus ? await plug.modbus(o) : await cap.nativePromise('Discovery', 'modbus', o);
+    } catch (e) { log(' Auslesen fehlgeschlagen: ' + (e.message || e)); return; }
+    for (const b of (a.blocks || [])) {
+      if (b.error) { log(` -- ab ${b.start} (${b.count}) -- ${b.error}`); continue; }
+      const r = b.regs || [];
+      log(` -- ab ${b.start} (${r.length} Register) --`);
+      for (let i = 0; i < r.length; i += 8) {
+        const nr = String(b.start + i).padStart(5, ' ');
+        log('  ' + nr + ': ' + r.slice(i, i + 8).map(v => String(v).padStart(6, ' ')).join(''));
+      }
+      // Viele Geräte legen Modell und Seriennummer als Text in die Register.
+      // Lange Zeichenketten sind meist Seriennummern – wie überall gekürzt.
+      const txt = r.map(v => String.fromCharCode(v >> 8, v & 255)).join('')
+                   .replace(/[^\x20-\x7E]/g, '.').trim()
+                   .replace(/[A-Za-z0-9]{8,}/g, m => '…' + m.slice(-4));
+      // Genug Druckbares übrig? Dann lohnt die Zeile – Modellnamen wie "GW10K-ET"
+      // haben keine drei Buchstaben am Stück, daran war die alte Prüfung gescheitert.
+      if ((txt.match(/[^.\s]/g) || []).length >= 4) log('  als Text: ' + txt);
+    }
+  }
+
   // Smart Meter getrennt abfragen – scheitert es, bleibt der Speicher davon unberuehrt
   async function holeMeter(){
     if (demo) { lastMeter = demoMeter(); if (last) render(last); else zeigeZustand(); return; }
@@ -1471,7 +1509,7 @@
       if (!devs.length) return;
       merkeListe(devs);
       if (cfg.meterIp) return;
-      const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
+      const andere = devs.filter(d => !istSpeicher(d) && !istModbus(d) && d.ip !== cfg.ip);
       if (andere.length === 1) {
         cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
         toast(t('found_meter', prodName(andere[0].product, andere[0]), andere[0].ip), 6000);
@@ -1848,8 +1886,9 @@
           devs = await discover();
           merkeListe(devs);
           log(` gefunden: ${devs.length} Gerät(e)`);
-          devs.forEach(d => log('  ·', d.ip, d.product || '(ohne Namen)', d.meter ? '· meldet total_power' : ''));
-          const andere = devs.filter(d => !istSpeicher(d) && d.ip !== cfg.ip);
+          devs.forEach(d => log('  ·', d.ip, d.product || '(ohne Namen)',
+            d.meter ? '· meldet total_power' : d.modbus ? `· spricht Modbus TCP (Geräteadresse ${d.unit})` : ''));
+          const andere = devs.filter(d => !istSpeicher(d) && !istModbus(d) && d.ip !== cfg.ip);
           if (!cfg.meterIp && andere.length === 1) {
             cfg.meterIp = andere[0].ip; store.set('meterIp', cfg.meterIp);
             log(' als zweites Gerät übernommen:', andere[0].ip);
@@ -1866,7 +1905,9 @@
       for (const ip of liste) {
         if (schon.has(ip)) continue;
         schon.add(ip);
-        await berichte(log, 'Weiteres Gerät', ip);
+        const d = devs.find(x => x.ip === ip);
+        if (d && d.modbus) await modbusBericht(log, d);
+        else await berichte(log, 'Weiteres Gerät', ip);
         zeig();
       }
       if (schon.size === 1) log('\n== Kein weiteres Gerät zum Auslesen ==');
@@ -1952,7 +1993,7 @@
   // Android-Modul "Discovery": erst mDNS (_zendure._tcp), sonst alle Adressen im WLAN abfragen.
   const DEV_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="16" height="11" rx="2.5"/><path d="M21 11v3"/><path d="m12 9-3 4h4l-2 3"/></svg>';
   function prodName(p, d){
-    if (!p) return istMeter(d) ? t('meter_dev') : t('zendure_dev');
+    if (!p) return istModbus(d) ? t('modbus_dev') : istMeter(d) ? t('meter_dev') : t('zendure_dev');
     const m = p.match(/^solarFlow(.*)$/i);
     if (m) return ('SolarFlow ' + m[1].replace(/(\d)([A-Za-z])/g, '$1 $2')
       .replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Za-z])(\d)/g, '$1 $2')).trim();
@@ -1998,6 +2039,9 @@
   const istSpeicher = d => /^solarflow/i.test(String(d && d.product || ''));
   // Das Smart Meter nennt sich nicht selbst; die Suche markiert es anhand von total_power
   const istMeter = d => !!(d && (d.meter || /meter/i.test(String(d.product || ''))));
+  // Ein Geraet, das nur Modbus spricht, ist kein Zendure-Geraet. Es darf vor allem
+  // nicht als Smart Meter uebernommen werden, sonst fragt die App es dauernd an.
+  const istModbus = d => !!(d && d.modbus);
   let gefunden = (() => { try { return JSON.parse(store.get('devs', '[]')); } catch { return []; } })();
   function merkeListe(devs){
     gefunden = devs.map(d => ({ip: d.ip, sn: d.sn || '', product: d.product || '', meter: !!d.meter}));
