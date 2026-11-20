@@ -1,0 +1,65 @@
+{
+  "_hinweis": "Einzige Quelle fuer alles, was App und Firmware gemeinsam wissen muessen. Aenderungen hier, danach tools/modell.py ausfuehren.",
+
+  "fluss": {
+    "_hinweis": "Strichmuster der Energiefluesse. Ein Strich alle 'periode' Einheiten, Platz fuer 'plaetze' Quellen. Laenger als 4 beruehren sich die Striche bei drei Quellen, weil die runden Enden die Strichbreite draufgeben.",
+    "periode": 24,
+    "strichlaenge": 4,
+    "plaetze": 3,
+    "dauerMs": 1100,
+    "strichbreite": 3,
+    "minWatt": 2
+  },
+
+  "farben": {
+    "hell":   { "solar": "#B36A00", "bat": "#0A7D5E", "grid": "#BE123C", "home": "#5B3FD0" },
+    "dunkel": { "solar": "#FFB547", "bat": "#3DDBB0", "grid": "#FF8FA3", "home": "#A594FF" }
+  },
+
+  "umrechnung": {
+    "_hinweis": "Rohwerte des Zendure-Berichts in lesbare Einheiten.",
+    "tempOffsetZehntelKelvin": 2731,
+    "tempTeiler": 10,
+    "spannungTeiler": 100,
+    "stromTeiler": 10,
+    "socPromilleTeiler": 10,
+    "vorzeichen16bitGrenze": 32767,
+    "vorzeichen16bitAbzug": 65536
+  },
+
+  "schwellen": {
+    "_hinweis": "Zellspreizung in Zaehlern zu 10 mV. Sie haengt stark vom Ladestand ab: unten laufen die Zellen immer weiter auseinander, weil dort wenige Millivolt viel Ladung bedeuten.",
+    "zellspreizungAuffaelligMv": 50,
+    "zellspreizungAuffaelligMvUnten": 60,
+    "ladestandUntenProzent": 25,
+    "faultLevelStoerungAb": 2,
+    "pvTotzoneWattJeEingang": 10
+  },
+
+  "geraete": {
+    "_hinweis": "Was ein einzelner MPPT-Eingang vertraegt (Datenblatt, nicht im Bericht). Zendure empfiehlt Module bis zum 1,5-fachen.",
+    "mpptMaxWatt": { "solarFlow800Pro2": 660, "solarFlow800Plus": 750, "solarFlow800": 600 },
+    "mpptEmpfehlungFaktor": 1.5
+  },
+
+  "zendure": {
+    "pfadBericht": "/properties/report",
+    "pfadSchreiben": "/properties/write",
+    "mindestabstandSekunden": 3,
+    "mdnsDienst": "_zendure._tcp",
+    "empfangslaengeBytes": 512
+  },
+
+  "modbus": {
+    "_hinweis": "Fuer GoodWe und andere Fremdgeraete am LAN. Bloecke sind geraten, bis ein echtes Geraet geantwortet hat.",
+    "port": 502,
+    "geraeteadressen": [1, 247],
+    "bloecke": [
+      { "start": 35000, "anzahl": 32,  "zweck": "Geraetetyp und Seriennummer, oft als Text" },
+      { "start": 35100, "anzahl": 125, "zweck": "Laufzeitwerte 1" },
+      { "start": 35225, "anzahl": 125, "zweck": "Laufzeitwerte 2" },
+      { "start": 36000, "anzahl": 60,  "zweck": "Akku" },
+      { "start": 37000, "anzahl": 30,  "zweck": "Zaehler" }
+    ]
+  }
+}

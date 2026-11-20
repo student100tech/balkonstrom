@@ -13,7 +13,7 @@
   :root{
     --bg:#0A0C11; --card:#13161E; --card2:#1B1F2A; --card3:#181C26; --line:#252A36; --line2:#1F2430; --line3:#2A3040;
     --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
-    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#FF8FA3; --warn:#F87171; --ok:#4ADE80;
+    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#FF8FA3; --warn:#F87171; --ok:#4ADE80; --limLo:#FF6B81; --limHi:#6FA8FF;
     --gridin:#F87171; --feed:#60A5FA;
     --onbat:#052219; --onfeed:#07213d; --tabon:#232838;
     --solarBg:#1E1A12; --solarLn:#3A3124; --gridBg:#241319; --gridLn:#45242D;
@@ -25,7 +25,7 @@
   :root[data-theme="light"]{
     --bg:#F3F5F9; --card:#FFFFFF; --card2:#EDF0F6; --card3:#F8FAFD; --line:#DCE1EA; --line2:#E7EBF2; --line3:#C5CCD9;
     --text:#10131A; --muted:#5C6475; --muted2:#39414F; --dim:#8A92A3;
-    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#BE123C; --warn:#C62828; --ok:#0A7D5E;
+    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#BE123C; --warn:#C62828; --ok:#0A7D5E; --limLo:#D81B45; --limHi:#1D4ED8;
     --gridin:#C62828; --feed:#1D4ED8;
     --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E2E7F1;
     --solarBg:#FFF5E4; --solarLn:#EBD3A6; --gridBg:#FFEDF1; --gridLn:#F3C4D0;
@@ -103,7 +103,8 @@
 
   /* ---------- Energiefluss ---------- */
   .flow{padding:16px 12px 10px}
-  .flow .card-head{padding:0 8px 4px}
+  .flowlbl{font-size:calc(13px * min(var(--zoom,1), 1.2));fill:var(--muted);font-weight:500;
+    font-family:Inter,system-ui,sans-serif}
   .flow svg{width:100%;height:auto;display:block}
   .node-label{font-size:calc(12px * min(var(--zoom,1), 1.2));fill:var(--muted);font-family:Inter,system-ui,sans-serif}
   .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
@@ -113,29 +114,13 @@
   .node-val.small.lang{font-size:calc(14.5px * min(var(--zoom,1), 1.25))}
   .pvlab{font-weight:500}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
+/* CSS-MODELL-ANFANG – erzeugt aus shared/modell.json */
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
-  /* Ein Strich alle 24 Einheiten – immer, egal wie viele Quellen speisen. In die
-     Luecke passen zwei weitere Striche, die bei 8 und 16 sitzen. Laenger als 4
-     duerfen sie nicht sein: die runden Enden legen noch die Strichbreite drauf,
-     dann beruehren sich die Striche bei drei Quellen. So behaelt jeder
-     Strom seinen Takt; kommt eine Quelle dazu, legt sie sich nur dazwischen. */
   .wire.on{stroke-dasharray:4 20}
+  /* CSS-MODELL-ENDE */
 
   /* ---------- Akku ---------- */
   .bat{display:flex;flex-direction:column;gap:14px}
-  .bat-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
-  .bat-soc{display:flex;align-items:baseline;gap:4px;color:var(--bat);margin-top:4px}
-  .bat-soc .num{font-size:44px;letter-spacing:-1.2px;line-height:1}
-  .bat-soc span:last-child{font-family:var(--num);font-size:20px;font-weight:500}
-  .bat-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:0;text-align:right}
-  .bat-right .kwh{font-size:14px;color:var(--muted)}
-  .bat-right .kwh b{font-family:var(--num);font-size:20px;font-weight:600;color:var(--text)}
-  .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;text-align:center;border-radius:99px;background:color-mix(in srgb,var(--bat) 14%,transparent);color:var(--batText);font-size:12px;font-weight:500}
-  .chip.idle{background:var(--card2);color:var(--muted2)}
-  .bar{height:10px;border-radius:99px;background:var(--card2);position:relative}
-  .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--bat);transition:width .6s}
-  .bar b{position:absolute;top:-4px;bottom:-4px;width:2px;border-radius:2px;background:var(--muted2)}
-  .barlbl{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:8px}
 
   /* ---------- Heute ---------- */
   .today-card{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
@@ -280,7 +265,8 @@
     transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s}
   details.dsec[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
   .drow{font-size:12.5px;margin:4px 0 10px}
-  label.f{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 6px}
+  .f{display:block;font-size:12.5px;color:var(--muted);margin:14px 0 6px}
+  .dtitle + .f{margin-top:10px}
   input:not([type]),input[type=text],input[type=email],input[type=password]{width:100%;height:46px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;font-family:inherit}
   input:focus{outline:2px solid var(--bat);outline-offset:1px}
   .diagbox{margin-top:10px}
@@ -384,74 +370,60 @@
     </div>
 
     <div class="card flow">
-      <div class="card-head"><span class="lbl" data-i18n="flow">Energiefluss</span></div>
-      <svg id="svgFlow" viewBox="0 -56 350 306" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
-        <path class="wbase" d="M175 66 V102"/><path id="wSolar" class="wire" d="M175 66 V102"/>
-        <path class="wbase" d="M72 126 H152"/><path id="wGrid" class="wire" d="M72 126 H152"/><path id="wGrid2" class="wire" d="M72 126 H152"/>
-        <path class="wbase" d="M198 126 H278"/><path id="wHome" class="wire" d="M198 126 H278"/><path id="wHome2" class="wire" d="M198 126 H278"/><path id="wHome3" class="wire" d="M198 126 H278"/>
-        <path class="wbase" d="M175 150 V186"/><path id="wBat" class="wire" d="M175 150 V186"/><path id="wBat2" class="wire" d="M175 150 V186"/>
+      <svg id="svgFlow" viewBox="0 -60 350 350" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
+        <path class="wbase" d="M175 70 V118"/><path id="wSolar" class="wire" d="M175 70 V118"/>
+        <path class="wbase" d="M72 142 H152"/><path id="wGrid" class="wire" d="M72 142 H152"/><path id="wGrid2" class="wire" d="M72 142 H152"/>
+        <path class="wbase" d="M198 142 H278"/><path id="wHome" class="wire" d="M198 142 H278"/><path id="wHome2" class="wire" d="M198 142 H278"/><path id="wHome3" class="wire" d="M198 142 H278"/>
+        <path class="wbase" d="M175 166 V220"/><path id="wBat" class="wire" d="M175 166 V220"/><path id="wBat2" class="wire" d="M175 166 V220"/>
 
         <!-- Solar: der Ring ist in so viele Boegen geteilt, wie das Geraet Eingaenge
              hat. Jeder Bogen fuellt sich im Uhrzeigersinn an seinem eigenen Anteil
              der Modulleistung; die Beschriftung steht aussen am jeweiligen Bogen. -->
-        <circle cx="175" cy="38" r="30.5" fill="var(--solarBg)"/>
+        <circle cx="175" cy="42" r="30.5" fill="var(--solarBg)"/>
         <g id="pvArcs" fill="none" stroke-width="5"></g>
-        <g transform="translate(160 23) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
-        <text class="node-label" x="175" y="-40" text-anchor="middle" data-i18n="solar">Solar</text>
-        <text class="node-val" x="175" y="-8" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
+        <g transform="translate(160 27) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
+        <text class="flowlbl" x="0" y="-44" data-i18n="flow">Energiefluss</text>
+        <text class="node-label" x="175" y="-44" text-anchor="middle" data-i18n="solar">Solar</text>
+        <text class="node-val" x="175" y="-12" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
         <text class="node-sub pvlab" id="pvL0"></text>
         <text class="node-sub pvlab" id="pvL1"></text>
         <text class="node-sub pvlab" id="pvL2"></text>
         <text class="node-sub pvlab" id="pvL3"></text>
 
-        <circle cx="175" cy="126" r="22" fill="var(--card2)" stroke="var(--line3)"/>
-        <path d="M179 112 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
+        <circle cx="175" cy="142" r="22" fill="var(--card2)" stroke="var(--line3)"/>
+        <path d="M179 128 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
 
-        <circle cx="46" cy="126" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
-        <circle id="gridRing" cx="46" cy="126" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 126)"/>
-        <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 111 l-8 30 M46 111 l8 30 M37 119 h18 M40 129 h12"/></g>
-        <text class="node-label" x="46" y="88" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
-        <text class="node-val small" x="46" y="180" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
+        <circle cx="46" cy="142" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
+        <circle id="gridRing" cx="46" cy="142" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 142)"/>
+        <g fill="none" stroke="var(--grid)" stroke-width="1.8" stroke-linecap="round"><path d="M46 127 l-8 30 M46 127 l8 30 M37 135 h18 M40 145 h12"/></g>
+        <text class="node-label" x="46" y="102" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
+        <text class="node-val small" x="46" y="192" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
-        <circle cx="304" cy="126" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
-        <circle id="homeRing" cx="304" cy="126" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 126)"/>
-        <g transform="translate(289 111) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
-        <text class="node-label" x="304" y="88" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
-        <text class="node-val small" x="304" y="180" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
+        <circle cx="304" cy="142" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
+        <circle id="homeRing" cx="304" cy="142" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 142)"/>
+        <g transform="translate(289 127) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
+        <text class="node-label" x="304" y="102" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
+        <text class="node-val small" x="304" y="192" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
 
         <!-- Off-Grid-Dose: haengt am Akku, deshalb links daneben an einer eigenen
              kurzen Leitung. Nur sichtbar, wenn das Geraet die Felder meldet. -->
         <g id="grpOff" style="display:none">
-          <path class="wbase" d="M144 214 H66"/>
-          <path id="wOff" class="wire" d="M144 214 H66"/>
-          <circle cx="40" cy="214" r="22" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
-          <g transform="translate(29 203)" fill="none" stroke="var(--home)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5"/><path d="M15 2v5"/><path d="M5 7h14v4.5a7 7 0 0 1-14 0z"/><path d="M12 18.5V22"/></g>
-          <text class="node-label" x="70" y="200" data-i18n="offgrid">Off-Grid</text>
-          <text class="node-val small" x="70" y="236" id="tOff" data-i18n="z_off">aus</text>
+          <path class="wbase" d="M144 248 H66"/>
+          <path id="wOff" class="wire" d="M144 248 H66"/>
+          <circle cx="40" cy="248" r="22" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
+          <g transform="translate(29 237)" fill="none" stroke="var(--home)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5"/><path d="M15 2v5"/><path d="M5 7h14v4.5a7 7 0 0 1-14 0z"/><path d="M12 18.5V22"/></g>
+          <text class="node-label" x="70" y="234" data-i18n="offgrid">Off-Grid</text>
+          <text class="node-val small" x="70" y="270" id="tOff" data-i18n="z_off">aus</text>
         </g>
-        <circle cx="175" cy="214" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
-        <circle id="socRing" cx="175" cy="214" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 214)"/>
-        <text x="175" y="220" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
-        <text class="node-label" x="216" y="199" id="tBatState" data-i18n="bat">Akku</text>
-        <text class="node-val" x="216" y="234" id="tBat" data-i18n="dash_w">– W</text>
+        <circle cx="175" cy="248" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
+        <circle id="socRing" cx="175" cy="248" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 248)"/>
+        <text x="175" y="254" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
+        <line id="socMin" stroke="var(--limLo)" stroke-width="2.5" stroke-linecap="round"/>
+        <line id="socMax" stroke="var(--limHi)" stroke-width="2.5" stroke-linecap="round"/>
+        <text class="node-label" x="216" y="224" id="tBatState" data-i18n="bat">Akku</text>
+        <text class="node-val" x="216" y="248" id="tBat" data-i18n="dash_w">– W</text>
+        <text class="node-sub" x="216" y="270" id="tBatSub"></text>
       </svg>
-    </div>
-
-    <div class="card bat">
-      <div class="bat-top">
-        <div>
-          <div class="lbl" data-i18n="bat">Akku</div>
-          <div class="bat-soc"><span class="num" id="cSoc">–</span><span>%</span></div>
-        </div>
-        <div class="bat-right">
-          <div class="kwh" id="cEnergy" data-i18n="dash_kwh">– kWh</div>
-          <div class="chip idle" id="cRemain">–</div>
-        </div>
-      </div>
-      <div>
-        <div class="bar"><i id="barFill" style="width:0"></i><b id="barMin" style="left:10%"></b><b id="barMax" style="left:calc(100% - 2px)"></b></div>
-        <div class="barlbl"><span id="cMinTxt">–</span><span id="cMaxTxt">–</span></div>
-      </div>
     </div>
 
     <div class="tiles">
@@ -563,26 +535,17 @@
     <div class="card setcard">
 
   <div class="dsec">
-    <div class="dtitle" data-i18n="d_lang">Sprache</div>
+    <div class="dtitle" data-i18n="d_grp_look">Anzeige</div>
+    <div class="f" data-i18n="d_lang">Sprache</div>
     <div class="langsel"><button data-l="de">Deutsch</button><button data-l="ru">Русский</button></div>
-  </div>
-
-  <div class="dsec">
-    <div class="dtitle" data-i18n="d_theme">Darstellung</div>
+    <div class="f" data-i18n="d_theme">Darstellung</div>
     <div class="selrow" id="themeSel"><button data-t="auto" data-i18n="th_auto">Automatisch</button><button data-t="light" data-i18n="th_light">Hell</button><button data-t="dark" data-i18n="th_dark">Dunkel</button></div>
-    <div class="f" style="margin-top:14px" data-i18n="d_size">Schriftgröße</div>
+    <div class="f" data-i18n="d_size">Schriftgröße</div>
     <div class="selrow" id="sizeSel"><button data-z="1" data-i18n="sz_normal">Normal</button><button data-z="1.15" data-i18n="sz_big">Groß</button><button data-z="1.3" data-i18n="sz_xl">Sehr groß</button></div>
   </div>
 
   <div class="dsec">
-    <div class="dtitle" data-i18n="d_app">App</div>
-    <div class="drow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
-    <button class="btn wide-btn" id="btnUpdate" data-i18n="check_update">Nach Update suchen</button>
-    <div id="updInfo" class="hint" style="display:none"></div>
-  </div>
-
-  <div class="dsec">
-    <div class="dtitle" data-i18n="d_dev">Gerät im WLAN</div>
+    <div class="dtitle" data-i18n="d_grp_conn">Verbindung</div>
     <label class="f" for="inIp" data-i18n="d_ip">IP-Adresse des SolarFlow</label>
     <div class="iprow"><input id="inIp" inputmode="decimal" data-i18n-ph="ph_ip" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="d_search">Suchen</span></button></div>
     <div class="found" id="findResultDlg" aria-live="polite" style="margin-top:8px"></div>
@@ -590,10 +553,13 @@
     <label class="f" for="inMeterIp" data-i18n="d_meter">Smart Meter (optional)</label>
     <input id="inMeterIp" inputmode="decimal" data-i18n-ph="ph_meter" placeholder="wird bei der Suche gefunden">
     <div class="hint" data-i18n="d_meter_hint">Nur bei Anlagen mit Smart Meter 3CT. Die Suche trägt es selbst ein, wenn sie ein zweites Zendure-Gerät findet.</div>
-    <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
-    <input id="inCap" inputmode="numeric" placeholder="1920">
-    <div class="hint" id="capHint"></div>
-    <label class="f" data-i18n="d_peak">Modulleistung je Eingang (Wp)</label>
+    <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
+    <input id="inInt" inputmode="numeric" placeholder="5">
+  </div>
+
+  <div class="dsec">
+    <div class="dtitle" data-i18n="d_grp_plant">Meine Anlage</div>
+    <div class="f" data-i18n="d_peak">Modulleistung je Eingang (Wp)</div>
     <div class="pvgrid" id="peakGrid">
       <label><span>PV1</span><input id="inPeak0" inputmode="numeric" placeholder="200"></label>
       <label><span>PV2</span><input id="inPeak1" inputmode="numeric" placeholder="200"></label>
@@ -601,15 +567,19 @@
       <label id="peakCell3"><span>PV4</span><input id="inPeak3" inputmode="numeric" placeholder="200"></label>
     </div>
     <div class="hint" id="peakSum"></div>
-    <label class="f" for="inInt" data-i18n="d_int">Aktualisierung alle … Sekunden (min. 3)</label>
-    <input id="inInt" inputmode="numeric" placeholder="5">
+    <label class="f" for="inCap" data-i18n="d_cap">Akku-Kapazität (Wh)</label>
+    <input id="inCap" inputmode="numeric" placeholder="1920">
+    <div class="hint" id="capHint"></div>
+    <label class="f" for="inPlz" data-i18n="d_loc">Standort (für Sonnenauf- und -untergang)</label>
+    <input id="inPlz" inputmode="numeric" placeholder="40123">
+    <div class="hint" id="locHint"></div>
   </div>
 
   <div class="dsec">
-    <div class="dtitle" data-i18n="d_loc">Standort (für Sonnenauf- und -untergang)</div>
-    <label class="f" for="inPlz" data-i18n="d_plz">Postleitzahl</label>
-    <input id="inPlz" inputmode="numeric" placeholder="40123">
-    <div class="hint" id="locHint"></div>
+    <div class="dtitle" data-i18n="d_app">App</div>
+    <div class="drow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
+    <button class="btn wide-btn" id="btnUpdate" data-i18n="check_update">Nach Update suchen</button>
+    <div id="updInfo" class="hint" style="display:none"></div>
   </div>
 
   <details class="dsec" id="secDemo">
@@ -820,6 +790,9 @@
       bat:'Akku', bat_idle:'Akku ruht', bat_charge:'Akku lädt', bat_discharge:'Akku entlädt',
       dash_w:'– W', dash_kwh:'– kWh', dash_c:'– °C', pv1:'PV1 – W', pv2:'PV2 – W',
       dis_to:v=>`Entladen bis ${v} %`, chg_to:v=>`Laden bis ${v} %`,
+      bat_left:(h,m)=>h ? `noch ${h} h ${m} min` : `noch ${m} min`,
+      bat_full:(h,m)=>h ? `voll in ${h} h ${m} min` : `voll in ${m} min`,
+      bat_stored:v=>`${v} kWh gespeichert`,
       lasts_until:(t0,h,m)=>`Reicht bis ${t0} · ca. ${h} h ${m} min`,
       discharging:w=>`Entlädt mit ${w}`, charging:w=>`Lädt mit ${w}`, idle:'Ruht',
       today:'Heute', charged:'Geladen', discharged:'Entladen',
@@ -891,7 +864,8 @@
       e_nodev:'Kein Gerät im Zendure-Konto gefunden',
       foot_src:'Daten direkt vom Gerät im WLAN (zenSDK)',
       tab_live:'Live',
-      d_title:'Einstellungen', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
+      d_title:'Einstellungen', d_grp_look:'Anzeige', d_grp_conn:'Verbindung',
+      d_grp_plant:'Meine Anlage', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
       check_update:'Nach Update suchen', update_to:n=>`Jetzt updaten auf Build ${n}`,
       d_dev:'Gerät im WLAN', d_ip:'IP-Adresse des SolarFlow', d_search:'Suchen',
       d_cap:'Akku-Kapazität (Wh)', d_peak:'Modulleistung je Eingang (Wp)',
@@ -955,6 +929,9 @@
       bat:'Аккумулятор', bat_idle:'АКБ в покое', bat_charge:'АКБ заряжается', bat_discharge:'АКБ разряжается',
       dash_w:'– Вт', dash_kwh:'– кВт·ч', dash_c:'– °C', pv1:'PV1 – Вт', pv2:'PV2 – Вт',
       dis_to:v=>`Разряд до ${v} %`, chg_to:v=>`Заряд до ${v} %`,
+      bat_left:(h,m)=>h ? `ещё ${h} ч ${m} мин` : `ещё ${m} мин`,
+      bat_full:(h,m)=>h ? `полный через ${h} ч ${m} мин` : `полный через ${m} мин`,
+      bat_stored:v=>`накоплено ${v} кВт·ч`,
       lasts_until:(t0,h,m)=>`Хватит до ${t0} · ок. ${h} ч ${m} мин`,
       discharging:w=>`Разряд ${w}`, charging:w=>`Заряд ${w}`, idle:'Покой',
       today:'Сегодня', charged:'Заряжено', discharged:'Разряжено',
@@ -1027,7 +1004,8 @@
       e_nodev:'В учётной записи Zendure устройств не найдено',
       foot_src:'Данные напрямую с устройства в сети Wi-Fi (zenSDK)',
       tab_live:'Онлайн',
-      d_title:'Настройки', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
+      d_title:'Настройки', d_grp_look:'Отображение', d_grp_conn:'Подключение',
+      d_grp_plant:'Моя установка', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
       check_update:'Проверить обновление', update_to:n=>`Обновить до сборки ${n}`,
       d_dev:'Устройство в сети Wi-Fi', d_ip:'IP-адрес SolarFlow', d_search:'Найти',
       d_cap:'Ёмкость аккумулятора (Вт·ч)', d_peak:'Мощность модуля на каждом входе (Вт·п)',
@@ -1216,8 +1194,8 @@
   // Der Solarring: ein Bogen je Eingang. Die Beschriftung sitzt aussen am Bogen,
   // beginnend rechts oben und dann im Uhrzeigersinn – wie die Boegen selbst.
   const PV_POS = {
-    2: [[213, 42, 'start'], [137, 42, 'end']],
-    4: [[213, 18, 'start'], [213, 66, 'start'], [137, 66, 'end'], [137, 18, 'end']]
+    2: [[213, 46, 'start'], [137, 46, 'end']],
+    4: [[213, 22, 'start'], [213, 70, 'start'], [137, 70, 'end'], [137, 22, 'end']]
   };
   let pvN = 0;   // wie viele Eingaenge das Geraet meldet
   function zeigePv(werte, grenzen){
@@ -1225,7 +1203,7 @@
     const bereich = i => [i * 360 / n + g / 2, (i + 1) * 360 / n - g / 2];
     if (grp.dataset.n !== String(n)) {
       grp.innerHTML = werte.map((_, i) => {
-        const [a0, a1] = bereich(i), d = bogen(175, 38, 28, a0, a1);
+        const [a0, a1] = bereich(i), d = bogen(175, 42, 28, a0, a1);
         return `<path d="${d}" stroke="var(--solarLn)" stroke-linecap="round"/>`
              + `<path id="pvArc${i}" d="${d}" stroke="var(--solar)" stroke-linecap="butt" stroke-dasharray="0 999"/>`;
       }).join('');
@@ -1246,8 +1224,98 @@
     for (let i = n; i < 4; i++) $('pvL' + i).textContent = '';
   }
 
-  // Eine Umdrehung des Strichmusters: 24 Einheiten in 1,1 Sekunden.
-  const LAUF = 1100, STRECKE = 24;
+/* MODELL-ANFANG – erzeugt aus shared/modell.json, nicht von Hand ändern */
+  const MODELL = {
+    "fluss": {
+      "periode": 24,
+      "strichlaenge": 4,
+      "plaetze": 3,
+      "dauerMs": 1100,
+      "strichbreite": 3,
+      "minWatt": 2
+    },
+    "farben": {
+      "hell": {
+        "solar": "#B36A00",
+        "bat": "#0A7D5E",
+        "grid": "#BE123C",
+        "home": "#5B3FD0"
+      },
+      "dunkel": {
+        "solar": "#FFB547",
+        "bat": "#3DDBB0",
+        "grid": "#FF8FA3",
+        "home": "#A594FF"
+      }
+    },
+    "umrechnung": {
+      "tempOffsetZehntelKelvin": 2731,
+      "tempTeiler": 10,
+      "spannungTeiler": 100,
+      "stromTeiler": 10,
+      "socPromilleTeiler": 10,
+      "vorzeichen16bitGrenze": 32767,
+      "vorzeichen16bitAbzug": 65536
+    },
+    "schwellen": {
+      "zellspreizungAuffaelligMv": 50,
+      "zellspreizungAuffaelligMvUnten": 60,
+      "ladestandUntenProzent": 25,
+      "faultLevelStoerungAb": 2,
+      "pvTotzoneWattJeEingang": 10
+    },
+    "geraete": {
+      "mpptMaxWatt": {
+        "solarFlow800Pro2": 660,
+        "solarFlow800Plus": 750,
+        "solarFlow800": 600
+      },
+      "mpptEmpfehlungFaktor": 1.5
+    },
+    "zendure": {
+      "pfadBericht": "/properties/report",
+      "pfadSchreiben": "/properties/write",
+      "mindestabstandSekunden": 3,
+      "mdnsDienst": "_zendure._tcp",
+      "empfangslaengeBytes": 512
+    },
+    "modbus": {
+      "port": 502,
+      "geraeteadressen": [
+        1,
+        247
+      ],
+      "bloecke": [
+        {
+          "start": 35000,
+          "anzahl": 32,
+          "zweck": "Geraetetyp und Seriennummer, oft als Text"
+        },
+        {
+          "start": 35100,
+          "anzahl": 125,
+          "zweck": "Laufzeitwerte 1"
+        },
+        {
+          "start": 35225,
+          "anzahl": 125,
+          "zweck": "Laufzeitwerte 2"
+        },
+        {
+          "start": 36000,
+          "anzahl": 60,
+          "zweck": "Akku"
+        },
+        {
+          "start": 37000,
+          "anzahl": 30,
+          "zweck": "Zaehler"
+        }
+      ]
+    }
+  };
+  const LAUF = MODELL.fluss.dauerMs, STRECKE = MODELL.fluss.periode;
+  /* MODELL-ENDE */
   // Alle Spuren werden aus derselben Uhr gezeichnet. Eine Spur weiss nur, den
   // wievielten von wie vielen Plaetzen sie belegt – ihre Striche ergeben sich
   // daraus. So kann keine aus dem Takt geraten, auch wenn eine Quelle erst
@@ -1265,7 +1333,7 @@
 
   // Hier wird nur noch gesagt, wer mitlaeuft und auf welchem Platz.
   function setWire(ids, watts, reverse, farben){
-    const cols = [].concat(farben), an = watts > 2;
+    const cols = [].concat(farben), an = watts > MODELL.fluss.minWatt;
     const spuren = [].concat(ids).map(i => $(i)).filter(Boolean);
     const n = an ? Math.min(cols.length, spuren.length) : 0;
     spuren.forEach((el, i) => {
@@ -1275,7 +1343,7 @@
       el._platz = i; el._anzahl = n || 1; el._rueck = !!reverse;
     });
   }
-  const tempC = raw => raw ? (raw - 2731) / 10 : null;
+  const tempC = raw => raw ? (raw - MODELL.umrechnung.tempOffsetZehntelKelvin) / MODELL.umrechnung.tempTeiler : null;
   const de1 = x => x.toFixed(1).replace('.', ',');
 
   function render(d){
@@ -1370,7 +1438,7 @@
     const hatOff = p.gridOffPower != null || p.gridOffMode != null;
     $('grpOff').style.display = hatOff ? '' : 'none';
     // Die Dose passt in die freie linke Spalte – das Bild muss dafuer nicht wachsen.
-    $('svgFlow').setAttribute('viewBox', '0 -56 350 306');
+    $('svgFlow').setAttribute('viewBox', '0 -60 350 350');
     if (hatOff) {
       $('tOff').textContent = offW > 0 ? fmtW(offW) : (p.gridOffMode ? t('z_ready') : t('z_off'));
       $('tOff').style.fill = offW > 0 ? '' : 'var(--muted)';
@@ -1380,24 +1448,30 @@
             discharge > 0 ? 'var(--bat)' : (ausLaden.length ? ausLaden : ['var(--bat)']));
     setWire(['wHome', 'wHome2', 'wHome3'], hausW, false, ausHaus);
 
-    // Akku-Karte
-    $('cSoc').textContent = soc;
-    $('cEnergy').innerHTML = `<b>${kwh(cfg.cap * soc / 100)}</b> / ${kwh(cfg.cap)} ${t('kwh')}`;
+    // Zwei kurze Striche quer ueber den Ladering: rot die Entladegrenze, blau die
+    // Ladegrenze. Steht eine Grenze auf 0 bzw. 100 %, faellt ihr Strich weg.
     const min = (p.minSoc ?? 100) / 10, max = (p.socSet ?? 1000) / 10;
-    $('barFill').style.width = soc + '%';
-    $('barMin').style.left = min + '%';
-    $('barMax').style.left = `calc(${max}% - 2px)`;
-    $('cMinTxt').textContent = t('dis_to', min);
-    $('cMaxTxt').textContent = t('chg_to', max);
-    let remain = '', active = true;
+    const marke = (id, proz) => {
+      const w = (-90 + proz * 3.6) * Math.PI / 180, el = $(id);
+      // Bei 0 % bzw. 100 % liegt die Marke auf dem Ringanfang und sagt nichts.
+      el.style.display = (proz <= 0.5 || proz >= 99.5) ? 'none' : '';
+      el.setAttribute('x1', (175 + 24 * Math.cos(w)).toFixed(1));
+      el.setAttribute('y1', (248 + 24 * Math.sin(w)).toFixed(1));
+      el.setAttribute('x2', (175 + 32 * Math.cos(w)).toFixed(1));
+      el.setAttribute('y2', (248 + 32 * Math.sin(w)).toFixed(1));
+    };
+    marke('socMin', min); marke('socMax', max);
+    // Unter der Akkuleistung steht das, was man wirklich wissen will: wie lange noch.
+    // Nur wenn keine Zeit zu ermitteln ist, steht dort der gespeicherte Inhalt.
+    const hhmm = m => [Math.floor(m / 60), Math.round(m % 60)];
+    let unten = t('bat_stored', kwh(cfg.cap * soc / 100));
     if (discharge > 0 && p.remainOutTime && p.remainOutTime < 59000) {
-      const end = new Date(Date.now() + p.remainOutTime * 60000);
-      remain = t('lasts_until', hm(end), Math.floor(p.remainOutTime/60), p.remainOutTime % 60);
-    } else if (discharge > 0) remain = t('discharging', fmtW(discharge));
-    else if (charge > 0) remain = t('charging', fmtW(charge));
-    else { remain = t('idle'); active = false; }
-    $('cRemain').textContent = remain;
-    $('cRemain').classList.toggle('idle', !active);
+      unten = t('bat_left', ...hhmm(p.remainOutTime));
+    } else if (charge > 0 && cfg.cap && soc < max) {
+      const mins = cfg.cap * (max - soc) / 100 / charge * 60;
+      if (mins < 2880) unten = t('bat_full', ...hhmm(mins));
+    }
+    $('tBatSub').textContent = unten;
 
     // Kacheln
     const mode = p.acMode === 1 ? t('mode_grid') : (p.acMode === 2 ? t('mode_home') : '–');
@@ -1626,7 +1700,8 @@
     s('zPackVolt', volt(nz(pk.totalVol) ? pk.totalVol : p.BatVolt));
     // batcur kommt als vorzeichenlose 16-Bit-Zahl; ueber 32767 heisst negativ = Entladen
     const roh = nz(pk.batcur) ? Number(pk.batcur) : null;
-    const amp = roh == null ? null : (roh > 32767 ? roh - 65536 : roh) / 10;
+    const amp = roh == null ? null : (roh > MODELL.umrechnung.vorzeichen16bitGrenze
+      ? roh - MODELL.umrechnung.vorzeichen16bitAbzug : roh) / MODELL.umrechnung.stromTeiler;
     s('zCur', amp == null ? null : de1(amp).replace('-', '−') + ' ' + t('u_a'));
     s('zPower', nz(pk.power) ? fmtW(pk.power) : null);
     $('zPacks').textContent = nz(p.packNum) ? t('z_packs_n', p.packNum) : '';
@@ -1679,7 +1754,7 @@
     // is_error oder eine Stufe ab 2 sind wirklich ein Fehler. Andere lokale
     // Integrationen haben hier denselben Fehlalarm erzeugt und ihn so behoben.
     const stufe = Number(p.faultLevel || 0);
-    const stoerung = Number(p.is_error || 0) > 0 || stufe >= 2;
+    const stoerung = Number(p.is_error || 0) > 0 || stufe >= MODELL.schwellen.faultLevelStoerungAb;
     s('zFault', p.faultLevel == null && p.is_error == null ? null
         : stoerung ? (stufe >= 2 ? t('z_fault_n', stufe) : t('z_fault_err'))
         : stufe === 1 ? t('z_nofault1') : t('z_nofault'),
@@ -1748,7 +1823,7 @@
   // Was ein einzelner MPPT-Eingang je Modell vertraegt (Datenblatt, nicht im Bericht).
   // Zendure empfiehlt ausdruecklich Module bis zum 1,5-fachen dieser Zahl, weil die
   // Module ihre Nennleistung in der Praxis fast nie erreichen.
-  const MPPT_MAX = { solarFlow800Pro2: 660, solarFlow800Plus: 750, solarFlow800: 600 };
+  const MPPT_MAX = MODELL.geraete.mpptMaxWatt;
   // Nur die Felder zeigen, die das Geraet wirklich hat, und die Summe darunter.
   function fuellePeaks(){
     const n = pvN || 2;
@@ -1758,7 +1833,8 @@
     cfg.peak = summe;
     const grenze = MPPT_MAX[last?.product];
     $('peakSum').textContent = t('d_peak_sum', summe, n)
-      + (grenze ? ' ' + t('d_peak_max', grenze, Math.round(grenze * 1.5)) : '');
+      + (grenze ? ' ' + t('d_peak_max', grenze,
+          Math.round(grenze * MODELL.geraete.mpptEmpfehlungFaktor)) : '');
   }
   // Demo-Szene waehlen. -1 schaltet zurueck auf das echte Geraet.
   function zeigeDemoWahl(){
