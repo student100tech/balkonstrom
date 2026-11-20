@@ -43,7 +43,35 @@ jobs:
           # Gerätesuche im WLAN (mDNS + Netz absuchen): Netzwerk-/WLAN-Status lesen, Multicast empfangen
           sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />\n    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />#' android/app/src/main/AndroidManifest.xml
           grep -q CHANGE_WIFI_MULTICAST_STATE android/app/src/main/AndroidManifest.xml
-          cp android-src/MainActivity.java android-src/UpdaterPlugin.java android-src/DiscoveryPlugin.java android/app/src/main/java/de/elektroautonews/balkonstrom/
+          # Monitor flashen: USB-Gastgeber, nicht erzwungen
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-feature android:name="android.hardware.usb.host" android:required="false" />#' android/app/src/main/AndroidManifest.xml
+          grep -q 'usb.host' android/app/src/main/AndroidManifest.xml
+          # usb-serial-for-android liegt nur bei JitPack, nicht bei Maven Central.
+          # Wohin die Zeile gehoert, haengt davon ab, wie Capacitor das Projekt
+          # anlegt - darum nicht mit sed raten, sondern nachsehen.
+          python3 - <<'PY'
+          import io, re
+          sg = 'android/settings.gradle'
+          s = io.open(sg).read()
+          zeile = '        maven { url "https://jitpack.io" }\n'
+          if 'dependencyResolutionManagement' in s:
+              i = s.index('dependencyResolutionManagement')
+              j = s.index('repositories', i)
+              k = s.index('{', j) + 1
+              io.open(sg, 'w').write(s[:k] + '\n' + zeile + s[k:])
+          else:
+              io.open('android/build.gradle', 'a').write(
+                  '\nallprojects {\n    repositories {\n'
+                  '        maven { url "https://jitpack.io" }\n    }\n}\n')
+          PY
+          grep -rq jitpack android/settings.gradle android/build.gradle
+          cat >> android/app/build.gradle <<'GRADLE'
+
+          dependencies {
+              implementation 'com.github.mik3y:usb-serial-for-android:3.7.0'
+          }
+          GRADLE
+          cp android-src/MainActivity.java android-src/UpdaterPlugin.java android-src/DiscoveryPlugin.java android-src/EspFlashPlugin.java android/app/src/main/java/de/elektroautonews/balkonstrom/
           cp android-src/file_paths.xml android/app/src/main/res/xml/file_paths.xml
           sed -i 's/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName "1.0"/versionName "2.${{ github.run_number }}"/' android/app/build.gradle
           npx @capacitor/assets generate --android --iconBackgroundColor '#0f1420' --iconBackgroundColorDark '#0f1420' --splashBackgroundColor '#0f1420' --splashBackgroundColorDark '#0f1420'

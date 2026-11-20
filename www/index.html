@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0A0C11">
 <title>Balkonstrom</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap">
+<!-- Manrope, SIL Open Font License 1.1 (www/fonts/OFL.txt). Liegt in der App,
+     damit sie ohne Internet läuft; auf die gebrauchten Zeichen beschnitten,
+     Latein und Kyrillisch, variabler Schnitt 200-800. -->
+<style>@font-face{font-family:Manrope;src:url(fonts/Manrope.woff) format('woff');
+  font-weight:200 800;font-style:normal;font-display:block}</style>
 <!-- Icons „solar-panel“ und „house-plug“: Lucide (https://lucide.dev), ISC License, © Lucide Contributors -->
 <style>
   :root{
@@ -20,7 +22,7 @@
     --homeBg:#18162A; --homeLn:#2B2745; --batBg:#112420; --batLn:#21342F;
     --moon:#C9D4E8; --noteBg:#12161F; --noteTx:#A8AFBD; --navBg:rgba(22,25,33,.92);
     --errBg:#3a1f25; --errLn:#6b2a33; --errTx:#fecaca; --errBtn:#4a2229; --errBtnLn:#7a3340;
-    --num:"Space Grotesk",Inter,system-ui,sans-serif;
+    --num:Manrope,system-ui,sans-serif;
   }
   :root[data-theme="light"]{
     --bg:#F3F5F9; --card:#FFFFFF; --card2:#EDF0F6; --card3:#F8FAFD; --line:#DCE1EA; --line2:#E7EBF2; --line3:#C5CCD9;
@@ -34,7 +36,7 @@
     --errBg:#FDECEC; --errLn:#F2BDBA; --errTx:#8E1C17; --errBtn:#FAD6D4; --errBtnLn:#E8A29E;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:14px}
+  html,body{background:var(--bg);color:var(--text);font-family:Manrope,system-ui,sans-serif;font-size:14px}
   body{padding:env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 96px)}
   button{font-family:inherit}
   /* … und nie abschneiden: Android rechnet seine eigene Schriftgroesse auf
@@ -51,7 +53,7 @@
   .brand{display:flex;align-items:center;gap:10px;min-width:0}
   .brand svg{width:38px;height:38px;flex:none}
   h1{font-family:var(--num);font-size:19px;font-weight:600;letter-spacing:-.2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  h1 small{display:block;overflow:hidden;text-overflow:ellipsis;font-family:Inter,system-ui,sans-serif;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:2px;letter-spacing:0}
+  h1 small{display:block;overflow:hidden;text-overflow:ellipsis;font-family:Manrope,system-ui,sans-serif;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:2px;letter-spacing:0}
   .hdr-right{display:flex;gap:8px;align-items:center;flex:none}
   .pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
@@ -99,15 +101,15 @@
   .gross .sunrow{justify-content:center;text-align:center}
   .gross .sunrow #daylight{flex:1 0 100%;order:-1}
   .sunrow #daylight{color:var(--muted2)}
-  .moontxt{font-size:11px;fill:var(--dim);font-family:Inter,system-ui,sans-serif}
+  .moontxt{font-size:11px;fill:var(--dim);font-family:Manrope,system-ui,sans-serif}
 
   /* ---------- Energiefluss ---------- */
   .flow{padding:16px 12px 10px}
   .flowlbl{font-size:calc(13px * min(var(--zoom,1), 1.2));fill:var(--muted);font-weight:500;
-    font-family:Inter,system-ui,sans-serif}
+    font-family:Manrope,system-ui,sans-serif}
   .flow svg{width:100%;height:auto;display:block}
-  .node-label{font-size:calc(12px * min(var(--zoom,1), 1.2));fill:var(--muted);font-family:Inter,system-ui,sans-serif}
-  .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Inter,system-ui,sans-serif}
+  .node-label{font-size:calc(12px * min(var(--zoom,1), 1.2));fill:var(--muted);font-family:Manrope,system-ui,sans-serif}
+  .node-sub{font-size:calc(12.5px * min(var(--zoom,1), 1.2));fill:var(--muted2);font-family:Manrope,system-ui,sans-serif}
   .node-val{font-size:calc(19px * var(--zoom,1));font-weight:600;fill:var(--text);font-family:var(--num);font-variant-numeric:tabular-nums}
   .node-val.small{font-size:calc(17px * min(var(--zoom,1), 1.25))}
   /* Vierstellige Werte am linken und rechten Rand eine Stufe schmaler … */
@@ -192,7 +194,7 @@
   .life .k{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
   .life .k i{display:block;width:8px;height:8px;border-radius:3px}
   .life .n{font-family:var(--num);font-size:24px;font-weight:600}
-  .life .n small{font-family:Inter,sans-serif;font-size:13px;font-weight:400;color:var(--muted)}
+  .life .n small{font-family:Manrope,sans-serif;font-size:13px;font-weight:400;color:var(--muted)}
   details{border:1px dashed var(--line3);border-radius:16px;padding:0 18px;font-size:13px;color:var(--muted)}
   details summary{height:48px;display:flex;align-items:center;cursor:pointer;list-style:none}
   details summary::-webkit-details-marker{display:none}
@@ -242,7 +244,6 @@
   .dhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
   .dhead h2{font-family:var(--num);font-size:20px;font-weight:600}
   .xbtn{width:44px;height:44px;background:none;border:0;color:var(--muted);font-size:20px;border-radius:12px;cursor:pointer}
-  .dsec{border-top:1px solid var(--line2);padding-top:14px;margin-top:14px}
   .pvgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-bottom:4px}
   .pvgrid label{display:block}
   .pvgrid span{display:block;font-size:12px;color:var(--muted);margin-bottom:3px}
@@ -254,16 +255,18 @@
   /* Der Rohbericht ist Werkzeug, nicht Alltag – zugeklappt steht nur die Zeile da.
      Die allgemeine details-Regel weiter oben setzt einen gestrichelten Kasten; hier
      soll der Abschnitt aber aussehen wie die anderen Einstellungsblöcke. */
-  details.dsec{border:none;border-top:1px solid var(--line2);border-radius:0;
-    padding:14px 0 0;font-size:inherit;color:inherit}
-  details.dsec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
-    gap:8px;font-size:13.5px;font-weight:600;color:var(--text);
-    padding:2px 0;-webkit-tap-highlight-color:transparent}
-  details.dsec>summary::-webkit-details-marker{display:none}
-  details.dsec>summary::after{content:'';width:7px;height:7px;margin-left:auto;
+  /* Jeder Themenblock ist eine eigene Karte – dieselbe Gliederung wie im
+     Reiter Zustand. Die Luft dazwischen kommt vom gap der Ansicht. */
+  .setgrp>.f:first-of-type,.setgrp>.dtitle+.f{margin-top:10px}
+  details.setgrp{font-size:inherit;color:inherit}
+  details.setgrp>summary{list-style:none;cursor:pointer;display:flex;align-items:center;
+    gap:8px;font-size:13.5px;font-weight:600;color:var(--text);height:auto;
+    padding:0;-webkit-tap-highlight-color:transparent}
+  details.setgrp>summary::-webkit-details-marker{display:none}
+  details.setgrp>summary::after{content:'';width:7px;height:7px;margin-left:auto;
     border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
     transform:rotate(45deg) translate(-2px,-2px);transition:transform .18s}
-  details.dsec[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+  details.setgrp[open]>summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
   .drow{font-size:12.5px;margin:4px 0 10px}
   .f{display:block;font-size:12.5px;color:var(--muted);margin:14px 0 6px}
   .dtitle + .f{margin-top:10px}
@@ -290,8 +293,6 @@
   .zsec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:6px 2px -4px}
   .zsec b{font-size:15px;font-weight:600}
   .zsec span{font-size:12px;color:var(--muted)}
-  .setcard{padding:16px 18px}
-  .setcard .dsec:first-child{border-top:0;padding-top:0;margin-top:0}
 
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 100px);background:var(--card2);border:1px solid var(--line);
     padding:11px 16px;border-radius:14px;font-size:14px;z-index:9;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
@@ -303,6 +304,8 @@
   .setup h3{font-family:var(--num);font-size:21px;font-weight:600}
   .setup p{font-size:13px;color:var(--muted);line-height:1.5;max-width:300px}
   .setup .btn.primary{width:100%;margin-top:6px}
+  .fbar{height:6px;border-radius:99px;background:var(--card2);margin-top:10px;overflow:hidden}
+  .fbar i{display:block;height:100%;width:0;border-radius:99px;background:var(--bat);transition:width .25s}
   .linkbtn{background:none;border:0;color:var(--muted2);font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:10px;cursor:pointer;min-height:44px}
   .found{width:100%;display:flex;flex-direction:column;gap:8px;text-align:left}
   .found:empty{display:none}
@@ -532,9 +535,7 @@
   <!-- ================= EINSTELLUNGEN ================= -->
   <section class="view" id="vSet">
     <div class="pagehead"><div><h2 data-i18n="d_title">Einstellungen</h2></div></div>
-    <div class="card setcard">
-
-  <div class="dsec">
+  <div class="card setgrp">
     <div class="dtitle" data-i18n="d_grp_look">Anzeige</div>
     <div class="f" data-i18n="d_lang">Sprache</div>
     <div class="langsel"><button data-l="de">Deutsch</button><button data-l="ru">Русский</button></div>
@@ -544,7 +545,7 @@
     <div class="selrow" id="sizeSel"><button data-z="1" data-i18n="sz_normal">Normal</button><button data-z="1.15" data-i18n="sz_big">Groß</button><button data-z="1.3" data-i18n="sz_xl">Sehr groß</button></div>
   </div>
 
-  <div class="dsec">
+  <div class="card setgrp">
     <div class="dtitle" data-i18n="d_grp_conn">Verbindung</div>
     <label class="f" for="inIp" data-i18n="d_ip">IP-Adresse des SolarFlow</label>
     <div class="iprow"><input id="inIp" inputmode="decimal" data-i18n-ph="ph_ip" placeholder="z. B. 192.168.178.xx"><button class="btn" id="btnFindDlg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span data-i18n="d_search">Suchen</span></button></div>
@@ -557,7 +558,7 @@
     <input id="inInt" inputmode="numeric" placeholder="5">
   </div>
 
-  <div class="dsec">
+  <div class="card setgrp">
     <div class="dtitle" data-i18n="d_grp_plant">Meine Anlage</div>
     <div class="f" data-i18n="d_peak">Modulleistung je Eingang (Wp)</div>
     <div class="pvgrid" id="peakGrid">
@@ -575,14 +576,32 @@
     <div class="hint" id="locHint"></div>
   </div>
 
-  <div class="dsec">
+  <div class="card setgrp">
     <div class="dtitle" data-i18n="d_app">App</div>
-    <div class="drow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
+    <div class="drow" id="verRow"><span class="muted" data-i18n="d_version">Version __APPVERSION__</span></div>
     <button class="btn wide-btn" id="btnUpdate" data-i18n="check_update">Nach Update suchen</button>
     <div id="updInfo" class="hint" style="display:none"></div>
+    <div id="codeRow" style="display:none">
+      <label class="f" for="inCode" data-i18n="m_code">Code</label>
+      <input id="inCode" inputmode="numeric" maxlength="4" placeholder="••••" autocomplete="off">
+    </div>
   </div>
 
-  <details class="dsec" id="secDemo">
+  <!-- Monitor: nur nach Eingabe des Codes sichtbar, damit niemand versehentlich
+       ein Board beschreibt. Freischalten: fuenfmal auf die Versionszeile. -->
+  <div class="card setgrp" id="secMonitor" style="display:none">
+    <div class="dtitle" data-i18n="m_title">Monitor</div>
+    <div class="hint" data-i18n="m_hint">Spielt die Firmware auf das ESP32-Wandbild.
+      Board mit einem USB-C-Kabel ans Handy stecken, dann flashen. Danach holt sich
+      der Monitor seine Updates selbst über WLAN.</div>
+    <div class="drow" id="mBoard" style="margin-top:10px">–</div>
+    <button class="btn wide-btn" id="btnFlash" data-i18n="m_flash">Monitor flashen</button>
+    <div class="fbar" id="flashBar" style="display:none"><i></i></div>
+    <div id="flashInfo" class="hint" style="display:none"></div>
+    <button class="linkbtn" id="btnLock" data-i18n="m_lock">Bereich wieder verbergen</button>
+  </div>
+
+  <details class="card setgrp" id="secDemo">
     <summary><span data-i18n="d_demo">Demo-Ansicht</span></summary>
     <div class="hint" style="margin-top:8px" data-i18n="d_demo_hint">Zeigt eine erfundene Anlage mit allem,
       was es gibt: vier Solareingänge, Smart Meter, Off-Grid-Dose, Lüfter und zwei Akkupacks.
@@ -599,7 +618,7 @@
     </div>
   </details>
 
-  <details class="dsec" id="secDiag">
+  <details class="card setgrp" id="secDiag">
     <summary><span data-i18n="d_diag">Rohbericht vom Gerät</span></summary>
     <div class="hint" style="margin-top:8px" data-i18n="d_diag_hint">Liest einmalig den vollständigen Bericht des Speichers im WLAN aus – auch Felder,
       die die App noch nicht anzeigt. Kein Konto nötig, es wird nichts verändert.
@@ -615,8 +634,6 @@
       </div>
     </div>
   </details>
-
-    </div>
  </section>
 
   <div class="foot" id="foot" data-i18n="foot_src">Daten direkt vom Gerät im WLAN (zenSDK)</div>
@@ -873,6 +890,20 @@
       d_peak_max:(m, e) => `Der Eingang selbst verträgt ${m} W; Zendure empfiehlt Module bis ${e} Wp je Eingang, weil sie ihre Nennleistung selten erreichen.`, d_int:'Aktualisierung alle … Sekunden (min. 3)',
       d_acct:'Zendure-Konto (für Statistik)', d_logout:'Abmelden', d_mail:'E-Mail', d_pw:'Passwort',
       d_pw_hint:'Wird nur auf diesem Handy gespeichert und nur an Zendure gesendet.',
+      m_code:'Code', m_title:'Monitor', m_flash:'Monitor flashen',
+      m_lock:'Bereich wieder verbergen',
+      m_hint:'Spielt die Firmware auf das ESP32-Wandbild. Board mit einem USB-C-Kabel ans Handy stecken, dann flashen. Danach holt sich der Monitor seine Updates selbst über WLAN.',
+      m_open:'Monitor-Bereich freigeschaltet', m_shut:'Monitor-Bereich verborgen',
+      m_wrong:'Falscher Code',
+      m_none:'Kein Board gefunden – Board einstecken und Nachfrage von Android bestätigen.',
+      m_found:n=>`Board erkannt: ${n}`,
+      m_nofw:'Noch keine Firmware veröffentlicht.',
+      m_fw:n=>`Firmware Build ${n} bereit`,
+      m_step:(s,p)=>`${s} · ${p} %`,
+      m_s_open:'Verbinde', m_s_sync:'Synchronisiere', m_s_write:'Schreibe',
+      m_s_check:'Prüfe', m_s_done:'Fertig – Board startet neu',
+      m_failed:'Flashen fehlgeschlagen: ', m_apponly:'Geht nur in der App, nicht im Browser.',
+      m_noplug:'Diese Fassung der App kann noch nicht flashen.',
       d_demo:'Demo-Ansicht', dz_auto:'Durchlauf',
       d_demo_hint:'Zeigt eine erfundene Anlage mit allem, was es gibt: vier Solareingänge, Smart Meter, Off-Grid-Dose, Lüfter und zwei Akkupacks. Das eigene Gerät wird solange nicht abgefragt.',
       dz_off:'Aus', dz_0:'Alles zugleich', dz_1:'Mittag, Einspeisung',
@@ -1013,6 +1044,20 @@
       d_peak_max:(m, e) => `Сам вход рассчитан на ${m} Вт; Zendure рекомендует модули до ${e} Вт·п на вход — номинал достигается редко.`, d_int:'Обновление каждые … секунд (мин. 3)',
       d_acct:'Учётная запись Zendure (для статистики)', d_logout:'Выйти', d_mail:'Эл. почта', d_pw:'Пароль',
       d_pw_hint:'Сохраняется только на этом телефоне и передаётся только в Zendure.',
+      m_code:'Код', m_title:'Монитор', m_flash:'Прошить монитор',
+      m_lock:'Снова скрыть раздел',
+      m_hint:'Записывает прошивку на настенный экран ESP32. Подключите плату к телефону кабелем USB-C и запустите прошивку. Дальше монитор обновляется сам по Wi-Fi.',
+      m_open:'Раздел «Монитор» открыт', m_shut:'Раздел «Монитор» скрыт',
+      m_wrong:'Неверный код',
+      m_none:'Плата не найдена — подключите её и подтвердите запрос Android.',
+      m_found:n=>`Плата найдена: ${n}`,
+      m_nofw:'Прошивка ещё не опубликована.',
+      m_fw:n=>`Прошивка сборки ${n} готова`,
+      m_step:(s,p)=>`${s} · ${p} %`,
+      m_s_open:'Соединение', m_s_sync:'Синхронизация', m_s_write:'Запись',
+      m_s_check:'Проверка', m_s_done:'Готово — плата перезагружается',
+      m_failed:'Не удалось прошить: ', m_apponly:'Работает только в приложении, не в браузере.',
+      m_noplug:'Эта версия приложения ещё не умеет прошивать.',
       d_demo:'Демо-режим', dz_auto:'По кругу',
       d_demo_hint:'Показывает вымышленную установку со всем сразу: четыре солнечных входа, умный счётчик, автономная розетка, вентилятор и два аккумуляторных блока. Своё устройство при этом не опрашивается.',
       dz_off:'Выкл.', dz_0:'Всё сразу', dz_1:'Полдень, отдача',
@@ -1780,6 +1825,7 @@
   const zuReiter = id => document.querySelector(`nav.tabs button[data-v="${id}"]`).click();
   // Felder beim Öffnen des Reiters mit den gespeicherten Werten füllen
   function ladeEinstellungen(){
+    zeigeMonitor();
     $('inIp').value = cfg.ip; $('inMeterIp').value = cfg.meterIp; $('inCap').value = cfg.cap; $('inInt').value = cfg.interval;
     fuellePeaks();
     zeigeGeraeteliste();
@@ -2063,6 +2109,88 @@
     try { info.textContent = (await checkUpdate()) ? t('upd_avail', upd.nr, BUILD) : t('upd_latest', BUILD); }
     catch (e) { info.style.color = 'var(--warn)'; info.textContent = t('upd_failed') + e.message; }
     finally { btn.disabled = false; }
+  };
+
+  // ---------- Monitor flashen (versteckt hinter einem Code) ----------
+  // Der Bereich darf dem Vater nicht in die Haende fallen: fuenfmal auf die
+  // Versionszeile tippen, dann den Code. Die Freigabe wird gemerkt.
+  const MON_CODE = '9669';
+  let monFw = null;                                   // {nr, url} der Firmware
+  const espPlug = () => window.Capacitor?.Plugins?.EspFlash;
+
+  function zeigeMonitor(){
+    const frei = store.get('monitor', '') === '1';
+    $('secMonitor').style.display = frei ? '' : 'none';
+    if (frei) pruefeBoard();
+  }
+
+  let tippZahl = 0, tippZeit = 0;
+  $('verRow').onclick = () => {
+    const jetzt = Date.now();
+    tippZahl = (jetzt - tippZeit < 1500) ? tippZahl + 1 : 1;
+    tippZeit = jetzt;
+    if (tippZahl >= 5 && store.get('monitor', '') !== '1') {
+      tippZahl = 0;
+      $('codeRow').style.display = 'block';
+      $('inCode').value = ''; $('inCode').focus();
+    }
+  };
+  $('inCode').oninput = () => {
+    const v = $('inCode').value.replace(/\D/g, '').slice(0, 4);
+    $('inCode').value = v;
+    if (v.length < 4) return;
+    if (v === MON_CODE) {
+      store.set('monitor', '1'); $('codeRow').style.display = 'none';
+      zeigeMonitor(); toast(t('m_open'));
+    } else { $('inCode').value = ''; toast(t('m_wrong')); }
+  };
+  $('btnLock').onclick = () => {
+    store.del('monitor'); $('secMonitor').style.display = 'none'; toast(t('m_shut'));
+  };
+
+  // Board und Firmware pruefen – beides darf fehlen, ohne dass etwas kaputtgeht.
+  async function pruefeBoard(){
+    let txt = t('m_none');
+    try { const r = await espPlug()?.check(); if (r?.found) txt = t('m_found', r.name); } catch {}
+    try {
+      const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest',
+                           {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
+      if (r.ok) {
+        const j = await r.json();
+        const bin = (j.assets || []).find(a => a.name.endsWith('.bin'));
+        monFw = bin ? {nr: Number((j.tag_name || '').replace(/\D/g, '')) || 0,
+                       url: bin.browser_download_url} : null;
+      }
+    } catch {}
+    $('mBoard').textContent = txt + ' · ' + (monFw ? t('m_fw', monFw.nr) : t('m_nofw'));
+    $('btnFlash').disabled = !monFw;
+  }
+
+  $('btnFlash').onclick = async () => {
+    const info = $('flashInfo'), bar = $('flashBar'), fuell = bar.firstElementChild;
+    info.style.display = 'block'; info.style.color = 'var(--muted)';
+    bar.style.display = 'block'; fuell.style.width = '0';
+    $('btnFlash').disabled = true;
+    let ab = null;
+    try {
+      if (!isApp) throw new Error(t('m_apponly'));
+      const plug = espPlug();
+      if (!plug?.flash) throw new Error(t('m_noplug'));
+      ab = await plug.addListener?.('fortschritt', e => {
+        const pz = Math.round(e.prozent || 0);
+        fuell.style.width = pz + '%';
+        info.textContent = t('m_step', t('m_s_' + (e.schritt || 'open')), pz);
+      });
+      await plug.flash({url: monFw.url});
+      fuell.style.width = '100%';
+      info.textContent = t('m_s_done');
+    } catch (e) {
+      info.style.color = 'var(--warn)';
+      info.textContent = t('m_failed') + (e?.message || e);
+    } finally {
+      try { ab?.remove?.(); } catch {}
+      $('btnFlash').disabled = false;
+    }
   };
 
   // ---------- SolarFlow im WLAN suchen ----------

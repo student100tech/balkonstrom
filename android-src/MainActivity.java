@@ -9,6 +9,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(UpdaterPlugin.class);
         registerPlugin(DiscoveryPlugin.class);
+        registerPlugin(EspFlashPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Die Android-Systemschriftgroesse vergroessert sonst auch die Weboberflaeche.
