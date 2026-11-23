@@ -19,6 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -26,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -74,6 +77,16 @@ public class DiscoveryPlugin extends Plugin {
                 ret.put("devices", arr);
                 ret.put("via", via);
                 ret.put("ownIp", ipStr(net[0]));
+                // Fuer den Netzbericht: welches Netz wurde abgesucht und wie breit.
+                int prefix = Math.max(net[1], 24);
+                ret.put("prefix", prefix);
+                ret.put("netz", ipStr(net[0] & (-1 << (32 - prefix))));
+                ret.put("geprueft", prefix >= 31 ? 0 : (1 << (32 - prefix)) - 2);
+                // Getrennt gehalten: ein Dongle, der nur per UDP antwortet, soll nicht
+                // versehentlich als Speicher ausgewaehlt werden koennen.
+                JSArray ua = new JSArray();
+                for (JSObject o : wifikit(net, call.getInt("udpMs", 1500))) ua.put(o);
+                ret.put("udp", ua);
                 call.resolve(ret);
             } catch (Exception e) {
                 call.reject(e.getMessage() != null ? e.getMessage() : e.toString());
@@ -306,6 +319,67 @@ public class DiscoveryPlugin extends Plugin {
             }
             return bo.toString("UTF-8");
         }
+    }
+
+    // ---------- GoodWe-Dongle per Rundruf ----------
+
+    /**
+     * Fragt GoodWe-WLAN-Module so ab, wie es die Bibliothek "goodwe" tut: der Text
+     * WIFIKIT-214028-READ als UDP-Rundruf auf Port 48899. Ein Modul antwortet mit
+     * seiner Adresse. Steht in der Antwort dtls_port:8899, laeuft die neuere
+     * verschluesselte Firmware, bei der einfaches UDP auf 8899 nicht mehr geht.
+     *
+     * Der Rundruf hilft genau dann, wenn Port 502 zu ist: so sehen wir, ob ueberhaupt
+     * ein Dongle im Netz haengt, statt nur "nichts gefunden" melden zu koennen.
+     */
+    private List<JSObject> wifikit(int[] net, int wartenMs) {
+        Map<String, JSObject> aus = new LinkedHashMap<>();
+        DatagramSocket so = null;
+        try {
+            so = new DatagramSocket();
+            so.setBroadcast(true);
+            so.setSoTimeout(250);
+            byte[] frage = "WIFIKIT-214028-READ".getBytes(StandardCharsets.US_ASCII);
+            for (String ziel : new String[] { rundrufAdresse(net), "255.255.255.255" }) {
+                if (ziel == null) continue;
+                try {
+                    so.send(new DatagramPacket(frage, frage.length, InetAddress.getByName(ziel), 48899));
+                } catch (Exception ignored) { }
+            }
+            long ende = System.currentTimeMillis() + Math.max(300, wartenMs);
+            byte[] puffer = new byte[1024];
+            while (System.currentTimeMillis() < ende) {
+                try {
+                    DatagramPacket p = new DatagramPacket(puffer, puffer.length);
+                    so.receive(p);
+                    String text = new String(p.getData(), 0, p.getLength(), StandardCharsets.US_ASCII).trim();
+                    if (text.isEmpty()) continue;
+                    String ip = p.getAddress().getHostAddress();
+                    if (ip.equals(ipStr(net[0]))) continue;          // eigenes Echo
+                    JSObject o = new JSObject();
+                    o.put("ip", ip);
+                    o.put("antwort", text);
+                    o.put("dtls", text.toLowerCase().contains("dtls"));
+                    aus.put(ip, o);
+                } catch (java.net.SocketTimeoutException weiter) {
+                    // noch nichts da – bis zum Ende der Wartezeit erneut lauschen
+                } catch (Exception e) {
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (so != null) so.close();
+        }
+        return new ArrayList<>(aus.values());
+    }
+
+    /** Rundruf-Adresse des eigenen Netzes, bei einem /24 also z. B. 192.168.178.255. */
+    private static String rundrufAdresse(int[] net) {
+        int prefix = Math.max(net[1], 8);
+        if (prefix >= 31) return null;
+        int mask = -1 << (32 - prefix);
+        return ipStr((net[0] & mask) | ~mask);
     }
 
     // ---------- eigene WLAN-Adresse ----------

@@ -22,6 +22,13 @@ Dazu eine **Demo-Ansicht** mit sechs erfundenen Szenen, die ohne Gerät läuft,
 und ein **Rohbericht**, der alle Felder ausgibt – gekürzt um Gerätenummern
 und Namen.
 
+Eine **Netzprüfung** sucht im WLAN nach allem, was antwortet: Zendure-Geräte
+über HTTP, Fremdgeräte über Modbus TCP auf Port 502, und GoodWe-Dongles über
+einen UDP-Rundruf auf Port 48899. Sie endet mit einem Satz im Klartext statt
+mit einem Protokoll und ist teilbar. Der Knopf steht in den Einstellungen und
+zusätzlich im Einrichtungsbildschirm – dort erreichbar auch dann, wenn gar
+kein Zendure-Gerät eingetragen ist.
+
 ## Woher die Daten kommen
 
 | Aufruf | Zweck |

@@ -39,7 +39,9 @@
   "geraete": {
     "_hinweis": "Was ein einzelner MPPT-Eingang vertraegt (Datenblatt, nicht im Bericht). Zendure empfiehlt Module bis zum 1,5-fachen.",
     "mpptMaxWatt": { "solarFlow800Pro2": 660, "solarFlow800Plus": 750, "solarFlow800": 600 },
-    "mpptEmpfehlungFaktor": 1.5
+    "mpptEmpfehlungFaktor": 1.5,
+    "maxSolarEingaenge": 6,
+    "_hinweisModelle": "Die Zahl der Solareingaenge wird aus dem Bericht gezaehlt, nicht am Modell festgemacht. AC-gekoppelte Speicher melden gar keinen - dann faellt der Solarzweig weg. mpptMaxWatt gilt nur fuer Modelle, deren Datenblatt wir haben; fehlt eines, zeigt die App keine Empfehlung statt einer geratenen."
   },
 
   "zendure": {
