@@ -1,16 +1,29 @@
-// PV-Monitor – Firmware fuer das Wandbild
-// Board: Guition ESP32-S3-4848S040 (Teilenummer JC4848W540C), 480x480, ST7701S
+// PV-Monitor - Firmware für das Wandbild (Guition ESP32-S3-4848S040, 480 x 480)
 //
-// Dieser Stand ist das Geruest: er weckt das Display, prueft den Touch und zeigt,
-// dass die Kette vom Bauablauf ueber die Freigabe bis zum Aufspielen vom Handy
-// traegt. Die Bildschirme aus dem Entwurf (Fluss, Zustand, Verlauf, Einrichtung)
-// kommen darauf.
+// Liest den Speicher im WLAN über dessen lokale Schnittstelle
+// (GET http://<IP>/properties/report) und zeigt dieselben Seiten wie die App:
+// Energiefluss, Zustand und den Tagesverlauf, den der Monitor selbst mitschreibt.
+// Nur lesen - der Monitor schreibt nichts an den Speicher.
 //
-// Pins und Zeitlagen stammen aus dem Arduino-Demo des Herstellers,
-// 1-Demo/Demo_Arduino/1_2_4.0_LvglWidgets, nicht aus einem Datenblatt.
+// Aufteilung:
+//   Kern 0  Netz-Task: WLAN, Suche nach Netzen und Speichern, Abfrage alle 3 s,
+//           Uhrzeit, Verlauf mitschreiben
+//   Kern 1  loop(): Touch, Zeichnen, laufende Striche
+// Das Zeichnen selbst steckt in seiten.h und leinwand.h und hat keine
+// Arduino-Abhängigkeit; tools/vorschau.cpp rendert damit dieselben Seiten am PC.
+//
+// Einbaulage: Der Halter dreht das Board um 90 Grad im Uhrzeigersinn, die
+// USB-Buchse zeigt nach unten. Die Leinwand liegt deshalb im Speicher schon in
+// der Lage des Panels (siehe leinwand.h), der Touch wird zurückgerechnet.
 
 #include <Arduino_GFX_Library.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <ESPmDNS.h>
+#include <Preferences.h>
+#include <time.h>
+#include "seiten.h"
 
 #ifndef FW_BUILD
 #define FW_BUILD 0
@@ -18,70 +31,295 @@
 
 static const int PIN_LICHT = 38;        // Hintergrundlicht, PWM
 static const int PIN_SDA   = 19;        // I2C zum Touch GT911
-static const int PIN_SCL   = 45;        // Achtung: Strapping-Pin
+static const int PIN_SCL   = 45;
 static const uint8_t GT911_ADDRS[2] = {0x5D, 0x14};
 
-// Arduino_GFX 1.2.9 bringt kein Farbmakro mit, nur benannte Konstanten.
-// 5 Bit Rot, 6 Bit Gruen, 5 Bit Blau. Das Panel laeuft als BGR, das dreht
-// der Treiber selbst - hier stehen also gewoehnliche RGB-Werte.
-#define RGB(r, g, b) ((uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | ((b) >> 3)))
-
-// Farben der App, damit Handy und Wandbild dieselbe Sprache sprechen
-static const uint16_t C_GRUND  = RGB(0x0F, 0x14, 0x20);
-static const uint16_t C_TEXT   = RGB(0xE8, 0xEA, 0xF0);
-static const uint16_t C_MATT   = RGB(0x8A, 0x91, 0xA3);
-static const uint16_t C_SOLAR  = RGB(0xFF, 0xB5, 0x47);
-static const uint16_t C_AKKU   = RGB(0x3D, 0xDB, 0xB0);
-static const uint16_t C_NETZ   = RGB(0xFF, 0x6B, 0x81);
-static const uint16_t C_HAUS   = RGB(0xA7, 0x8B, 0xFA);
-
+// ---------- Panel wie im Herstellerdemo (Build 6/7 auf dem Board bestätigt) ----------
 Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
   39 /* CS */, 48 /* SCK */, 47 /* SDA */,
   18 /* DE */, 17 /* VSYNC */, 16 /* HSYNC */, 21 /* PCLK */,
   11 /* R0 */, 12 /* R1 */, 13 /* R2 */, 14 /* R3 */,  0 /* R4 */,
    8 /* G0 */, 20 /* G1 */,  3 /* G2 */, 46 /* G3 */,  9 /* G4 */, 10 /* G5 */,
    4 /* B0 */,  5 /* B1 */,  6 /* B2 */,  7 /* B3 */, 15 /* B4 */);
+Arduino_ST7701_RGBPanel *gfx = new Arduino_ST7701_RGBPanel(
+  bus, GFX_NOT_DEFINED, 0, true /* IPS */, 480, 480,
+  st7701_type1_init_operations, sizeof(st7701_type1_init_operations), true /* BGR */,
+  10, 8, 50, 10, 8, 20);
 
-// Einbaulage: der Halter dreht das Board um 90 Grad im Uhrzeigersinn, die
-// USB-Buchse zeigt nach unten. Arduino_GFX 1.2.9 kann bei diesem Panel nur 0
-// und 180 Grad ("case 1/3: not implemented"), also drehen wir selbst. Weil das
-// Display quadratisch ist, reicht es, die vier Grundfunktionen umzurechnen -
-// Text, Kreise und Linien laufen alle darueber.
-//
-//   Panel (px, py) = (y, 479 - x)     fuer einen Punkt (x, y) im Bild
-//
-// Herleitung: nach der Drehung ist die linke Panelkante oben (px = y) und die
-// obere Panelkante rechts (py = 479 - x).
-class GedrehtesPanel : public Arduino_ST7701_RGBPanel {
-public:
-  using Arduino_ST7701_RGBPanel::Arduino_ST7701_RGBPanel;
-  static const int16_t N = 479;
-  void writePixelPreclipped(int16_t x, int16_t y, uint16_t c) override {
-    Arduino_ST7701_RGBPanel::writePixelPreclipped(y, N - x, c);
-  }
-  void writeFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override {
-    Arduino_ST7701_RGBPanel::writeFastVLine(y, N - x - w + 1, w, c);
-  }
-  void writeFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override {
-    Arduino_ST7701_RGBPanel::writeFastHLine(y, N - x, h, c);
-  }
-  void writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override {
-    Arduino_ST7701_RGBPanel::writeFillRectPreclipped(y, N - x - w + 1, h, w, c);
-  }
-};
+// ---------- gemeinsamer Zustand ----------
+static Einst ein;
+static Lage lage;                       // vom Netz-Task gefüllt, unter Sperre
+static Verlauf verl;                    // vom Netz-Task geschrieben, unter Sperre
+static Verlauf verlUI;                  // Kopie fürs Zeichnen
+static Oberflaeche ui;
+static SemaphoreHandle_t sperre;
 
-// Zeitlagen wie im Herstellerdemo. Der Pixeltakt steht auf 16 MHz; daraus
-// ergeben sich 548 x 518 Takte je Bild und damit rund 56 Bilder je Sekunde.
-GedrehtesPanel *gfx = new GedrehtesPanel(
-  bus, GFX_NOT_DEFINED /* RST */, 0 /* Drehung */,
-  true /* IPS */, 480, 480,
-  st7701_type1_init_operations, sizeof(st7701_type1_init_operations),
-  true /* BGR */,
-  10 /* hsync front porch */, 8 /* hsync pulse */, 50 /* hsync back porch */,
-  10 /* vsync front porch */, 8 /* vsync pulse */, 20 /* vsync back porch */);
+enum { A_SCAN = 1, A_VERBINDEN = 2, A_SUCHE = 4, A_ZEIT = 8 };
+static volatile uint32_t anfragen = 0;
+static portMUX_TYPE anfrageMux = portMUX_INITIALIZER_UNLOCKED;
+static void anfrage(uint32_t bit) { portENTER_CRITICAL(&anfrageMux); anfragen |= bit; portEXIT_CRITICAL(&anfrageMux); }
+static uint32_t holeAnfragen() {
+  portENTER_CRITICAL(&anfrageMux); uint32_t a = holeAnfragen(); portEXIT_CRITICAL(&anfrageMux);
+  return a;
+}
+static volatile uint32_t letzteOk = 0;  // millis() des letzten guten Berichts, 0 = nie
+static volatile bool datenNeu = false, listeNeu = false;
+static volatile int verbindErgebnis = 0;    // 0 nichts, 2 ok, 3 Fehler
+static volatile bool sucheFertig = false;
 
-static uint8_t touchAdr = 0;            // 0 = keiner gefunden
+static uint16_t *fb = nullptr, *basisBuf = nullptr, *teilBuf = nullptr;
+static Leinwand basis;
+static const int TEIL_PX = 8192;
 
+static void sperren() { xSemaphoreTake(sperre, portMAX_DELAY); }
+static void freigeben() { xSemaphoreGive(sperre); }
+
+// =====================================================================
+// Einstellungen
+// =====================================================================
+static void einstLaden() {
+  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
+  prefs.begin("pvm", true);
+  prefs.getString("ssid", ein.ssid, sizeof ein.ssid);
+  prefs.getString("pass", ein.pass, sizeof ein.pass);
+  prefs.getString("ip", ein.ip, sizeof ein.ip);
+  prefs.getString("host", ein.host, sizeof ein.host);
+  prefs.getString("prod", ein.produkt, sizeof ein.produkt);
+  if (prefs.getBytesLength("peaks") == sizeof ein.peaks) prefs.getBytes("peaks", ein.peaks, sizeof ein.peaks);
+  ein.cap = prefs.getInt("cap", 0);
+  ein.nachtHell = prefs.getInt("hell", 20);
+  ein.zone = prefs.getInt("zone", 0);
+  ein.sprache = prefs.getInt("spr", 0);
+  prefs.end();
+  if (ein.zone < 0 || ein.zone >= ZONEN_ANZ) ein.zone = 0;
+  sprache = ein.sprache ? 1 : 0;
+}
+static void einstSichern() {
+  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
+  prefs.begin("pvm", false);
+  prefs.putString("ssid", ein.ssid); prefs.putString("pass", ein.pass);
+  prefs.putString("ip", ein.ip); prefs.putString("host", ein.host); prefs.putString("prod", ein.produkt);
+  prefs.putBytes("peaks", ein.peaks, sizeof ein.peaks);
+  prefs.putInt("cap", ein.cap); prefs.putInt("hell", ein.nachtHell);
+  prefs.putInt("zone", ein.zone); prefs.putInt("spr", ein.sprache);
+  prefs.end();
+}
+// Nur WLAN-Zugang zurückholen, z. B. nach einem misslungenen Wechsel
+static void wlanAusSpeicher(char *ssid, char *pass) {
+  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
+  prefs.begin("pvm", true);
+  prefs.getString("ssid", ssid, 33); prefs.getString("pass", pass, 65);
+  prefs.end();
+}
+
+// =====================================================================
+// Verlauf: 5-Minuten-Mittel und Tagesenergie, alle 15 min gesichert
+// =====================================================================
+static int slotAkt = -1; static float sumS = 0, sumH = 0, sumL = 0; static int sumN = 0;
+static uint32_t letzteBuchung = 0, letzteSicherung = 0;
+
+static void verlaufLaden() {
+  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
+  prefs.begin("verlauf", true);
+  if (prefs.getBytesLength("tag") == sizeof(Verlauf)) prefs.getBytes("tag", &verl, sizeof(Verlauf));
+  else verl.leeren(0);
+  prefs.end();
+}
+static void verlaufSichern() {
+  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
+  prefs.begin("verlauf", false);
+  prefs.putBytes("tag", &verl, sizeof(Verlauf));
+  prefs.end();
+}
+static void verlaufBuchen(const Werte &w) {
+  time_t jetzt = time(nullptr); struct tm t; localtime_r(&jetzt, &t);
+  if (t.tm_year < 124) return;                       // Uhr noch nicht gestellt
+  uint32_t tag = (t.tm_year + 1900) * 10000 + (t.tm_mon + 1) * 100 + t.tm_mday;
+  uint32_t ms = millis();
+  sperren();
+  if (verl.tag != tag) {
+    if (verl.tag) verlaufSichern();                  // gestern noch festhalten
+    verl.leeren(tag); slotAkt = -1;
+  }
+  int slot = (t.tm_hour * 60 + t.tm_min) / 5;
+  if (slot != slotAkt) { slotAkt = slot; sumS = sumH = sumL = 0; sumN = 0; }
+  float solar = w.n(F_SOLAR), haus = w.n(F_HOME), laden = w.n(F_LADEN), netz = w.n(F_GRID);
+  sumS += solar; sumH += haus; sumL += laden; sumN++;
+  verl.solar[slot] = (int16_t)lroundf(sumS / sumN);
+  verl.haus[slot] = (int16_t)lroundf(sumH / sumN);
+  verl.laden[slot] = (int16_t)lroundf(sumL / sumN);
+  if (letzteBuchung) {
+    uint32_t d = ms - letzteBuchung; if (d > 30000) d = 30000;   // Lücken nicht hochrechnen
+    float h = d / 3600000.0f;
+    verl.whSolar += solar * h; verl.whHaus += haus * h; verl.whNetz += netz * h;
+  }
+  letzteBuchung = ms;
+  bool sichern = ms - letzteSicherung > 15UL * 60 * 1000;
+  freigeben();
+  if (sichern) { letzteSicherung = ms; sperren(); verlaufSichern(); freigeben(); }
+}
+
+// =====================================================================
+// Netz-Task (Kern 0)
+// =====================================================================
+static bool zeitGestellt() { time_t j = time(nullptr); struct tm t; localtime_r(&j, &t); return t.tm_year >= 124; }
+
+static void scanNetze() {
+  int n = WiFi.scanNetworks(false, false);
+  Netz tmp[24]; int anz = 0;
+  for (int i = 0; i < n && anz < 24; i++) {
+    String s = WiFi.SSID(i);
+    if (!s.length()) continue;
+    int dup = -1;
+    for (int k = 0; k < anz; k++) if (!strcmp(tmp[k].ssid, s.c_str())) dup = k;
+    if (dup >= 0) { if (WiFi.RSSI(i) > tmp[dup].rssi) tmp[dup].rssi = WiFi.RSSI(i); continue; }
+    snprintf(tmp[anz].ssid, 33, "%s", s.c_str());
+    tmp[anz].rssi = WiFi.RSSI(i);
+    tmp[anz].offen = WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+    anz++;
+  }
+  WiFi.scanDelete();
+  for (int i = 0; i < anz; i++) for (int k = i + 1; k < anz; k++)
+    if (tmp[k].rssi > tmp[i].rssi) { Netz x = tmp[i]; tmp[i] = tmp[k]; tmp[k] = x; }
+  sperren();
+  memcpy(lage.netze, tmp, sizeof(Netz) * anz); lage.netzAnz = anz; lage.scanLaeuft = false;
+  freigeben();
+  listeNeu = true;
+  Serial.printf("WLAN: %d Netze gefunden\n", anz);
+}
+
+static bool verbinden(const char *ssid, const char *pass, uint32_t warteMs) {
+  WiFi.disconnect(false, false);
+  delay(100);
+  WiFi.begin(ssid, pass);
+  uint32_t t0 = millis();
+  while (millis() - t0 < warteMs) {
+    if (WiFi.status() == WL_CONNECTED) return true;
+    delay(200);
+  }
+  return false;
+}
+
+static bool mdnsLaeuft = false;
+static void mdnsStart() {
+  if (!mdnsLaeuft && MDNS.begin("pv-monitor")) mdnsLaeuft = true;
+}
+
+// Ein Bericht vom Speicher. Gibt true zurück, wenn es einer war.
+static bool holeBericht(const char *ip, Werte &w, int timeoutMs) {
+  HTTPClient http;
+  char url[64]; snprintf(url, sizeof url, "http://%s%s", ip, ZENDURE_PFAD);
+  http.setConnectTimeout(timeoutMs); http.setTimeout(timeoutMs);
+  if (!http.begin(url)) return false;
+  int code = http.GET();
+  bool ok = false;
+  if (code == 200) { String b = http.getString(); ok = leseBericht(b.c_str(), w); }
+  http.end();
+  return ok;
+}
+
+static void sucheSpeicher() {
+  mdnsStart();
+  Fund tmp[6]; int anz = 0;
+  int n = mdnsLaeuft ? MDNS.queryService("zendure", "tcp") : 0;
+  for (int i = 0; i < n && anz < 6; i++) {
+    Fund &f = tmp[anz];
+    snprintf(f.host, sizeof f.host, "%s", MDNS.hostname(i).c_str());
+    snprintf(f.ip, sizeof f.ip, "%s", MDNS.IP(i).toString().c_str());
+    f.produkt[0] = 0;
+    // Nur Speicher übernehmen: ein Smart Meter antwortet ohne "properties"
+    static Werte probe;
+    if (holeBericht(f.ip, probe, 2500)) { snprintf(f.produkt, sizeof f.produkt, "%s", probe.produkt); anz++; }
+  }
+  sperren();
+  memcpy(lage.funde, tmp, sizeof(Fund) * anz); lage.fundAnz = anz; lage.sucheLaeuft = false;
+  freigeben();
+  sucheFertig = true; listeNeu = true;
+  Serial.printf("Suche: %d Speicher gefunden\n", anz);
+}
+
+static void netzTask(void *) {
+  WiFi.mode(WIFI_STA);
+  WiFi.persistent(false);
+  WiFi.setAutoReconnect(true);
+  WiFi.setHostname("PV-Monitor");
+  if (ein.ssid[0]) { Serial.println("WLAN: verbinde"); WiFi.begin(ein.ssid, ein.pass); }
+  bool warVerbunden = false, zeitAngestossen = false, zeitGemeldet = false;
+  uint32_t letzteAbfrage = 0; int fehler = 0; bool ersteAntwort = true;
+  for (;;) {
+    uint32_t a = holeAnfragen();
+    if (a & A_SCAN) scanNetze();
+    if (a & A_VERBINDEN) {
+      char ssid[33], pass[65];
+      sperren(); snprintf(ssid, sizeof ssid, "%s", ein.ssid); snprintf(pass, sizeof pass, "%s", ein.pass); freigeben();
+      Serial.println("WLAN: verbinde mit neuem Netz");
+      if (verbinden(ssid, pass, 20000)) {
+        Serial.println("WLAN: verbunden");
+        einstSichern(); verbindErgebnis = 2;
+      } else {
+        Serial.println("WLAN: Verbindung fehlgeschlagen");
+        // Altes Netz wiederherstellen, damit der Monitor nicht ohne WLAN dasteht
+        char s0[33], p0[65]; wlanAusSpeicher(s0, p0);
+        sperren(); snprintf(ein.ssid, sizeof ein.ssid, "%s", s0); snprintf(ein.pass, sizeof ein.pass, "%s", p0); freigeben();
+        if (s0[0]) WiFi.begin(s0, p0);
+        verbindErgebnis = 3;
+      }
+    }
+    bool verbunden = WiFi.status() == WL_CONNECTED;
+    if (verbunden && !warVerbunden) {
+      Serial.println("WLAN: verbunden");
+      mdnsStart();
+      a |= A_ZEIT;
+    }
+    warVerbunden = verbunden;
+    if ((a & A_ZEIT) && verbunden) {
+      configTzTime(ZONEN[ein.zone].tz, "pool.ntp.org", "time.cloudflare.com", "time.google.com");
+      zeitAngestossen = true;
+    }
+    if (zeitAngestossen && !zeitGemeldet && zeitGestellt()) { zeitGemeldet = true; Serial.println("Zeit: gestellt"); }
+    // Suche erst, wenn das WLAN steht - nach dem Einschalten dauert das ein paar Sekunden
+    static uint32_t sucheSeit = 0;
+    if (a & A_SUCHE) {
+      if (verbunden) { sucheSeit = 0; sucheSpeicher(); }
+      else {
+        if (!sucheSeit) sucheSeit = millis();
+        if (millis() - sucheSeit < 25000) anfrage(A_SUCHE);
+        else { sucheSeit = 0; sperren(); lage.sucheLaeuft = false; lage.fundAnz = 0; freigeben(); sucheFertig = true; listeNeu = true; }
+      }
+    }
+
+    // Abfrage alle 3 s
+    char ip[16]; sperren(); snprintf(ip, sizeof ip, "%s", ein.ip); freigeben();
+    if (verbunden && ip[0] && millis() - letzteAbfrage >= ZENDURE_ABSTAND_S * 1000UL) {
+      letzteAbfrage = millis();
+      static Werte w;
+      if (holeBericht(ip, w, 2500)) {
+        if (ersteAntwort || fehler >= 5) Serial.println("Speicher: Antwort ok");
+        ersteAntwort = false; fehler = 0;
+        sperren(); lage.w = w; freigeben();
+        letzteOk = millis(); datenNeu = true;
+        verlaufBuchen(w);
+      } else if (++fehler == 5 || fehler % 20 == 0) {
+        Serial.printf("Speicher: keine Antwort (%d)\n", fehler);
+        // Neue Adresse vom Router? Über den mDNS-Namen nachschlagen.
+        char host[48]; sperren(); snprintf(host, sizeof host, "%s", ein.host); freigeben();
+        if (host[0] && mdnsLaeuft) {
+          IPAddress neu = MDNS.queryHost(host, 2000);
+          if (neu != IPAddress(0, 0, 0, 0) && strcmp(neu.toString().c_str(), ip)) {
+            sperren(); snprintf(ein.ip, sizeof ein.ip, "%s", neu.toString().c_str()); freigeben();
+            einstSichern(); Serial.println("Speicher: neue Adresse uebernommen");
+          }
+        }
+      }
+    }
+    vTaskDelay(pdMS_TO_TICKS(40));
+  }
+}
+
+// =====================================================================
+// Touch (GT911)
+// =====================================================================
+static uint8_t touchAdr = 0;
 static uint8_t sucheTouch() {
   for (uint8_t i = 0; i < 2; i++) {
     Wire.beginTransmission(GT911_ADDRS[i]);
@@ -89,131 +327,233 @@ static uint8_t sucheTouch() {
   }
   return 0;
 }
-
-// GT911: Register 0x814E traegt im unteren Nibble die Zahl der Beruehrungen,
-// ab 0x8150 folgen je acht Byte mit Kennung, X und Y. Nach dem Lesen muss das
-// Statusregister geloescht werden, sonst meldet der Baustein nichts Neues.
-static bool liesTouch(uint16_t &x, uint16_t &y) {
-  if (!touchAdr) return false;
+// -1 nichts Neues, 0 losgelassen, 1 berührt (x/y im Bild)
+static int liesTouch(int &x, int &y) {
+  if (!touchAdr) return -1;
   Wire.beginTransmission(touchAdr);
   Wire.write(0x81); Wire.write(0x4E);
-  if (Wire.endTransmission() != 0) return false;
-  if (Wire.requestFrom((int)touchAdr, 1) != 1) return false;
+  if (Wire.endTransmission() != 0 || Wire.requestFrom((int)touchAdr, 1) != 1) return -1;
   uint8_t st = Wire.read();
-  bool treffer = false;
-  if ((st & 0x80) && (st & 0x0F)) {
-    // Ab 0x8150 stehen direkt X und Y des ersten Fingers; die Kennung liegt
-    // davor auf 0x814F. Build 6 las eine Kennung zu viel und war damit um ein
-    // Byte verrutscht - daher Werte wie 30209 auf einem 480er-Display.
+  if (!(st & 0x80)) return -1;
+  int erg = 0;
+  if (st & 0x0F) {
     Wire.beginTransmission(touchAdr);
     Wire.write(0x81); Wire.write(0x50);
     if (Wire.endTransmission() == 0 && Wire.requestFrom((int)touchAdr, 4) == 4) {
-      uint8_t xl = Wire.read(), xh = Wire.read();
-      uint8_t yl = Wire.read(), yh = Wire.read();
-      uint16_t px = xl | (xh << 8), py = yl | (yh << 8);
-      // Der Touch meldet Panelkoordinaten; zurueck ins gedrehte Bild:
-      // aus Panel = (y, 479 - x) folgt x = 479 - py, y = px.
-      x = 479 - py; y = px;
-      treffer = px < 480 && py < 480;
+      uint8_t xl = Wire.read(), xh = Wire.read(), yl = Wire.read(), yh = Wire.read();
+      int px = xl | (xh << 8), py = yl | (yh << 8);
+      if (px < 480 && py < 480) { x = 479 - py; y = px; erg = 1; }   // Panel -> Bild (Build 7 bestätigt)
     }
   }
-  if (st & 0x80) {                                  // Status zuruecksetzen
-    Wire.beginTransmission(touchAdr);
-    Wire.write(0x81); Wire.write(0x4E); Wire.write(0x00);
-    Wire.endTransmission();
+  Wire.beginTransmission(touchAdr);
+  Wire.write(0x81); Wire.write(0x4E); Wire.write(0x00);
+  Wire.endTransmission();
+  return erg;
+}
+
+// =====================================================================
+// Licht
+// =====================================================================
+static uint32_t letzteBeruehrung = 0;
+static int lichtJetzt = -1;
+static bool nachts() {
+  time_t j = time(nullptr); struct tm t; localtime_r(&j, &t);
+  if (t.tm_year < 124) return false;
+  int m = t.tm_hour * 60 + t.tm_min;
+  return m >= 22 * 60 + 30 || m < 6 * 60 + 30;
+}
+static void lichtStellen() {
+  int p = (nachts() && millis() - letzteBeruehrung > 30000) ? ein.nachtHell : 100;
+  if (!ui.hauptseite()) p = 100;
+  if (p == lichtJetzt) return;
+  lichtJetzt = p;
+  ledcWrite(0, p * 255 / 100);
+}
+
+// =====================================================================
+// Bild: Leinwand -> Bildspeicher des Panels
+// =====================================================================
+static void allesZeigen() {
+  memcpy(fb, basisBuf, 480 * 480 * 2);
+  Cache_WriteBack_Addr((uint32_t)fb, 480 * 480 * 2);
+}
+static void teilZeigen(Leinwand &q, int x, int y, int w, int h) {
+  for (int xx = x; xx < x + w; xx++) memcpy(fb + (479 - xx) * 480 + y, q.an(xx, y), h * 2);
+  Cache_WriteBack_Addr((uint32_t)(fb + (479 - (x + w - 1)) * 480), w * 480 * 2);
+}
+
+// Striche: erst alle Drähte fertig in den Teilspeicher rechnen, dann in einem
+// Zug kopieren - so fehlen sie auch beim Neuzeichnen der Seite nie sichtbar.
+struct Teil { Leinwand L; int x, y, w, h; };
+static Teil teile[8]; static int teilAnz = 0;
+static void stricheRechnen(uint32_t ms) {
+  teilAnz = 0; int belegt = 0;
+  for (int i = 0; i < ui.drahtAnz; i++) {
+    Teil &t = teile[teilAnz];
+    Oberflaeche::drahtRahmen(ui.draht[i], t.x, t.y, t.w, t.h);
+    if (belegt + t.w * t.h > TEIL_PX) break;
+    t.L.init(teilBuf + belegt, t.x, t.y, t.w, t.h);
+    belegt += t.w * t.h;
+    for (int xx = t.x; xx < t.x + t.w; xx++) memcpy(t.L.an(xx, t.y), basis.an(xx, t.y), t.h * 2);
+    Oberflaeche::striche(t.L, ui.draht[i], ms);
+    teilAnz++;
   }
-  return treffer;
+}
+static void stricheZeigen() { for (int i = 0; i < teilAnz; i++) teilZeigen(teile[i].L, teile[i].x, teile[i].y, teile[i].w, teile[i].h); }
+
+static Lage zeichenLage;
+static void lageHolen() {
+  sperren();
+  zeichenLage = lage;
+  if (ui.seite == S_VERLAUF) verlUI = verl;
+  freigeben();
+  uint32_t ok = letzteOk;
+  zeichenLage.alterS = ok ? (int)((millis() - ok) / 1000) : -1;
+  time_t j = time(nullptr); struct tm t; localtime_r(&j, &t);
+  zeichenLage.uhr = t.tm_year >= 124;
+  zeichenLage.hh = t.tm_hour; zeichenLage.mm = t.tm_min; zeichenLage.ss = t.tm_sec;
+  zeichenLage.build = FW_BUILD;
+  zeichenLage.verlauf = &verlUI;
+}
+static void seiteZeichnen() {
+  lageHolen();
+  basis.volleFlaeche();
+  ui.zeichne(basis, zeichenLage);
+  stricheRechnen(millis());
+  allesZeigen();
+  stricheZeigen();
 }
 
-static void mitte(const char *s, int y, uint16_t farbe, uint8_t groesse) {
-  gfx->setTextSize(groesse);
-  gfx->setTextColor(farbe);
-  int16_t x1, y1; uint16_t w, h;
-  gfx->getTextBounds(s, 0, 0, &x1, &y1, &w, &h);
-  gfx->setCursor((480 - w) / 2, y);
-  gfx->print(s);
-}
-
-// Die Sonne des App-Icons, hier in Bildpunkten: Scheibe mit zehn Strahlen,
-// Strahl von 1,613 bis 2,085 Radien, Strich 0,283 Radien - dieselben Masse
-// wie im Tagesbogen der App.
-static void sonne(int cx, int cy, int r) {
-  gfx->fillCircle(cx, cy, r, C_SOLAR);
-  const float innen = r * 1.613f, aussen = r * 2.085f;
-  const int dicke = max(2, (int)lroundf(r * 0.283f));
-  for (int k = 0; k < 10; k++) {
-    float w = (k * 36 - 90) * 0.017453293f;
-    int x1 = cx + lroundf(innen  * cosf(w)), y1 = cy + lroundf(innen  * sinf(w));
-    int x2 = cx + lroundf(aussen * cosf(w)), y2 = cy + lroundf(aussen * sinf(w));
-    for (int d = -(dicke / 2); d <= dicke / 2; d++)
-      gfx->drawLine(x1 + d, y1, x2 + d, y2, C_SOLAR);
-  }
-}
-
+// =====================================================================
+// setup / loop
+// =====================================================================
 void setup() {
   Serial.begin(115200);
-  delay(100);
-  Serial.printf("PV-Monitor Firmware Build %d\n", FW_BUILD);
+  delay(200);
+  Serial.printf("\nPV-Monitor Firmware Build %d\n", FW_BUILD);
+  sperre = xSemaphoreCreateMutex();
 
+  ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LICHT, 0); ledcWrite(0, 0);
   gfx->begin(16000000);
-  // Farbumkehr AN. Die Bibliothek schickt bei IPS = true nach dem Start
-  // "Umkehr aus" (0x20); auf diesem Panel waren damit Hell und Dunkel
-  // vertauscht - Build 6 zeigte hellen Grund und blaue Sonne. In der
-  // Startfolge des Herstellers steht 0x21 auskommentiert.
+  // Farbumkehr AN: Die Bibliothek schickt bei IPS "Umkehr aus" (0x20), auf
+  // diesem Panel sind damit Hell und Dunkel vertauscht (Build 7 bestätigt).
   gfx->invertDisplay(true);
-  gfx->fillScreen(C_GRUND);
-
-  // Hintergrundlicht genau wie im Herstellerdemo: einfach einschalten.
-  // Build 4 steuerte es per PWM (150 Hz) - das Board blieb danach schwarz.
-  // Dimmen kommt zurueck, sobald ein Bild steht.
-  pinMode(PIN_LICHT, OUTPUT);
-  digitalWrite(PIN_LICHT, HIGH);
+  fb = gfx->getFramebuffer();
+  basisBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
+  teilBuf = (uint16_t *)heap_caps_malloc(TEIL_PX * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  if (!basisBuf || !teilBuf || !fb) { Serial.println("Speicher fuer Bild fehlt"); }
+  basis.init(basisBuf, 0, 0, 480, 480);
 
   Wire.begin(PIN_SDA, PIN_SCL, 400000);
   touchAdr = sucheTouch();
-  Serial.printf("Touch: %s\n", touchAdr ? "gefunden" : "nicht gefunden");
+  Serial.println(touchAdr ? "Touch: gefunden" : "Touch: nicht gefunden");
 
-  sonne(240, 150, 34);
-  mitte("PV-Monitor", 230, C_TEXT, 4);
+  einstLaden();
+  verlaufLaden();
+  ui.e = &ein;
+  if (!ein.ssid[0]) {
+    ui.einrichtung = true; ui.gehe(S_NETZE);
+    lage.scanLaeuft = true; anfrage(A_SCAN);
+  } else if (!ein.ip[0]) {
+    ui.einrichtung = true; ui.gehe(S_SPEICHER);
+    lage.sucheLaeuft = true; anfrage(A_SUCHE);
+  } else ui.gehe(S_FLUSS);
 
-  char z[48];
-  snprintf(z, sizeof z, "Firmware Build %d", FW_BUILD);
-  mitte(z, 272, C_MATT, 2);
-  mitte(touchAdr ? "Touch bereit - Bildschirm beruehren" : "Touch nicht gefunden",
-        300, touchAdr ? C_MATT : C_NETZ, 1);
-
-  // Fuenf reine Testfarben mit Namen. Fotos taugen nicht zum Pruefen - die
-  // Kamera hatte bei Build 6 den Rotanteil fast ganz weggefiltert. Was man
-  // mit eigenen Augen sieht, ist eindeutig.
-  const uint16_t f[5] = {RGB(255,0,0), RGB(0,255,0), RGB(0,0,255), RGB(255,255,255), RGB(0,0,0)};
-  const char *n[5] = {"Rot", "Gruen", "Blau", "Weiss", "Schwarz"};
-  for (int i = 0; i < 5; i++) {
-    int x = 16 + i * 92;
-    gfx->fillRoundRect(x, 330, 80, 60, 12, f[i]);
-    gfx->drawRoundRect(x, 330, 80, 60, 12, C_MATT);   // damit Schwarz sichtbar bleibt
-    gfx->setTextSize(2); gfx->setTextColor(C_TEXT);
-    int16_t x1, y1; uint16_t w, h;
-    gfx->getTextBounds(n[i], 0, 0, &x1, &y1, &w, &h);
-    gfx->setCursor(x + (80 - (int)w) / 2, 400);
-    gfx->print(n[i]);
-  }
+  seiteZeichnen();
+  ledcWrite(0, 255); lichtJetzt = 100;
+  xTaskCreatePinnedToCore(netzTask, "netz", 12288, nullptr, 1, nullptr, 0);
 }
 
+static bool unten = false, lang = false, schlucken = false;
+static int tx0, ty0, txl, tyl; static uint32_t t0 = 0, tZuletzt = 0;
+static uint32_t letzteAnim = 0, letzteSekunde = 0, letzterTouch = 0, letztesLaufen = 0;
+static int letzteSek = -1;
+
 void loop() {
-  static uint32_t letzte = 0;
-  uint16_t x, y;
-  if (liesTouch(x, y)) {
-    gfx->fillCircle(x, y, 10, C_AKKU);
-    char z[40];
-    snprintf(z, sizeof z, "%3u / %3u    ", x, y);
-    gfx->fillRect(150, 440, 180, 20, C_GRUND);
-    gfx->setTextSize(2); gfx->setTextColor(C_TEXT);
-    gfx->setCursor(160, 442);
-    gfx->print(z);
-    Serial.printf("Touch %u/%u\n", x, y);
+  uint32_t jetzt = millis();
+
+  // ---- Touch: Tippen, Wischen, lang Drücken ----
+  if (jetzt - letzterTouch >= 15) {
+    letzterTouch = jetzt;
+    int x, y, st = liesTouch(x, y);
+    if (st == 1) {
+      tZuletzt = jetzt;
+      if (!unten) {
+        unten = true; lang = false; tx0 = txl = x; ty0 = tyl = y; t0 = jetzt;
+        schlucken = lichtJetzt < 100;          // nachts weckt die erste Berührung nur das Licht
+        letzteBeruehrung = jetzt; lichtStellen();
+      } else { txl = x; tyl = y; }
+    }
+    if (unten && (st == 0 || jetzt - tZuletzt > 150)) {
+      unten = false;
+      int dx = txl - tx0, dy = tyl - ty0;
+      if (!lang && !schlucken) {
+        if (abs(dx) > 60 && abs(dx) > abs(dy) * 3 / 2) ui.wische(dx < 0 ? 1 : -1);
+        else if (abs(dx) < 25 && abs(dy) < 25) ui.tippe(tx0, ty0, zeichenLage);
+      }
+    }
+    if (unten && !lang && !schlucken && jetzt - t0 > 1500 && abs(txl - tx0) < 25 && abs(tyl - ty0) < 25) {
+      lang = true; ui.lange();
+    }
   }
-  // Lebenszeichen auf der seriellen Schnittstelle, damit sich ein haengender
-  // Start von einem stillen Display unterscheiden laesst.
-  if (millis() - letzte > 5000) { letzte = millis(); Serial.println("laeuft"); }
-  delay(16);
+
+  // ---- Wünsche der Oberfläche ----
+  uint32_t w = ui.wuensche; ui.wuensche = 0;
+  if (w) {
+    sprache = ein.sprache;
+    if (w & W_SICHERN) einstSichern();
+    if (w & W_SCAN) { sperren(); lage.scanLaeuft = true; freigeben(); anfrage(A_SCAN); }
+    if (w & W_VERBINDEN) anfrage(A_VERBINDEN);
+    if (w & W_SUCHE) { sperren(); lage.sucheLaeuft = true; lage.fundAnz = 0; freigeben(); anfrage(A_SUCHE); }
+    if (w & W_GERAET) { sperren(); lage.w.leeren(); freigeben(); letzteOk = 0; }
+    if (w & W_ZONE) anfrage(A_ZEIT);
+    if (w & W_HELL) lichtJetzt = -1;
+  }
+  // ---- Ergebnisse des Netz-Tasks ----
+  if (verbindErgebnis) {
+    int e = verbindErgebnis; verbindErgebnis = 0;
+    if (e == 2) {
+      if (ui.einrichtung || !ein.ip[0]) {
+        ui.einrichtung = true;
+        sperren(); lage.sucheLaeuft = true; lage.fundAnz = 0; freigeben();
+        anfrage(A_SUCHE); ui.gehe(S_SPEICHER);
+      } else ui.gehe(S_FLUSS);
+    } else ui.zeigeMeldung(T(T_VERB_FEHLER), true);
+  }
+  if (sucheFertig) {
+    sucheFertig = false;
+    sperren(); int n = lage.fundAnz; Fund f0 = lage.funde[0]; freigeben();
+    // Beim ersten Einrichten und genau einem Speicher: nichts zu entscheiden
+    if (ui.einrichtung && n == 1 && ui.seite == S_SPEICHER) {
+      snprintf(ein.ip, sizeof ein.ip, "%s", f0.ip); snprintf(ein.host, sizeof ein.host, "%s", f0.host);
+      snprintf(ein.produkt, sizeof ein.produkt, "%s", f0.produkt);
+      einstSichern(); ui.einrichtung = false; ui.gehe(S_FLUSS);
+    }
+  }
+  if (listeNeu) { listeNeu = false; if (ui.seite == S_NETZE || ui.seite == S_SPEICHER) ui.neu = true; }
+  if (datenNeu) { datenNeu = false; if (ui.hauptseite() || ui.seite == S_EINST) ui.neu = true; }
+
+  // ---- Zeichnen ----
+  time_t tj = time(nullptr); struct tm tt; localtime_r(&tj, &tt);
+  if (ui.neu) {
+    seiteZeichnen();
+    letzteSek = tt.tm_sec;
+  } else if (tt.tm_sec != letzteSek) {
+    letzteSek = tt.tm_sec;
+    // Jede Sekunde nur die Uhr; der Verlauf bekommt einmal je Minute neue Punkte
+    if (ui.seite == S_VERLAUF && tt.tm_sec == 0) seiteZeichnen();
+    else {
+      lageHolen();
+      int x, y, pw, ph;
+      if (ui.nurPille(basis, zeichenLage, x, y, pw, ph)) teilZeigen(basis, x, y, pw, ph);
+    }
+    lichtStellen();
+  }
+  if (ui.seite == S_FLUSS && ui.drahtAnz && jetzt - letzteAnim >= 33) {
+    letzteAnim = jetzt;
+    stricheRechnen(jetzt);
+    stricheZeigen();
+  }
+  if (jetzt - letztesLaufen > 60000) { letztesLaufen = jetzt; Serial.println("laeuft"); }
+  delay(2);
 }

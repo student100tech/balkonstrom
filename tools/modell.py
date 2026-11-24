@@ -3,7 +3,7 @@
 Traegt shared/modell.json in alle Ziele ein, die es brauchen.
 
   www/index.html      zwischen den Marken MODELL-ANFANG / MODELL-ENDE
-  firmware/modell.h   erzeugt, fuer das ESP32-Wandbild
+  firmware/pvmonitor/modell.h erzeugt, fuer das ESP32-Wandbild (im Sketch-Ordner, sonst findet der Arduino-Bau sie nicht)
 
 Aufruf ohne Argumente schreibt. Mit --pruefen wird nur verglichen und bei
 Abweichung mit Rueckgabewert 1 beendet – so faellt im Bauablauf auf, wenn
@@ -103,13 +103,13 @@ def main():
         if not pruefen:
             html.write_text(neu, encoding="utf-8"); print("www/index.html aktualisiert")
 
-    h = WURZEL / "firmware" / "modell.h"
+    h = WURZEL / "firmware" / "pvmonitor" / "modell.h"
     h.parent.mkdir(exist_ok=True)
     inhalt = header()
     if not h.exists() or h.read_text(encoding="utf-8") != inhalt:
         abweichung = True
         if not pruefen:
-            h.write_text(inhalt, encoding="utf-8"); print("firmware/modell.h erzeugt")
+            h.write_text(inhalt, encoding="utf-8"); print("firmware/pvmonitor/modell.h erzeugt")
 
     if pruefen and abweichung:
         raise SystemExit("Abweichung: shared/modell.json und die Ziele passen nicht zusammen. "
