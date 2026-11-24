@@ -42,9 +42,37 @@ Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
    8 /* G0 */, 20 /* G1 */,  3 /* G2 */, 46 /* G3 */,  9 /* G4 */, 10 /* G5 */,
    4 /* B0 */,  5 /* B1 */,  6 /* B2 */,  7 /* B3 */, 15 /* B4 */);
 
+// Einbaulage: der Halter dreht das Board um 90 Grad im Uhrzeigersinn, die
+// USB-Buchse zeigt nach unten. Arduino_GFX 1.2.9 kann bei diesem Panel nur 0
+// und 180 Grad ("case 1/3: not implemented"), also drehen wir selbst. Weil das
+// Display quadratisch ist, reicht es, die vier Grundfunktionen umzurechnen -
+// Text, Kreise und Linien laufen alle darueber.
+//
+//   Panel (px, py) = (y, 479 - x)     fuer einen Punkt (x, y) im Bild
+//
+// Herleitung: nach der Drehung ist die linke Panelkante oben (px = y) und die
+// obere Panelkante rechts (py = 479 - x).
+class GedrehtesPanel : public Arduino_ST7701_RGBPanel {
+public:
+  using Arduino_ST7701_RGBPanel::Arduino_ST7701_RGBPanel;
+  static const int16_t N = 479;
+  void writePixelPreclipped(int16_t x, int16_t y, uint16_t c) override {
+    Arduino_ST7701_RGBPanel::writePixelPreclipped(y, N - x, c);
+  }
+  void writeFastHLine(int16_t x, int16_t y, int16_t w, uint16_t c) override {
+    Arduino_ST7701_RGBPanel::writeFastVLine(y, N - x - w + 1, w, c);
+  }
+  void writeFastVLine(int16_t x, int16_t y, int16_t h, uint16_t c) override {
+    Arduino_ST7701_RGBPanel::writeFastHLine(y, N - x, h, c);
+  }
+  void writeFillRectPreclipped(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t c) override {
+    Arduino_ST7701_RGBPanel::writeFillRectPreclipped(y, N - x - w + 1, h, w, c);
+  }
+};
+
 // Zeitlagen wie im Herstellerdemo. Der Pixeltakt steht auf 16 MHz; daraus
 // ergeben sich 548 x 518 Takte je Bild und damit rund 56 Bilder je Sekunde.
-Arduino_ST7701_RGBPanel *gfx = new Arduino_ST7701_RGBPanel(
+GedrehtesPanel *gfx = new GedrehtesPanel(
   bus, GFX_NOT_DEFINED /* RST */, 0 /* Drehung */,
   true /* IPS */, 480, 480,
   st7701_type1_init_operations, sizeof(st7701_type1_init_operations),
@@ -74,14 +102,19 @@ static bool liesTouch(uint16_t &x, uint16_t &y) {
   uint8_t st = Wire.read();
   bool treffer = false;
   if ((st & 0x80) && (st & 0x0F)) {
+    // Ab 0x8150 stehen direkt X und Y des ersten Fingers; die Kennung liegt
+    // davor auf 0x814F. Build 6 las eine Kennung zu viel und war damit um ein
+    // Byte verrutscht - daher Werte wie 30209 auf einem 480er-Display.
     Wire.beginTransmission(touchAdr);
     Wire.write(0x81); Wire.write(0x50);
-    if (Wire.endTransmission() == 0 && Wire.requestFrom((int)touchAdr, 6) == 6) {
-      Wire.read();                                  // Kennung des Fingers
+    if (Wire.endTransmission() == 0 && Wire.requestFrom((int)touchAdr, 4) == 4) {
       uint8_t xl = Wire.read(), xh = Wire.read();
       uint8_t yl = Wire.read(), yh = Wire.read();
-      x = xl | (xh << 8); y = yl | (yh << 8);
-      treffer = true;
+      uint16_t px = xl | (xh << 8), py = yl | (yh << 8);
+      // Der Touch meldet Panelkoordinaten; zurueck ins gedrehte Bild:
+      // aus Panel = (y, 479 - x) folgt x = 479 - py, y = px.
+      x = 479 - py; y = px;
+      treffer = px < 480 && py < 480;
     }
   }
   if (st & 0x80) {                                  // Status zuruecksetzen
@@ -123,6 +156,11 @@ void setup() {
   Serial.printf("PV-Monitor Firmware Build %d\n", FW_BUILD);
 
   gfx->begin(16000000);
+  // Farbumkehr AN. Die Bibliothek schickt bei IPS = true nach dem Start
+  // "Umkehr aus" (0x20); auf diesem Panel waren damit Hell und Dunkel
+  // vertauscht - Build 6 zeigte hellen Grund und blaue Sonne. In der
+  // Startfolge des Herstellers steht 0x21 auskommentiert.
+  gfx->invertDisplay(true);
   gfx->fillScreen(C_GRUND);
 
   // Hintergrundlicht genau wie im Herstellerdemo: einfach einschalten.
@@ -144,17 +182,19 @@ void setup() {
   mitte(touchAdr ? "Touch bereit - Bildschirm beruehren" : "Touch nicht gefunden",
         300, touchAdr ? C_MATT : C_NETZ, 1);
 
-  // Vier Farbfelder: zeigt, dass die Farbkanaele richtig verdrahtet sind.
-  // Waeren Rot und Blau vertauscht, faellt es hier sofort auf.
-  const uint16_t f[4] = {C_SOLAR, C_AKKU, C_NETZ, C_HAUS};
-  const char *n[4] = {"Solar", "Akku", "Netz", "Haus"};
-  for (int i = 0; i < 4; i++) {
-    int x = 40 + i * 105;
-    gfx->fillRoundRect(x, 340, 90, 60, 14, f[i]);
-    gfx->setTextSize(1); gfx->setTextColor(C_MATT);
+  // Fuenf reine Testfarben mit Namen. Fotos taugen nicht zum Pruefen - die
+  // Kamera hatte bei Build 6 den Rotanteil fast ganz weggefiltert. Was man
+  // mit eigenen Augen sieht, ist eindeutig.
+  const uint16_t f[5] = {RGB(255,0,0), RGB(0,255,0), RGB(0,0,255), RGB(255,255,255), RGB(0,0,0)};
+  const char *n[5] = {"Rot", "Gruen", "Blau", "Weiss", "Schwarz"};
+  for (int i = 0; i < 5; i++) {
+    int x = 16 + i * 92;
+    gfx->fillRoundRect(x, 330, 80, 60, 12, f[i]);
+    gfx->drawRoundRect(x, 330, 80, 60, 12, C_MATT);   // damit Schwarz sichtbar bleibt
+    gfx->setTextSize(2); gfx->setTextColor(C_TEXT);
     int16_t x1, y1; uint16_t w, h;
     gfx->getTextBounds(n[i], 0, 0, &x1, &y1, &w, &h);
-    gfx->setCursor(x + (90 - w) / 2, 412);
+    gfx->setCursor(x + (80 - (int)w) / 2, 400);
     gfx->print(n[i]);
   }
 }
@@ -170,6 +210,7 @@ void loop() {
     gfx->setTextSize(2); gfx->setTextColor(C_TEXT);
     gfx->setCursor(160, 442);
     gfx->print(z);
+    Serial.printf("Touch %u/%u\n", x, y);
   }
   // Lebenszeichen auf der seriellen Schnittstelle, damit sich ein haengender
   // Start von einem stillen Display unterscheiden laesst.
