@@ -58,20 +58,25 @@ struct Lage {
   int verbinden = 0;                     // 0 nichts, 1 läuft, 2 ok, 3 Fehler
   int build = 0;
   Verlauf *verlauf = nullptr;
+  // Update über WLAN
+  int updBuild = 0;                      // neuestes Build auf GitHub, 0 = unbekannt
+  int updStatus = 0;                     // 0 nichts, 1 prüft, 2 lädt, 3 fertig, 4 Fehler
+  int updProzent = 0; bool updGeprueft = false; char updFehler[64] = "";
 };
 
 // ---------- Knöpfe ----------
 enum KnopfId {
   K_PILLE = 1, K_PUNKT, K_NETZ, K_WEITERE, K_NAME, K_TASTE, K_ZEIGEN, K_VERBINDEN, K_ZURUECK,
   K_GERAET, K_NEU_SUCHEN, K_IP, K_SP_AENDERN, K_WLAN_AENDERN, K_FELD, K_SPRACHE, K_ZONE,
-  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE
+  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL
 };
 struct Knopf { int16_t x, y, w, h; uint8_t id; int16_t arg; };
 
-enum Seite { S_FLUSS, S_ZUSTAND, S_VERLAUF, S_EINST, S_NETZE, S_TASTATUR, S_SPEICHER, S_ZAHL, S_MELDUNG };
+enum Seite { S_FLUSS, S_ZUSTAND, S_VERLAUF, S_EINST, S_NETZE, S_TASTATUR, S_SPEICHER, S_ZAHL, S_MELDUNG, S_UPDATE };
 
 // Wünsche an die Hardware
-enum { W_SCAN = 1, W_VERBINDEN = 2, W_SUCHE = 4, W_SICHERN = 8, W_GERAET = 16, W_HELL = 32, W_ZONE = 64 };
+enum { W_SCAN = 1, W_VERBINDEN = 2, W_SUCHE = 4, W_SICHERN = 8, W_GERAET = 16, W_HELL = 32, W_ZONE = 64,
+       W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256 };
 
 // Eine Leitung im Flussdiagramm mit ihren laufenden Strichen
 struct Draht { float x0, y0, x1, y1; uint16_t farbe[3]; int anz; bool rueck; bool an; };
@@ -539,7 +544,16 @@ struct Oberflaeche {
     knopf(0, 0, 230, 48, K_ZURUECK);
     L.text(44, 33, T(T_EINSTELLUNGEN), S200, C_TEXT);
     char b[64];
-    snprintf(b, sizeof b, "Build %d", g.build); L.text(460, 32, b, R130, C_MUTED, 2);
+    if (g.updBuild > g.build) {
+      snprintf(b, sizeof b, T(T_UPD_PILLE), g.updBuild);
+      float bw = Leinwand::breite(b, S150) + 24;
+      L.rund(460 - bw, 13, bw, 30, 15, C_BAT);
+      L.text(460 - bw / 2, 33, b, S150, C_ONBAT, 1);
+      knopf(450 - bw, 4, bw + 20, 46, K_UPDATE);
+    } else {
+      snprintf(b, sizeof b, "Build %d", g.build); L.text(460, 32, b, R130, C_MUTED, 2);
+      knopf(360, 4, 120, 46, K_UPDATE);
+    }
     // Speicher und WLAN
     float y = 50;
     L.karte(20, y, 440, 118, 16, C_CARD, C_LINE2);
@@ -802,6 +816,62 @@ struct Oberflaeche {
     (void)g;
   }
 
+
+  // ===================== Firmware-Update =====================
+  void update(Leinwand &L, const Lage &g) {
+    bool laeuft = g.updStatus == 2 || g.updStatus == 3;
+    if (!laeuft) { ikone(L, IK_ZURUECK, 12, 14, 1.1f, 2.2f, C_MUTED2); knopf(0, 0, 230, 56, K_ZURUECK); }
+    L.text(46, 37, T(T_FIRMWARE), S200, C_TEXT);
+    char b[64];
+    L.karte(20, 64, 440, 118, 16, C_CARD, C_LINE2);
+    L.text(34, 96, T(T_INSTALLIERT), R140, C_MUTED);
+    snprintf(b, sizeof b, "Build %d", g.build); L.text(446, 96, b, S160, C_TEXT, 2, true);
+    L.flaeche(34, 122, 412, 1, C_LINE);
+    L.text(34, 156, T(T_VERFUEGBAR), R140, C_MUTED);
+    if (g.updStatus == 1) snprintf(b, sizeof b, "%s", T(T_PRUEFE));
+    else if (!g.updGeprueft) snprintf(b, sizeof b, "%s", T(T_NICHT_GEPRUEFT));
+    else if (g.updBuild > g.build) snprintf(b, sizeof b, "Build %d", g.updBuild);
+    else snprintf(b, sizeof b, "%s", T(T_AKTUELL));
+    L.text(446, 156, b, S160, g.updBuild > g.build ? C_BAT : C_MUTED2, 2, true);
+    // Hinweis, in Zeilen umbrochen
+    zeilen(L, T(T_UPD_HINWEIS), 34, 222, 412, R140, C_MUTED2);
+    if (g.updStatus == 2 || g.updStatus == 3) {
+      if (g.updStatus == 2) snprintf(b, sizeof b, T(T_LADE), g.updBuild, g.updProzent);
+      else snprintf(b, sizeof b, "%s", T(T_NEUSTART));
+      L.text(240, 330, b, R160, C_TEXT, 1, true);
+      L.rund(34, 346, 412, 8, 4, C_CARD2);
+      L.rund(34, 346, fmaxf(8, 412 * g.updProzent / 100.0f), 8, 4, C_BAT);
+      return;
+    }
+    if (g.updStatus == 4) {
+      snprintf(b, sizeof b, "%s", T(T_UPD_FEHLER)); L.text(240, 318, b, S160, C_WARN, 1);
+      L.text(240, 344, g.updFehler, R130, C_MUTED, 1);
+    }
+    bool neuer = g.updBuild > g.build && g.updStatus != 1;
+    taste(L, 20, 400, neuer ? 215 : 440, 56, T(T_JETZT_PRUEFEN), R150, C_CARD, C_MUTED2, K_UPD_PRUEFEN, 0);
+    if (neuer) taste(L, 245, 400, 215, 56, T(T_INSTALLIEREN), S160, C_BAT, C_ONBAT, K_UPD_INSTALL, 0);
+  }
+  // Text an Leerzeichen umbrechen; gibt die Höhe zurück
+  float zeilen(Leinwand &L, const char *t, float x, float y, float breit, const Schrift &f, uint16_t c) {
+    char z[160]; const char *p = t; float y0 = y;
+    while (*p) {
+      int best = 0;
+      for (int i = 0; p[i]; i++) {
+        if (p[i] == ' ' || !p[i + 1]) {
+          int l = p[i] == ' ' ? i : i + 1; if (l >= (int)sizeof z) break;
+          memcpy(z, p, l); z[l] = 0;
+          if (Leinwand::breite(z, f) > breit && best) break;
+          best = l;
+        }
+      }
+      if (!best) best = (int)strlen(p) < (int)sizeof z - 1 ? (int)strlen(p) : (int)sizeof z - 1;
+      memcpy(z, p, best); z[best] = 0;
+      L.text(x, y, z, f, c);
+      y += f.asc + f.desc + 4; p += best; while (*p == ' ') p++;
+    }
+    return y - y0;
+  }
+
   // ===================== Zeichnen und Tippen =====================
   void zeichne(Leinwand &L, const Lage &g) {
     knAnz = 0; pilleR = -1;
@@ -816,6 +886,7 @@ struct Oberflaeche {
       case S_SPEICHER: speicher(L, g); break;
       case S_ZAHL: zahl(L, g); break;
       case S_MELDUNG: meldungSeite(L, g); break;
+      case S_UPDATE: update(L, g); break;
     }
     if (seite != S_FLUSS) drahtAnz = 0;
     neu = false;
@@ -841,6 +912,9 @@ struct Oberflaeche {
       if (x < k.x || y < k.y || x >= k.x + k.w || y >= k.y + k.h) continue;
       switch (k.id) {
         case K_PILLE: gehe(S_EINST); break;
+        case K_UPDATE: wuensche |= W_UPD_PRUEFEN; gehe(S_UPDATE); break;
+        case K_UPD_PRUEFEN: wuensche |= W_UPD_PRUEFEN; neu = true; break;
+        case K_UPD_INSTALL: wuensche |= W_UPD_LADEN; neu = true; break;
         case K_PUNKT: gehe((Seite)k.arg); break;
         case K_NETZ:
           snprintf(zielSsid, sizeof zielSsid, "%s", g.netze[k.arg].ssid);
@@ -856,6 +930,7 @@ struct Oberflaeche {
         case K_NOCHMAL: eingabe[0] = 0; snprintf(eingabe, sizeof eingabe, "%s", e->pass); tastZweck = 0; gehe(S_TASTATUR); break;
         case K_ZURUECK:
           if (seite == S_EINST) gehe(S_FLUSS);
+          else if (seite == S_UPDATE) gehe(S_EINST);
           else if (seite == S_TASTATUR) gehe(S_NETZE);
           else if (seite == S_ZAHL) gehe(zahlFeld == 5 ? S_SPEICHER : S_EINST);
           else gehe(einrichtung ? S_NETZE : S_EINST);

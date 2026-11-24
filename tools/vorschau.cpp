@@ -88,6 +88,10 @@ int main(int argc, char **argv) {
   sichern(ziel + "_fluss_plus.ppm");
   o.seite = S_ZUSTAND; o.zeichne(L, g); sichern(ziel + "_zustand_plus.ppm");
   o.seite = S_FLUSS; g.w.leeren(); g.alterS = -1; o.zeichne(L, g); sichern(ziel + "_fluss_leer.ppm");
+  g.updBuild = 11; g.updGeprueft = true; o.seite = S_EINST; o.zeichne(L, g); sichern(ziel + "_einst_upd.ppm");
+  o.seite = S_UPDATE; o.zeichne(L, g); sichern(ziel + "_update.ppm");
+  g.updStatus = 2; g.updProzent = 45; o.zeichne(L, g); sichern(ziel + "_update_laedt.ppm");
+  g.updStatus = 0;
   o.zeigeMeldung("Verbindung fehlgeschlagen. Bitte das Passwort prüfen.", true); o.zeichne(L, g); sichern(ziel + "_meldung.ppm");
   printf("fertig\n");
   return 0;

@@ -20,6 +20,8 @@ enum Txt {
   T_UEBERNEHMEN, T_VERBINDE, T_VERB_FEHLER, T_ZURUECK, T_NOCHMAL,
   T_SPEICHER_SUCHEN, T_SUCHE_GERAETE, T_N_GEFUNDEN, T_KEIN_GERAET, T_IP_EINTIPPEN, T_IP_ADRESSE,
   T_KEINE_DATEN, T_WARTE, T_MP_PV, T_ANTIPPEN,
+  T_FIRMWARE, T_INSTALLIERT, T_VERFUEGBAR, T_AKTUELL, T_PRUEFE, T_JETZT_PRUEFEN, T_INSTALLIEREN,
+  T_UPD_HINWEIS, T_LADE, T_NEUSTART, T_UPD_PILLE, T_UPD_FEHLER, T_NICHT_GEPRUEFT,
   T_ANZ
 };
 
@@ -46,7 +48,12 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Zurück", "Nochmal",
     "Speicher suchen", "Suche im WLAN …", "%d gefunden",
     "Kein Speicher gefunden. Ist er im selben WLAN?", "IP eintippen", "IP-Adresse",
-    "keine Daten", "Warte auf Daten …", "PV%d (Wp)", "antippen zum Wählen"
+    "keine Daten", "Warte auf Daten …", "PV%d (Wp)", "antippen zum Wählen",
+    "Firmware", "Installiert", "Verfügbar", "Kein neueres Build", "Prüfe GitHub …", "Jetzt prüfen",
+    "Installieren",
+    "WLAN, Speicher und Verlauf bleiben erhalten. Der Monitor startet danach neu.",
+    "Lade Build %d … %d %%", "Fertig – Neustart …", "Update: Build %d", "Update fehlgeschlagen",
+    "noch nicht geprüft"
   },
   { // Русский
     "Поток энергии", "Солнце", "Сеть", "Сеть \xE2\x86\x92 АКБ", "В дом", "Аккумулятор",
@@ -71,7 +78,12 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Назад", "Ещё раз",
     "Поиск накопителя", "Поиск в сети …", "Найдено: %d",
     "Накопитель не найден. Он в той же сети?", "Ввести IP", "IP-адрес",
-    "нет данных", "Ожидание данных …", "PV%d (Вт)", "нажмите, чтобы выбрать"
+    "нет данных", "Ожидание данных …", "PV%d (Вт)", "нажмите, чтобы выбрать",
+    "Прошивка", "Установлена", "Доступна", "Новее нет", "Проверка GitHub …", "Проверить",
+    "Установить",
+    "Wi-Fi, накопитель и журнал сохранятся. Затем монитор перезапустится.",
+    "Загрузка сборки %d … %d %%", "Готово — перезапуск …", "Обновление: сборка %d", "Ошибка обновления",
+    "ещё не проверено"
   }
 };
 

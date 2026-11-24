@@ -84,6 +84,8 @@ jobs:
             0x8000   build/pvmonitor.ino.partitions.bin \
             0xe000   "$BOOT" \
             0x10000  build/pvmonitor.ino.bin
+          # Fuers Update ueber WLAN: nur das Programm, ohne Vorlader und Partitionen
+          cp build/pvmonitor.ino.bin PV-Monitor_Update_Build-${{ github.run_number }}.bin
           ls -la *.bin
           python3 - <<'PY'
           import glob, hashlib, pathlib
@@ -104,7 +106,13 @@ jobs:
           body: |
             Firmware für das Wandbild, Board Guition ESP32-S3-4848S040.
 
-            Ein einziges Abbild, Adresse 0x0. Aufspielen über die App:
-            Einstellungen → Versionszeile fünfmal → Code → Monitor flashen.
-          files: PV-Monitor_Firmware_Build-${{ github.run_number }}.bin
+            PV-Monitor_Firmware_Build-N.bin: ganzes Abbild ab 0x0, zum Aufspielen
+            über USB aus der App (Einstellungen → Versionszeile fünfmal → Code →
+            Monitor flashen). Löscht WLAN, Einstellungen und Verlauf.
+
+            PV-Monitor_Update_Build-N.bin: nur das Programm, für das Update über
+            WLAN direkt am Monitor (Einstellungen → Buildnummer oben rechts).
+          files: |
+            PV-Monitor_Firmware_Build-${{ github.run_number }}.bin
+            PV-Monitor_Update_Build-${{ github.run_number }}.bin
           make_latest: false

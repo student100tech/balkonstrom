@@ -23,7 +23,11 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include <time.h>
+#include <WiFiClientSecure.h>
+#include <Update.h>
+#include "esp_ota_ops.h"
 #include "seiten.h"
+#include "zertifikate.h"
 
 #ifndef FW_BUILD
 #define FW_BUILD 0
@@ -179,7 +183,7 @@ static Verlauf verlUI;                  // Kopie fürs Zeichnen
 static Oberflaeche ui;
 static SemaphoreHandle_t sperre;
 
-enum { A_SCAN = 1, A_VERBINDEN = 2, A_SUCHE = 4, A_ZEIT = 8 };
+enum { A_SCAN = 1, A_VERBINDEN = 2, A_SUCHE = 4, A_ZEIT = 8, A_UPD_PRUEFEN = 16, A_UPD_LADEN = 32 };
 static volatile uint32_t anfragen = 0;
 static portMUX_TYPE anfrageMux = portMUX_INITIALIZER_UNLOCKED;
 static void anfrage(uint32_t bit) { portENTER_CRITICAL(&anfrageMux); anfragen |= bit; portEXIT_CRITICAL(&anfrageMux); }
@@ -363,6 +367,121 @@ static void sucheSpeicher() {
   Serial.printf("Suche: %d Speicher gefunden\n", anz);
 }
 
+
+// =====================================================================
+// Update über WLAN aus den GitHub-Freigaben
+// =====================================================================
+// Der Bau legt neben dem USB-Abbild (alles ab 0x0) die reine Programmdatei
+// PV-Monitor_Update_Build-N.bin an die Freigabe fw-N. Nur die wird hier
+// geladen und in den freien App-Bereich geschrieben; Vorlader, Partitionen
+// und NVS bleiben unberührt - WLAN, Speicher und Verlauf überleben.
+// Verbindung nur mit geprüftem Zertifikat (zertifikate.h), Quelle fest
+// eingetragen.
+static const char *UPD_LISTE = "https://api.github.com/repos/student100tech/balkonstrom/releases?per_page=20";
+static const char *UPD_QUELLE = "https://github.com/student100tech/balkonstrom/releases/download/fw-%d/PV-Monitor_Update_Build-%d.bin";
+
+static void updStatus(int st, const char *fehler = nullptr) {
+  sperren();
+  lage.updStatus = st;
+  if (fehler) snprintf(lage.updFehler, sizeof lage.updFehler, "%s", fehler);
+  freigeben();
+  listeNeu = true;
+}
+static void updatePruefen() {
+  updStatus(1);
+  WiFiClientSecure cl; cl.setCACert(GITHUB_WURZELN);
+  HTTPClient http; http.setConnectTimeout(8000); http.setTimeout(12000);
+  int neuestes = 0; bool ok = false;
+  if (http.begin(cl, UPD_LISTE)) {
+    http.setUserAgent("PV-Monitor");
+    http.addHeader("Accept", "application/vnd.github+json");
+    int code = http.GET();
+    if (code == 200) {
+      String t = http.getString();
+      // Statt das ganze JSON zu zerlegen: nach den Dateinamen suchen
+      const char *m = "PV-Monitor_Update_Build-";
+      int i = 0;
+      while ((i = t.indexOf(m, i)) >= 0) {
+        i += strlen(m);
+        int n = atoi(t.c_str() + i);
+        if (n > neuestes) neuestes = n;
+      }
+      ok = true;
+    } else Serial.printf("Update: GitHub antwortet %d\n", code);
+    http.end();
+  }
+  sperren(); lage.updGeprueft = ok; if (ok) lage.updBuild = neuestes; freigeben();
+  updStatus(ok ? 0 : 4, ok ? nullptr : "GitHub nicht erreichbar");
+  if (ok) Serial.printf("Update: neuestes Build %d, installiert %d\n", neuestes, FW_BUILD);
+}
+static void updateLaden() {
+  int n; sperren(); n = lage.updBuild; lage.updProzent = 0; freigeben();
+  if (n <= FW_BUILD) return;
+  updStatus(2);
+  char url[200]; snprintf(url, sizeof url, UPD_QUELLE, n, n);
+  WiFiClientSecure cl; cl.setCACert(GITHUB_WURZELN);
+  HTTPClient http; http.setConnectTimeout(8000); http.setTimeout(15000);
+  http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);     // GitHub leitet auf seinen Dateispeicher um
+  const char *fehler = nullptr;
+  if (!http.begin(cl, url)) fehler = "Adresse ungueltig";
+  else {
+    http.setUserAgent("PV-Monitor");
+    int code = http.GET(), len = http.getSize();
+    if (code != 200 || len <= 0) { fehler = "Datei nicht gefunden"; Serial.printf("Update: HTTP %d\n", code); }
+    else if (!Update.begin(len, U_FLASH)) fehler = "kein Platz fuer das Update";
+    else {
+      WiFiClient *st = http.getStreamPtr();
+      static uint8_t puf[4096];
+      int geschrieben = 0; uint32_t zuletzt = millis();
+      while (geschrieben < len && millis() - zuletzt < 20000) {
+        int v = st->available();
+        if (v <= 0) { delay(5); continue; }
+        int r = st->readBytes(puf, v < (int)sizeof puf ? v : sizeof puf);
+        if (r <= 0) continue;
+        if (Update.write(puf, r) != (size_t)r) { fehler = "Schreiben fehlgeschlagen"; break; }
+        geschrieben += r; zuletzt = millis();
+        int pz = (int)((int64_t)geschrieben * 100 / len);
+        sperren(); if (pz != lage.updProzent) { lage.updProzent = pz; listeNeu = true; } freigeben();
+      }
+      if (!fehler && geschrieben < len) fehler = "Download abgebrochen";
+      // end(true) prüft auch die Prüfsumme im Programmabbild selbst
+      if (!fehler && !Update.end(true)) fehler = "Abbild ungueltig";
+      if (fehler) Update.abort();
+    }
+    http.end();
+  }
+  if (fehler) { Serial.printf("Update: %s\n", fehler); updStatus(4, fehler); return; }
+  Serial.printf("Update: Build %d geschrieben, Neustart\n", n);
+  { Preferences p; p.begin("ota", false); p.putInt("neu", 1); p.putInt("versuch", 0); p.end(); }
+  sperren(); verlaufSichern(); freigeben();
+  updStatus(3);
+  delay(1500);
+  ESP.restart();
+}
+// Läuft eine frisch geladene Fassung nicht stabil an, zurück zur alten.
+// Der Vorlader des Arduino-Kerns kann das nicht selbst, also zählt die
+// Firmware ihre eigenen Startversuche: Drei Abstürze vor der Bestätigung nach
+// 60 s, und der vorige App-Bereich wird wieder Startbereich.
+static void startPruefen() {
+  Preferences p; p.begin("ota", false);
+  if (p.getInt("neu", 0)) {
+    int v = p.getInt("versuch", 0) + 1; p.putInt("versuch", v);
+    if (v > 3) {
+      p.putInt("neu", 0); p.putInt("versuch", 0); p.end();
+      const esp_partition_t *alt = esp_ota_get_next_update_partition(nullptr);
+      Serial.println("Update: neue Fassung startet nicht, zurueck zur alten");
+      if (alt && esp_ota_set_boot_partition(alt) == ESP_OK) { delay(100); ESP.restart(); }
+      return;
+    }
+  }
+  p.end();
+}
+static void startBestaetigen() {
+  Preferences p; p.begin("ota", false);
+  if (p.getInt("neu", 0)) { p.putInt("neu", 0); p.putInt("versuch", 0); Serial.println("Update: neue Fassung laeuft stabil"); }
+  p.end();
+}
+
 static void netzTask(void *) {
   WiFi.mode(WIFI_STA);
   WiFi.persistent(false);
@@ -402,6 +521,11 @@ static void netzTask(void *) {
       zeitAngestossen = true;
     }
     if (zeitAngestossen && !zeitGemeldet && zeitGestellt()) { zeitGemeldet = true; Serial.println("Zeit: gestellt"); }
+    static uint32_t letztePruefung = 0; static bool erstePruefung = true;
+    if (verbunden && (erstePruefung ? zeitGestellt() : millis() - letztePruefung > 6UL * 3600 * 1000)) a |= A_UPD_PRUEFEN;
+    if (verbunden && (a & A_UPD_PRUEFEN)) { erstePruefung = false; letztePruefung = millis(); updatePruefen(); }
+    else if (a & A_UPD_PRUEFEN) updStatus(4, "kein WLAN");
+    if (verbunden && (a & A_UPD_LADEN)) updateLaden();
     // Suche erst, wenn das WLAN steht - nach dem Einschalten dauert das ein paar Sekunden
     static uint32_t sucheSeit = 0;
     if (a & A_SUCHE) {
@@ -556,6 +680,7 @@ void setup() {
   Serial.begin(115200);
   delay(200);
   Serial.printf("\nPV-Monitor Firmware Build %d\n", FW_BUILD);
+  startPruefen();
   sperre = xSemaphoreCreateMutex();
 
   ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LICHT, 0); ledcWrite(0, 0);
@@ -630,6 +755,8 @@ void loop() {
     if (w & W_GERAET) { sperren(); lage.w.leeren(); freigeben(); letzteOk = 0; }
     if (w & W_ZONE) anfrage(A_ZEIT);
     if (w & W_HELL) lichtJetzt = -1;
+    if (w & W_UPD_PRUEFEN) anfrage(A_UPD_PRUEFEN);
+    if (w & W_UPD_LADEN) anfrage(A_UPD_LADEN);
   }
   // ---- Ergebnisse des Netz-Tasks ----
   if (verbindErgebnis) {
@@ -652,7 +779,7 @@ void loop() {
       einstSichern(); ui.einrichtung = false; ui.gehe(S_FLUSS);
     }
   }
-  if (listeNeu) { listeNeu = false; if (ui.seite == S_NETZE || ui.seite == S_SPEICHER) ui.neu = true; }
+  if (listeNeu) { listeNeu = false; if (ui.seite == S_NETZE || ui.seite == S_SPEICHER || ui.seite == S_UPDATE || ui.seite == S_EINST) ui.neu = true; }
   if (datenNeu) { datenNeu = false; if (ui.hauptseite() || ui.seite == S_EINST) ui.neu = true; }
 
   // ---- Zeichnen ----
@@ -676,6 +803,9 @@ void loop() {
     stricheRechnen(jetzt);
     stricheZeigen();
   }
-  if (jetzt - letztesLaufen > 60000) { letztesLaufen = jetzt; Serial.println("laeuft"); }
+  if (jetzt - letztesLaufen > 60000) {
+    if (!letztesLaufen) startBestaetigen();       // eine Minute ohne Absturz: neue Fassung gilt
+    letztesLaufen = jetzt; Serial.println("laeuft");
+  }
   delay(2);
 }
