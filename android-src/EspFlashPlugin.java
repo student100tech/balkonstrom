@@ -100,6 +100,8 @@ public class EspFlashPlugin extends Plugin {
         }
         new Thread(() -> {
             UsbSerialPort port = null;
+            UsbManager[] mgrRef = {null};
+            String[] geraet = {null};
             try {
                 melde("open", 0);
                 byte[] abbild = laden(url);
@@ -108,6 +110,8 @@ public class EspFlashPlugin extends Plugin {
                 List<UsbSerialDriver> gefunden = UsbSerialProber.getDefaultProber().findAllDrivers(mgr);
                 if (gefunden.isEmpty()) throw new Exception("Kein Board gefunden");
                 UsbSerialDriver treiber = gefunden.get(0);
+                mgrRef[0] = mgr;
+                geraet[0] = treiber.getDevice().getDeviceName();
 
                 if (!mgr.hasPermission(treiber.getDevice()) && !erlaubnisHolen(mgr, treiber.getDevice())) {
                     throw new Exception("Keine Erlaubnis fuer das USB-Geraet");
@@ -138,7 +142,20 @@ public class EspFlashPlugin extends Plugin {
                 melde("done", 100);
                 call.resolve(new JSObject().put("ok", true));
             } catch (Throwable e) {
-                call.reject(String.valueOf(e.getMessage() == null ? e : e.getMessage()));
+                String text = String.valueOf(e.getMessage() == null ? e : e.getMessage());
+                // War das Board danach noch am USB? Wenn nicht, ist es nicht die
+                // Software, sondern fast immer der Strom: das Handy versorgt Board,
+                // Wandler und Hintergrundlicht allein, und das Loeschen zieht viel.
+                if (mgrRef[0] != null && geraet[0] != null) {
+                    try { Thread.sleep(600); } catch (InterruptedException ignored) {}
+                    boolean noch = false;
+                    for (UsbDevice d : mgrRef[0].getDeviceList().values())
+                        if (geraet[0].equals(d.getDeviceName())) noch = true;
+                    if (!noch) text = "Board hat sich vom USB getrennt. Meist reicht der Strom"
+                        + " vom Handy nicht - kurzes Kabel nehmen oder das Board zusaetzlich"
+                        + " versorgen. (" + text + ")";
+                }
+                call.reject(text);
             } finally {
                 try { if (port != null) port.close(); } catch (Throwable ignored) {}
             }
@@ -219,42 +236,71 @@ public class EspFlashPlugin extends Plugin {
     }
 
     /** Schreibt das Abbild blockweise nach 0x0 und meldet 10 bis 96 Prozent. */
+    /**
+     * Je FLASH_BEGIN geloeschter Abschnitt. Der ROM-Loader loescht beim Beginn
+     * den ganzen angegebenen Bereich auf einmal; bei 400 KB zieht das lange viel
+     * Strom. Am Board brach danach die USB-Verbindung ab - das Handy versorgt
+     * Board und Wandler allein. In 64-KB-Abschnitten kommt der Strombedarf in
+     * kurzen Stoessen. esptool spielt mehrere Dateien auf dieselbe Weise auf:
+     * jeder Abschnitt hat sein eigenes FLASH_BEGIN und zaehlt die Bloecke ab 0.
+     */
+    private static final int ABSCHNITT = 64 * 1024;
+
     private void schreiben(UsbSerialPort port, byte[] abbild) throws Exception {
-        int bloecke = (abbild.length + BLOCK - 1) / BLOCK;
-
-        // Fuenf Werte, nicht vier: der ROM-Loader des ESP32-S3 (wie S2 und C3)
-        // erwartet als fuenftes ein Verschluesselungs-Kennzeichen, esptool haengt
-        // es bei diesen Chips immer an. Mit nur 16 Byte antwortete der ROM am
-        // Board mit Status 1, Fehler 5 - "Nachricht ungueltig" -, loeschte nichts,
-        // und jeder folgende Block wurde ebenfalls abgelehnt.
-        byte[] anfang = new byte[20];
-        setz32(anfang, 0, abbild.length);   // zu loeschende Groesse
-        setz32(anfang, 4, bloecke);
-        setz32(anfang, 8, BLOCK);
-        setz32(anfang, 12, 0);              // Zieladresse 0x0
-        setz32(anfang, 16, 0);              // nicht verschluesselt
-        // Das Loeschen eines ganzen Abbilds dauert beim ROM-Loader lange.
-        befehl(port, CMD_FLASH_BEGIN, anfang, 0, 30000);
-
+        int gesamt = (abbild.length + BLOCK - 1) / BLOCK, fertig = 0;
         melde("write", 10);
-        for (int i = 0; i < bloecke; i++) {
-            int von = i * BLOCK, laenge = Math.min(BLOCK, abbild.length - von);
-            byte[] daten = new byte[BLOCK];
-            System.arraycopy(abbild, von, daten, 0, laenge);
-            // Der letzte Block wird mit 0xFF aufgefuellt, nicht mit Nullen -
-            // geloeschter Flash ist 0xFF, so bleibt die Pruefsumme stimmig.
-            for (int k = laenge; k < BLOCK; k++) daten[k] = (byte) 0xFF;
+        for (int ab = 0; ab < abbild.length; ab += ABSCHNITT) {
+            int groesse = Math.min(ABSCHNITT, abbild.length - ab);
+            int bloecke = (groesse + BLOCK - 1) / BLOCK;
 
-            byte[] nutz = new byte[16 + BLOCK];
-            setz32(nutz, 0, BLOCK);
-            setz32(nutz, 4, i);
-            setz32(nutz, 8, 0);
-            setz32(nutz, 12, 0);
-            System.arraycopy(daten, 0, nutz, 16, BLOCK);
+            // Fuenf Werte, nicht vier: der ROM-Loader des ESP32-S3 (wie S2 und C3)
+            // erwartet als fuenftes ein Verschluesselungs-Kennzeichen. Mit 16 Byte
+            // antwortete er mit Status 1, Fehler 5 - "Nachricht ungueltig".
+            byte[] anfang = new byte[20];
+            setz32(anfang, 0, groesse);         // zu loeschende Groesse
+            setz32(anfang, 4, bloecke);
+            setz32(anfang, 8, BLOCK);
+            setz32(anfang, 12, ab);             // Zieladresse, auf 64 KB ausgerichtet
+            setz32(anfang, 16, 0);              // nicht verschluesselt
+            befehl(port, CMD_FLASH_BEGIN, anfang, 0, 30000);
 
-            befehl(port, CMD_FLASH_DATA, nutz, pruefsumme(daten), 5000);
-            melde("write", 10 + (int) (86L * (i + 1) / bloecke));
+            for (int i = 0; i < bloecke; i++) {
+                int von = ab + i * BLOCK, laenge = Math.min(BLOCK, abbild.length - von);
+                byte[] daten = new byte[BLOCK];
+                System.arraycopy(abbild, von, daten, 0, laenge);
+                // Den letzten Block mit 0xFF auffuellen, nicht mit Nullen -
+                // geloeschter Flash ist 0xFF.
+                for (int k = laenge; k < BLOCK; k++) daten[k] = (byte) 0xFF;
+
+                byte[] nutz = new byte[16 + BLOCK];
+                setz32(nutz, 0, BLOCK);
+                setz32(nutz, 4, i);
+                setz32(nutz, 8, 0);
+                setz32(nutz, 12, 0);
+                System.arraycopy(daten, 0, nutz, 16, BLOCK);
+
+                blockSenden(port, nutz, pruefsumme(daten), von);
+                fertig++;
+                melde("write", 10 + (int) (86L * fertig / gesamt));
+            }
         }
+    }
+
+    /** Ein Datenblock, bei Fehlschlag bis zu dreimal - wie esptool. */
+    private void blockSenden(UsbSerialPort port, byte[] nutz, int summe, int adresse) throws Exception {
+        Exception letzter = null;
+        for (int versuch = 1; versuch <= 3; versuch++) {
+            try {
+                befehl(port, CMD_FLASH_DATA, nutz, summe, 5000);
+                return;
+            } catch (Exception e) {
+                letzter = e;
+                Thread.sleep(200L * versuch);
+                leeren(port);       // Reste eines abgerissenen Pakets verwerfen
+            }
+        }
+        throw new Exception("Block bei 0x" + Integer.toHexString(adresse)
+                            + " nach drei Versuchen nicht geschrieben: " + letzter.getMessage());
     }
 
     /** Holt die MD5-Summe eines Flash-Bereichs beim Chip ab. */
