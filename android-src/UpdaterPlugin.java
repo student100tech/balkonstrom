@@ -27,7 +27,7 @@ public class UpdaterPlugin extends Plugin {
     @PluginMethod
     public void shareText(PluginCall call) {
         String text = call.getString("text");
-        String title = call.getString("title", "Balkonstrom");
+        String title = call.getString("title", "PV-Monitor");
         if (text == null || text.isEmpty()) {
             call.reject("Kein Text zum Teilen");
             return;

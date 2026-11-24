@@ -1,7 +1,8 @@
-# Balkonstrom
+# PV-Monitor
 
-Android-App für Zendure-Balkonspeicher. Liest die Werte **direkt vom Gerät im
-WLAN** – kein Zendure-Konto, kein Token, keine Cloud.
+Android-App für Balkon- und Hausspeicher. Liest die Werte **direkt vom Gerät im
+WLAN** – kein Konto, kein Token, keine Cloud. Heute spricht sie Zendure;
+GoodWe über Modbus TCP ist in Arbeit, gefunden wird es schon.
 
 Unterstützt **SolarFlow 800 Plus** und **SolarFlow 800 Pro 2** (vier
 Solareingänge, Off-Grid-Dose, Lüfter) sowie das **Smart Meter 3CT** als
@@ -26,8 +27,8 @@ Eine **Netzprüfung** sucht im WLAN nach allem, was antwortet: Zendure-Geräte
 über HTTP, Fremdgeräte über Modbus TCP auf Port 502, und GoodWe-Dongles über
 einen UDP-Rundruf auf Port 48899. Sie endet mit einem Satz im Klartext statt
 mit einem Protokoll und ist teilbar. Der Knopf steht in den Einstellungen und
-zusätzlich im Einrichtungsbildschirm – dort erreichbar auch dann, wenn gar
-kein Zendure-Gerät eingetragen ist.
+als Abkürzung auf der Einrichtungskarte, damit er auch ohne eingetragenes
+Gerät gleich ins Auge fällt.
 
 ## Woher die Daten kommen
 

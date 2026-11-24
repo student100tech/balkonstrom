@@ -27,7 +27,7 @@ jobs:
         run: |
           DATUM=$(TZ=Europe/Berlin date +%F)
           echo "DATUM=$DATUM" >> $GITHUB_ENV
-          echo "APKNAME=Balkonstrom_${DATUM}_Build-${{ github.run_number }}.apk" >> $GITHUB_ENV
+          echo "APKNAME=PV-Monitor_${DATUM}_Build-${{ github.run_number }}.apk" >> $GITHUB_ENV
           sed -i "s/__APPVERSION__/2.${{ github.run_number }} · Build ${{ github.run_number }} · ${DATUM}/g" www/index.html
           sed -i "s/__BUILDNR__/${{ github.run_number }}/g" www/index.html
 
@@ -105,7 +105,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Balkonstrom – Build ${{ github.run_number }} (${{ env.DATUM }})
+          name: PV-Monitor – Build ${{ github.run_number }} (${{ env.DATUM }})
           body: |
             Live-Anzeige, Statistik (Zendure-Cloud) und Steuerung für den SolarFlow 800 Plus.
             Installation: APK herunterladen, öffnen, installieren.

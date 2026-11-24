@@ -1,6 +1,6 @@
 {
   "appId": "de.elektroautonews.balkonstrom",
-  "appName": "Balkonstrom",
+  "appName": "PV-Monitor",
   "webDir": "www",
   "server": {
     "androidScheme": "https",
