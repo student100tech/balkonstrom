@@ -21,14 +21,19 @@ static const int PIN_SDA   = 19;        // I2C zum Touch GT911
 static const int PIN_SCL   = 45;        // Achtung: Strapping-Pin
 static const uint8_t GT911_ADDRS[2] = {0x5D, 0x14};
 
+// Arduino_GFX 1.2.9 bringt kein Farbmakro mit, nur benannte Konstanten.
+// 5 Bit Rot, 6 Bit Gruen, 5 Bit Blau. Das Panel laeuft als BGR, das dreht
+// der Treiber selbst - hier stehen also gewoehnliche RGB-Werte.
+#define RGB(r, g, b) ((uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | ((b) >> 3)))
+
 // Farben der App, damit Handy und Wandbild dieselbe Sprache sprechen
-static const uint16_t C_GRUND  = RGB565(0x0F, 0x14, 0x20);
-static const uint16_t C_TEXT   = RGB565(0xE8, 0xEA, 0xF0);
-static const uint16_t C_MATT   = RGB565(0x8A, 0x91, 0xA3);
-static const uint16_t C_SOLAR  = RGB565(0xFF, 0xB5, 0x47);
-static const uint16_t C_AKKU   = RGB565(0x3D, 0xDB, 0xB0);
-static const uint16_t C_NETZ   = RGB565(0xFF, 0x6B, 0x81);
-static const uint16_t C_HAUS   = RGB565(0xA7, 0x8B, 0xFA);
+static const uint16_t C_GRUND  = RGB(0x0F, 0x14, 0x20);
+static const uint16_t C_TEXT   = RGB(0xE8, 0xEA, 0xF0);
+static const uint16_t C_MATT   = RGB(0x8A, 0x91, 0xA3);
+static const uint16_t C_SOLAR  = RGB(0xFF, 0xB5, 0x47);
+static const uint16_t C_AKKU   = RGB(0x3D, 0xDB, 0xB0);
+static const uint16_t C_NETZ   = RGB(0xFF, 0x6B, 0x81);
+static const uint16_t C_HAUS   = RGB(0xA7, 0x8B, 0xFA);
 
 Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
   39 /* CS */, 48 /* SCK */, 47 /* SDA */,
@@ -65,13 +70,13 @@ static bool liesTouch(uint16_t &x, uint16_t &y) {
   Wire.beginTransmission(touchAdr);
   Wire.write(0x81); Wire.write(0x4E);
   if (Wire.endTransmission() != 0) return false;
-  if (Wire.requestFrom(touchAdr, (uint8_t)1) != 1) return false;
+  if (Wire.requestFrom((int)touchAdr, 1) != 1) return false;
   uint8_t st = Wire.read();
   bool treffer = false;
   if ((st & 0x80) && (st & 0x0F)) {
     Wire.beginTransmission(touchAdr);
     Wire.write(0x81); Wire.write(0x50);
-    if (Wire.endTransmission() == 0 && Wire.requestFrom(touchAdr, (uint8_t)6) == 6) {
+    if (Wire.endTransmission() == 0 && Wire.requestFrom((int)touchAdr, 6) == 6) {
       Wire.read();                                  // Kennung des Fingers
       uint8_t xl = Wire.read(), xh = Wire.read();
       uint8_t yl = Wire.read(), yh = Wire.read();
