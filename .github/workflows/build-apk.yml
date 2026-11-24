@@ -3,6 +3,15 @@ name: APK bauen
 on:
   push:
     branches: [main]
+    # Reine Firmware-Aenderungen bauen keine neue APK - sonst bot die App
+    # nach jeder Firmware ein "Update" ohne jede Aenderung an.
+    paths-ignore:
+      - 'firmware/**'
+      - '.github/workflows/build-firmware.yml'
+      - 'tools/vorschau.cpp'
+      - 'tools/schriften.py'
+      - 'tools/ikonen.py'
+      - 'tools/zertifikate.py'
   workflow_dispatch:
 
 permissions:
