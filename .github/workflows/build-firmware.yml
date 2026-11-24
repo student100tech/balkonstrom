@@ -116,3 +116,19 @@ jobs:
             PV-Monitor_Firmware_Build-${{ github.run_number }}.bin
             PV-Monitor_Update_Build-${{ github.run_number }}.bin
           make_latest: false
+
+      # Nur die neueste Firmware-Freigabe behalten. GitHub liefert die Liste
+      # der Freigaben nicht verlaesslich nach Datum: am 24.11. kamen fw-9 bis
+      # fw-4 vor fw-11, und die App flashte deshalb Build 9 statt 11. Die Tags
+      # bleiben stehen, nur die Freigaben samt Dateien verschwinden.
+      - name: Aeltere Firmware-Freigaben entfernen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 200 --json tagName -q '.[].tagName' \
+            | grep -E '^fw-[0-9]+$' \
+            | while read -r tag; do
+                if [ "${tag#fw-}" -lt "${{ github.run_number }}" ]; then
+                  gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes && echo "entfernt: $tag"
+                fi
+              done
