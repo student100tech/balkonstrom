@@ -222,11 +222,17 @@ public class EspFlashPlugin extends Plugin {
     private void schreiben(UsbSerialPort port, byte[] abbild) throws Exception {
         int bloecke = (abbild.length + BLOCK - 1) / BLOCK;
 
-        byte[] anfang = new byte[16];
+        // Fuenf Werte, nicht vier: der ROM-Loader des ESP32-S3 (wie S2 und C3)
+        // erwartet als fuenftes ein Verschluesselungs-Kennzeichen, esptool haengt
+        // es bei diesen Chips immer an. Mit nur 16 Byte antwortete der ROM am
+        // Board mit Status 1, Fehler 5 - "Nachricht ungueltig" -, loeschte nichts,
+        // und jeder folgende Block wurde ebenfalls abgelehnt.
+        byte[] anfang = new byte[20];
         setz32(anfang, 0, abbild.length);   // zu loeschende Groesse
         setz32(anfang, 4, bloecke);
         setz32(anfang, 8, BLOCK);
         setz32(anfang, 12, 0);              // Zieladresse 0x0
+        setz32(anfang, 16, 0);              // nicht verschluesselt
         // Das Loeschen eines ganzen Abbilds dauert beim ROM-Loader lange.
         befehl(port, CMD_FLASH_BEGIN, anfang, 0, 30000);
 
