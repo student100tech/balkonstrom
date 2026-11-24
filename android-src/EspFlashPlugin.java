@@ -90,6 +90,61 @@ public class EspFlashPlugin extends Plugin {
         call.resolve(o);
     }
 
+    /**
+     * Startet das Board normal neu und liest mit, was es ueber den seriellen
+     * Ausgang meldet: Startmeldungen des ROM und des Bootloaders, die Ausgaben
+     * der Firmware und bei einem Absturz dessen Bericht. Schreibt nichts.
+     */
+    @PluginMethod
+    public void ausgabe(PluginCall call) {
+        final int ms = Math.max(2000, Math.min(20000, call.getInt("ms", 8000)));
+        new Thread(() -> {
+            UsbSerialPort port = null;
+            try {
+                UsbManager mgr = (UsbManager) getContext().getSystemService(Context.USB_SERVICE);
+                List<UsbSerialDriver> gefunden = UsbSerialProber.getDefaultProber().findAllDrivers(mgr);
+                if (gefunden.isEmpty()) throw new Exception("Kein Board gefunden");
+                UsbSerialDriver treiber = gefunden.get(0);
+                if (!mgr.hasPermission(treiber.getDevice()) && !erlaubnisHolen(mgr, treiber.getDevice())) {
+                    throw new Exception("Keine Erlaubnis fuer das USB-Geraet");
+                }
+                UsbDeviceConnection verb = mgr.openDevice(treiber.getDevice());
+                if (verb == null) throw new Exception("USB-Geraet laesst sich nicht oeffnen");
+                port = treiber.getPorts().get(0);
+                port.open(verb);
+                port.setParameters(BAUD, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+                neustart(port);
+                call.resolve(new JSObject().put("log", mitlesen(port, ms)));
+            } catch (Throwable e) {
+                call.reject(String.valueOf(e.getMessage() == null ? e : e.getMessage()));
+            } finally {
+                try { if (port != null) port.close(); } catch (Throwable ignored) {}
+            }
+        }, "esp-ausgabe").start();
+    }
+
+    /** Liest eine Weile alles mit, was vom Board kommt, als Text. */
+    private String mitlesen(UsbSerialPort port, int ms) {
+        StringBuilder sb = new StringBuilder();
+        byte[] puffer = new byte[1024];
+        long ende = System.currentTimeMillis() + ms;
+        try {
+            while (System.currentTimeMillis() < ende && sb.length() < 20000) {
+                int n = port.read(puffer, 200);
+                for (int i = 0; i < n; i++) {
+                    int c = puffer[i] & 0xFF;
+                    // Steuerzeichen ausser Zeilenwechsel und Tab weglassen; der ROM
+                    // schickt beim Start auch ein paar Zeichen mit falschem Takt.
+                    if (c == '\n' || c == '\t' || (c >= 0x20 && c < 0x7F)) sb.append((char) c);
+                    else if (c >= 0xA0) sb.append('?');
+                }
+            }
+        } catch (Throwable e) {
+            sb.append("\n[Lesen abgebrochen: ").append(e.getMessage()).append("]");
+        }
+        return sb.length() == 0 ? "(keine Ausgabe vom Board)" : sb.toString();
+    }
+
     /** Laedt die Firmware und schreibt sie nach Adresse 0x0. */
     @PluginMethod
     public void flash(PluginCall call) {
@@ -135,12 +190,17 @@ public class EspFlashPlugin extends Plugin {
                 melde("check", 97);
                 pruefen(port, abbild);
 
-                // Neustart: Ende ohne Reboot-Flag, danach harter Reset ueber die Leitungen.
-                befehl(port, CMD_FLASH_END, zahl32(1), 0, 3000);
+                // FLASH_END ist nur ein Abschluss, die Daten stehen und sind geprueft.
+                // Der ROM des ESP32-S3 lehnt ihn am Board mit Fehler 6 ab; esptool
+                // schickt ihn dem ROM-Loader deshalb gar nicht erst. Also nicht
+                // daran scheitern, sondern ueber die Leitungen neu starten.
+                try { befehl(port, CMD_FLASH_END, zahl32(1), 0, 3000); } catch (Exception ignored) {}
                 neustart(port);
+                melde("boot", 99);
+                String log = mitlesen(port, 6000);
 
                 melde("done", 100);
-                call.resolve(new JSObject().put("ok", true));
+                call.resolve(new JSObject().put("ok", true).put("log", log));
             } catch (Throwable e) {
                 String text = String.valueOf(e.getMessage() == null ? e : e.getMessage());
                 // War das Board danach noch am USB? Wenn nicht, ist es nicht die

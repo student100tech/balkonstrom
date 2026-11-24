@@ -625,6 +625,17 @@
     <button class="btn wide-btn" id="btnFlash" data-i18n="m_flash">Monitor flashen</button>
     <div class="fbar" id="flashBar" style="display:none"><i></i></div>
     <div id="flashInfo" class="hint" style="display:none"></div>
+    <!-- Was das Board selbst meldet: Startmeldungen, Ausgaben der Firmware,
+         Absturzberichte. Ohne das bleibt ein schwarzes Display ein Raetsel. -->
+    <button class="btn wide-btn" id="btnLog" style="margin-top:10px" data-i18n="m_log">Ausgabe des Boards lesen</button>
+    <div class="diagbox" id="logBox" style="display:none">
+      <div class="stepnote" id="logNote"></div>
+      <textarea id="logOut" readonly></textarea>
+      <div class="diagrow">
+        <button class="btn" id="btnLogCopy" data-i18n="d_copy">Kopieren</button>
+        <button class="btn primary" id="btnLogShare" data-i18n="d_share">Teilen</button>
+      </div>
+    </div>
     <button class="linkbtn" id="btnLock" data-i18n="m_lock">Bereich wieder verbergen</button>
   </div>
 
@@ -943,6 +954,9 @@
       m_step:(s,p)=>`${s} · ${p} %`,
       m_s_open:'Verbinde', m_s_sync:'Synchronisiere', m_s_write:'Schreibe',
       m_s_check:'Prüfe', m_s_done:'Fertig – Board startet neu',
+      m_s_boot:'Starte neu', m_log:'Ausgabe des Boards lesen',
+      m_log_run:'Board startet neu, lese acht Sekunden mit …',
+      m_log_done:'Das hat das Board gemeldet:', m_log_boot:'Startmeldungen direkt nach dem Flashen:',
       m_failed:'Flashen fehlgeschlagen: ', m_apponly:'Geht nur in der App, nicht im Browser.',
       m_noplug:'Diese Fassung der App kann noch nicht flashen.',
       d_demo:'Demo-Ansicht', dz_auto:'Durchlauf',
@@ -1098,6 +1112,9 @@
       m_step:(s,p)=>`${s} · ${p} %`,
       m_s_open:'Соединение', m_s_sync:'Синхронизация', m_s_write:'Запись',
       m_s_check:'Проверка', m_s_done:'Готово — плата перезагружается',
+      m_s_boot:'Перезапуск', m_log:'Прочитать вывод платы',
+      m_log_run:'Плата перезапускается, читаю восемь секунд …',
+      m_log_done:'Вот что сообщила плата:', m_log_boot:'Сообщения при запуске сразу после прошивки:',
       m_failed:'Не удалось прошить: ', m_apponly:'Работает только в приложении, не в браузере.',
       m_noplug:'Эта версия приложения ещё не умеет прошивать.',
       d_demo:'Демо-режим', dz_auto:'По кругу',
@@ -2367,9 +2384,10 @@
         fuell.style.width = pz + '%';
         info.textContent = t('m_step', t('m_s_' + (e.schritt || 'open')), pz);
       });
-      await plug.flash({url: monFw.url});
+      const r = await plug.flash({url: monFw.url});
       fuell.style.width = '100%';
       info.textContent = t('m_s_done');
+      if (r?.log) zeigeLog(r.log, t('m_log_boot'));
     } catch (e) {
       info.style.color = 'var(--warn)';
       info.textContent = t('m_failed') + (e?.message || e);
@@ -2378,6 +2396,30 @@
       $('btnFlash').disabled = false;
     }
   };
+
+  function zeigeLog(text, note){
+    $('logBox').style.display = 'block';
+    $('logNote').textContent = note || '';
+    $('logOut').value = text;
+    $('logOut').scrollTop = 0;
+  }
+  $('btnLog').onclick = async () => {
+    $('btnLog').disabled = true;
+    zeigeLog('', t('m_log_run'));
+    try {
+      if (!isApp) throw new Error(t('m_apponly'));
+      const plug = espPlug();
+      if (!plug?.ausgabe) throw new Error(t('m_noplug'));
+      const r = await plug.ausgabe({ms: 8000});
+      zeigeLog(r?.log || '', t('m_log_done'));
+    } catch (e) {
+      zeigeLog(String(e?.message || e), t('m_failed'));
+    } finally {
+      $('btnLog').disabled = false;
+    }
+  };
+  $('btnLogCopy').onclick = () => kopiere('logOut');
+  $('btnLogShare').onclick = () => teile('logOut', 'PV-Monitor Board-Ausgabe');
 
   // ---------- SolarFlow im WLAN suchen ----------
   // Android-Modul "Discovery": erst mDNS (_zendure._tcp), sonst alle Adressen im WLAN abfragen.
