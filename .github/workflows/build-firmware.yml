@@ -65,13 +65,21 @@ jobs:
 
       # Ein einziges Abbild auf 0x0: das Aufspielen aus der App kennt nur eine
       # Adresse. Beim ESP32-S3 liegt der Vorlader auf 0x0, nicht auf 0x1000.
+      #
+      # Im Kopf steht DIO, nicht QIO - auch wenn das Programm mit QIO laeuft.
+      # Der ROM liest den Bootloader in der Betriebsart aus dem Kopf; fuer QIO
+      # muesste im Flash erst das Quad-Enable-Bit gesetzt sein, und das tut
+      # der Bootloader selbst. Mit QIO im Kopf las der ROM Unsinn, meldete
+      # "ets_loader.c 78" und der Watchdog startete endlos neu. Die
+      # Arduino-Werkzeuge schreiben fuer den S3 aus demselben Grund DIO, und
+      # beide Abbilder des Herstellers tragen DIO.
       - name: Zu einem Abbild zusammenfuegen
         run: |
           python3 -m pip install --quiet "esptool>=4.6,<5"
           BOOT=$(find ~/.arduino15 -name 'boot_app0.bin' | head -1)
           python3 -m esptool --chip esp32s3 merge_bin \
             -o PV-Monitor_Firmware_Build-${{ github.run_number }}.bin \
-            --flash_mode qio --flash_freq 80m --flash_size 16MB \
+            --flash_mode dio --flash_freq 80m --flash_size 16MB \
             0x0      build/pvmonitor.ino.bootloader.bin \
             0x8000   build/pvmonitor.ino.partitions.bin \
             0xe000   "$BOOT" \
@@ -83,6 +91,7 @@ jobs:
           d = pathlib.Path(f).read_bytes()
           chip = {0: 'ESP32', 2: 'ESP32-S2', 9: 'ESP32-S3', 5: 'ESP32-C3'}.get(d[12], '?')
           assert d[0] == 0xE9, 'kein gueltiges ESP-Abbild'
+          assert d[2] == 2, f'Kopf muss DIO tragen (2), steht auf {d[2]}'
           assert chip == 'ESP32-S3', f'falscher Chip im Kopf: {chip}'
           print(f'{f}: {len(d)} Byte, Chip {chip}, MD5 {hashlib.md5(d).hexdigest()}')
           PY
