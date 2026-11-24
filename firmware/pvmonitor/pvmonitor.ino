@@ -41,9 +41,134 @@ Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
   11 /* R0 */, 12 /* R1 */, 13 /* R2 */, 14 /* R3 */,  0 /* R4 */,
    8 /* G0 */, 20 /* G1 */,  3 /* G2 */, 46 /* G3 */,  9 /* G4 */, 10 /* G5 */,
    4 /* B0 */,  5 /* B1 */,  6 /* B2 */,  7 /* B3 */, 15 /* B4 */);
+// Startfolge des ST7701 wortgleich aus der Bibliothekskopie im Herstellerpaket
+// (1-Demo/Demo_Arduino/Libraries/Arduino_GFX-master). Die gleichnamige Fassung
+// 1.2.9 aus dem Bibliotheksverwalter ist nicht dieselbe: Der Hersteller hat
+// COLCTRL (0xCD) auf 0x00 gesetzt (sein Kommentar nennt das Original 0x08) und "Umkehr an" (0x21)
+// herausgenommen. 0xCD legt fest, wie die 16 Datenleitungen auf die Farbbits
+// des Panels verteilt werden. Mit 0x08 kamen reine Farben richtig an, Mischtöne
+// aber verdreht - der fast schwarze Grund wurde orange (Build 9). Deshalb auch
+// kein invertDisplay(true) mehr: Das war in Build 7 nur das Gegenmittel zur
+// falschen Startfolge.
+static const uint8_t herstellerInit[] = {
+    BEGIN_WRITE,
+    WRITE_COMMAND_8, 0xFF,
+    WRITE_BYTES, 5, 0x77, 0x01, 0x00, 0x00, 0x10,
+
+    WRITE_C8_D16, 0xC0, 0x3B, 0x00,
+    WRITE_C8_D16, 0xC1, 0x0D, 0x02,
+    WRITE_C8_D16, 0xC2, 0x31, 0x05,
+    WRITE_C8_D8, 0xCD, 0x00,//0x08
+
+    WRITE_COMMAND_8, 0xB0, // Positive Voltage Gamma Control
+    WRITE_BYTES, 16,
+    0x00, 0x11, 0x18, 0x0E,
+    0x11, 0x06, 0x07, 0x08,
+    0x07, 0x22, 0x04, 0x12,
+    0x0F, 0xAA, 0x31, 0x18,
+
+    WRITE_COMMAND_8, 0xB1, // Negative Voltage Gamma Control
+    WRITE_BYTES, 16,
+    0x00, 0x11, 0x19, 0x0E,
+    0x12, 0x07, 0x08, 0x08,
+    0x08, 0x22, 0x04, 0x11,
+    0x11, 0xA9, 0x32, 0x18,
+
+    // PAGE1
+    WRITE_COMMAND_8, 0xFF,
+    WRITE_BYTES, 5, 0x77, 0x01, 0x00, 0x00, 0x11,
+
+    WRITE_C8_D8, 0xB0, 0x60, // Vop=4.7375v
+    WRITE_C8_D8, 0xB1, 0x32, // VCOM=32
+    WRITE_C8_D8, 0xB2, 0x07, // VGH=15v
+    WRITE_C8_D8, 0xB3, 0x80,
+    WRITE_C8_D8, 0xB5, 0x49, // VGL=-10.17v
+    WRITE_C8_D8, 0xB7, 0x85,
+    WRITE_C8_D8, 0xB8, 0x21, // AVDD=6.6 & AVCL=-4.6
+    WRITE_C8_D8, 0xC1, 0x78,
+    WRITE_C8_D8, 0xC2, 0x78,
+
+    WRITE_COMMAND_8, 0xE0,
+    WRITE_BYTES, 3, 0x00, 0x1B, 0x02,
+
+    WRITE_COMMAND_8, 0xE1,
+    WRITE_BYTES, 11,
+    0x08, 0xA0, 0x00, 0x00,
+    0x07, 0xA0, 0x00, 0x00,
+    0x00, 0x44, 0x44,
+
+    WRITE_COMMAND_8, 0xE2,
+    WRITE_BYTES, 12,
+    0x11, 0x11, 0x44, 0x44,
+    0xED, 0xA0, 0x00, 0x00,
+    0xEC, 0xA0, 0x00, 0x00,
+
+    WRITE_COMMAND_8, 0xE3,
+    WRITE_BYTES, 4, 0x00, 0x00, 0x11, 0x11,
+
+    WRITE_C8_D16, 0xE4, 0x44, 0x44,
+
+    WRITE_COMMAND_8, 0xE5,
+    WRITE_BYTES, 16,
+    0x0A, 0xE9, 0xD8, 0xA0,
+    0x0C, 0xEB, 0xD8, 0xA0,
+    0x0E, 0xED, 0xD8, 0xA0,
+    0x10, 0xEF, 0xD8, 0xA0,
+
+    WRITE_COMMAND_8, 0xE6,
+    WRITE_BYTES, 4, 0x00, 0x00, 0x11, 0x11,
+
+    WRITE_C8_D16, 0xE7, 0x44, 0x44,
+
+    WRITE_COMMAND_8, 0xE8,
+    WRITE_BYTES, 16,
+    0x09, 0xE8, 0xD8, 0xA0,
+    0x0B, 0xEA, 0xD8, 0xA0,
+    0x0D, 0xEC, 0xD8, 0xA0,
+    0x0F, 0xEE, 0xD8, 0xA0,
+
+    WRITE_COMMAND_8, 0xEB,
+    WRITE_BYTES, 7,
+    0x02, 0x00, 0xE4, 0xE4,
+    0x88, 0x00, 0x40,
+
+    WRITE_C8_D16, 0xEC, 0x3C, 0x00,
+
+    WRITE_COMMAND_8, 0xED,
+    WRITE_BYTES, 16,
+    0xAB, 0x89, 0x76, 0x54,
+    0x02, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0xFF, 0x20,
+    0x45, 0x67, 0x98, 0xBA,
+
+    //-----------VAP & VAN---------------
+    WRITE_COMMAND_8, 0xFF,
+    WRITE_BYTES, 5, 0x77, 0x01, 0x00, 0x00, 0x13,
+
+    WRITE_C8_D8, 0xE5, 0xE4,
+
+    WRITE_COMMAND_8, 0xFF,
+    WRITE_BYTES, 5, 0x77, 0x01, 0x00, 0x00, 0x00,
+
+    WRITE_C8_D8, 0x3A, 0x60, // 0x70 RGB888, 0x60 RGB666, 0x50 RGB565
+
+    //WRITE_COMMAND_8, 0x21,0X00,
+    //END_WRITE,
+     
+    DELAY, 10,
+    WRITE_COMMAND_8, 0x11, // Sleep Out
+    END_WRITE,
+
+    DELAY, 120,
+
+    BEGIN_WRITE,
+    WRITE_COMMAND_8, 0x29, // Display On
+
+    END_WRITE};
+
 Arduino_ST7701_RGBPanel *gfx = new Arduino_ST7701_RGBPanel(
   bus, GFX_NOT_DEFINED, 0, true /* IPS */, 480, 480,
-  st7701_type1_init_operations, sizeof(st7701_type1_init_operations), true /* BGR */,
+  herstellerInit, sizeof(herstellerInit), true /* BGR */,
   10, 8, 50, 10, 8, 20);
 
 // ---------- gemeinsamer Zustand ----------
@@ -434,10 +559,7 @@ void setup() {
   sperre = xSemaphoreCreateMutex();
 
   ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LICHT, 0); ledcWrite(0, 0);
-  gfx->begin(16000000);
-  // Farbumkehr AN: Die Bibliothek schickt bei IPS "Umkehr aus" (0x20), auf
-  // diesem Panel sind damit Hell und Dunkel vertauscht (Build 7 bestätigt).
-  gfx->invertDisplay(true);
+  gfx->begin(16000000);       // schickt danach selbst 0x20, wie im Herstellerdemo
   fb = gfx->getFramebuffer();
   basisBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
   teilBuf = (uint16_t *)heap_caps_malloc(TEIL_PX * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
