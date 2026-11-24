@@ -409,7 +409,11 @@
         <circle cx="46" cy="142" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="142" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 142)"/>
         <g fill="none" stroke="var(--grid)" stroke-width="2" stroke-linecap="round"><path d="M46 127 l-8 30 M46 127 l8 30 M37 135 h18 M40 145 h12"/></g>
-        <text class="node-label" x="46" y="102" text-anchor="middle" id="lGrid" data-i18n="grid_bat">Netz → Akku</text>
+        <!-- Starttext neutral: applyStatic() setzt jede data-i18n-Beschriftung neu,
+             beim Start und bei jedem Sprachwechsel. Stand hier grid_bat, behauptete
+             der Knoten bis zur naechsten Abfrage "Netz → Akku", auch wenn gar nichts
+             floss. Was wirklich laeuft, traegt zeichne() ein. -->
+        <text class="node-label" x="46" y="102" text-anchor="middle" id="lGrid" data-i18n="grid_n">Netz</text>
         <text class="node-val small" x="46" y="192" text-anchor="middle" id="tGrid" data-i18n="dash_w">– W</text>
 
         <circle cx="304" cy="142" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
@@ -2303,14 +2307,22 @@
   async function pruefeBoard(){
     let txt = t('m_none');
     try { const r = await espPlug()?.check(); if (r?.found) txt = t('m_found', r.name); } catch {}
+    // Die Firmware liegt nicht zwangslaeufig in der neuesten Freigabe: APK und
+    // Firmware entstehen in getrennten Ablaeufen, und dazwischen koennen reine
+    // App-Freigaben liegen. Deshalb die letzten zehn durchsehen. Unsere eigene
+    // Firmware hat Vorrang vor einem beigelegten Pruefbild.
     try {
-      const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases/latest',
+      const r = await http('https://api.github.com/repos/student100tech/balkonstrom/releases?per_page=10',
                            {headers: {'Accept': 'application/vnd.github+json'}}, 10000);
       if (r.ok) {
-        const j = await r.json();
-        const bin = (j.assets || []).find(a => a.name.endsWith('.bin'));
-        monFw = bin ? {nr: Number((j.tag_name || '').replace(/\D/g, '')) || 0,
-                       url: bin.browser_download_url} : null;
+        const treffer = [];
+        for (const j of await r.json())
+          for (const a of (j.assets || []))
+            if (a.name.endsWith('.bin'))
+              treffer.push({nr: Number((j.tag_name || '').replace(/\D/g, '')) || 0,
+                            url: a.browser_download_url,
+                            eigen: a.name.startsWith('PV-Monitor_Firmware')});
+        monFw = treffer.find(x => x.eigen) || treffer[0] || null;
       }
     } catch {}
     $('mBoard').textContent = txt + ' · ' + (monFw ? t('m_fw', monFw.nr) : t('m_nofw'));

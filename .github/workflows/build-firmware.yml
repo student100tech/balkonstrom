@@ -1,0 +1,85 @@
+name: Firmware bauen
+
+# Laeuft nur, wenn sich an der Firmware oder an diesem Ablauf etwas aendert -
+# sonst wuerde jede Textaenderung in der App eine Firmware bauen.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/build-firmware.yml'
+  workflow_dispatch:
+
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Datum setzen
+        run: echo "DATUM=$(date +%Y-%m-%d)" >> $GITHUB_ENV
+
+      # Kern und Bibliothek sind bewusst festgenagelt, nicht "neueste".
+      # Arduino_GFX 1.2.9 traegt die erprobte Startfolge des ST7701 und
+      # gehoert zum Kern 2.x; mit dem Kern 3.x uebersetzt sie nicht, weil
+      # sich die RGB-Panel-Schnittstelle von ESP-IDF 5 geaendert hat.
+      - name: arduino-cli einrichten
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh -s 0.35.3
+          echo "$PWD/bin" >> $GITHUB_PATH
+
+      - name: ESP32-Kern und Bibliothek
+        run: |
+          arduino-cli config init
+          arduino-cli config add board_manager.additional_urls \
+            https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@2.0.14
+          arduino-cli lib install "GFX Library for Arduino"@1.2.9
+          arduino-cli core list && arduino-cli lib list
+
+      - name: Übersetzen
+        run: |
+          arduino-cli compile \
+            --fqbn 'esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,FlashMode=qio,PartitionScheme=custom,CPUFreq=240,DebugLevel=none' \
+            --build-property "compiler.cpp.extra_flags=-DFW_BUILD=${{ github.run_number }}" \
+            --output-dir build \
+            firmware/pvmonitor
+          ls -la build
+
+      # Ein einziges Abbild auf 0x0: das Aufspielen aus der App kennt nur eine
+      # Adresse. Beim ESP32-S3 liegt der Vorlader auf 0x0, nicht auf 0x1000.
+      - name: Zu einem Abbild zusammenfuegen
+        run: |
+          python3 -m pip install --quiet "esptool>=4.6,<5"
+          BOOT=$(find ~/.arduino15 -name 'boot_app0.bin' | head -1)
+          python3 -m esptool --chip esp32s3 merge_bin \
+            -o PV-Monitor_Firmware_Build-${{ github.run_number }}.bin \
+            --flash_mode qio --flash_freq 80m --flash_size 16MB \
+            0x0      build/pvmonitor.ino.bootloader.bin \
+            0x8000   build/pvmonitor.ino.partitions.bin \
+            0xe000   "$BOOT" \
+            0x10000  build/pvmonitor.ino.bin
+          ls -la *.bin
+          python3 - <<'PY'
+          import glob, hashlib, pathlib
+          f = glob.glob('PV-Monitor_Firmware_Build-*.bin')[0]
+          d = pathlib.Path(f).read_bytes()
+          chip = {0: 'ESP32', 2: 'ESP32-S2', 9: 'ESP32-S3', 5: 'ESP32-C3'}.get(d[12], '?')
+          assert d[0] == 0xE9, 'kein gueltiges ESP-Abbild'
+          assert chip == 'ESP32-S3', f'falscher Chip im Kopf: {chip}'
+          print(f'{f}: {len(d)} Byte, Chip {chip}, MD5 {hashlib.md5(d).hexdigest()}')
+          PY
+
+      - name: An die Freigabe haengen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: fw-${{ github.run_number }}
+          name: PV-Monitor Firmware – Build ${{ github.run_number }} (${{ env.DATUM }})
+          body: |
+            Firmware für das Wandbild, Board Guition ESP32-S3-4848S040.
+
+            Ein einziges Abbild, Adresse 0x0. Aufspielen über die App:
+            Einstellungen → Versionszeile fünfmal → Code → Monitor flashen.
+          files: PV-Monitor_Firmware_Build-${{ github.run_number }}.bin
+          make_latest: false
