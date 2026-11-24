@@ -251,26 +251,48 @@ public class EspFlashPlugin extends Plugin {
         }
     }
 
-    /** Vergleicht die MD5-Summe im Flash mit der des Abbilds. */
+    /** Holt die MD5-Summe eines Flash-Bereichs beim Chip ab. */
+    private String flashMd5(UsbSerialPort port, int laenge, int[] antwortLaenge) throws Exception {
+        byte[] nutz = new byte[16];
+        setz32(nutz, 0, 0);
+        setz32(nutz, 4, laenge);
+        byte[] antwort = befehl(port, CMD_FLASH_MD5, nutz, 0, 30000);
+        if (antwortLaenge != null) antwortLaenge[0] = antwort == null ? -1 : antwort.length;
+        return md5AusAntwort(antwort);
+    }
+
+    /**
+     * Vergleicht die MD5-Summe im Flash mit der des Abbilds.
+     *
+     * Zwei Lesarten sind moeglich, und welche gilt, haengt am ROM: esptool
+     * fuellt den letzten Block mit 0xFF auf, rechnet die Summe aber ueber die
+     * ungefuellte Laenge. Statt uns auf eine festzulegen, fragen wir beide ab -
+     * passt eine, ist gut. Passt keine, nennt die Meldung die Zahlen, damit
+     * sich der naechste Versuch nicht wieder im Raten erschoepft.
+     */
     private void pruefen(UsbSerialPort port, byte[] abbild) throws Exception {
-        // Der Flash enthaelt volle Bloecke, die Pruefsumme muss ueber dieselbe
-        // aufgefuellte Laenge laufen.
         int bloecke = (abbild.length + BLOCK - 1) / BLOCK;
         int laenge = bloecke * BLOCK;
         byte[] voll = new byte[laenge];
         java.util.Arrays.fill(voll, (byte) 0xFF);
         System.arraycopy(abbild, 0, voll, 0, abbild.length);
-        String erwartet = md5(voll);
 
-        byte[] nutz = new byte[16];
-        setz32(nutz, 0, 0);
-        setz32(nutz, 4, laenge);
-        byte[] antwort = befehl(port, CMD_FLASH_MD5, nutz, 0, 30000);
-        String bekommen = md5AusAntwort(antwort);
-        if (bekommen != null && !bekommen.equalsIgnoreCase(erwartet)) {
-            throw new Exception("Pruefsumme stimmt nicht");
-        }
+        int[] al = new int[]{-1};
+        String roh = flashMd5(port, abbild.length, al);
+        if (roh == null) return;                                  // nichts Lesbares: nicht pruefen
+        if (roh.equalsIgnoreCase(md5(abbild))) return;
+
+        String pad = flashMd5(port, laenge, null);
+        if (pad != null && pad.equalsIgnoreCase(md5(voll))) return;
+
+        throw new Exception("Pruefsumme stimmt nicht."
+            + " Abbild " + abbild.length + " B, aufgefuellt " + laenge + " B,"
+            + " Antwort " + al[0] + " B."
+            + " Erwartet roh " + kurz(md5(abbild)) + ", gefuellt " + kurz(md5(voll)) + "."
+            + " Vom Chip roh " + kurz(roh) + ", gefuellt " + kurz(pad) + ".");
     }
+
+    private static String kurz(String s) { return s == null ? "-" : s.substring(0, 8); }
 
     // =====================================================================
     //  Protokoll

@@ -405,6 +405,9 @@
 
         <circle cx="175" cy="142" r="22" fill="var(--card2)" stroke="var(--line3)"/>
         <path d="M179 128 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
+        <!-- Was im Geraet bleibt: rechts neben der Nabe, ueber der Leitung zum Haus.
+             Dort ist Platz frei, egal welche Zweige gerade fliessen. -->
+        <text class="node-sub" x="202" y="137" id="tLoss"></text>
 
         <circle cx="46" cy="142" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="142" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 142)"/>
@@ -517,6 +520,7 @@
       <div class="card-head"><span class="lbl" data-i18n="z_op">Betrieb</span></div>
       <div class="zrow"><span data-i18n="mode">Modus</span><b id="zMode">–</b></div>
       <div class="zrow"><span data-i18n="z_packstate">Akkupack</span><b id="zPackState">–</b></div>
+      <div class="zrow"><span data-i18n="z_loss">Verlust im Gerät</span><b id="zLoss">–</b></div>
       <div class="zrow" id="zRowAvChg"><span data-i18n="z_availchg">Frei zum Laden</span><b id="zAvailChg">–</b></div>
       <div class="zrow" id="zRowAvDis"><span data-i18n="z_availdis">Frei zum Entladen</span><b id="zAvailDis">–</b></div>
       <div class="zrow"><span data-i18n="z_derate">Gedrosselt</span><b id="zDerate">–</b></div>
@@ -859,7 +863,8 @@
       no_conn_html:ip=>`Keine Verbindung zum SolarFlow unter <b>${ip}</b>.<br>Ist das Handy im selben WLAN? Vielleicht hat der SolarFlow eine neue IP-Adresse bekommen.<br><button class="btn" id="msgFind">SolarFlow neu suchen</button>`,
       d_theme:'Darstellung', th_auto:'Automatisch', th_light:'Hell', th_dark:'Dunkel',
       d_size:'Schriftgröße', sz_normal:'Normal', sz_big:'Groß', sz_xl:'Sehr groß',
-      z_grp_bat:'Speicher', z_grp_meter:'Smart Meter', z_values:'Werte', meter_dev:'Smart Meter', modbus_dev:'Fremdgerät (Modbus)',
+      z_grp_bat:'Speicher',
+      z_loss:'Verlust im Gerät', z_grp_meter:'Smart Meter', z_values:'Werte', meter_dev:'Smart Meter', modbus_dev:'Fremdgerät (Modbus)',
       dg_1:'1 von 4 · Speicher wird ausgelesen', dg_2:'2 von 4 · Suche im WLAN',
       dg_2b:'2 von 4 · Suche läuft, etwa 20 Sekunden', dg_3:'3 von 4 · Zweites Gerät',
       dg_4:'Fertig – jetzt teilen', dg_err:'Abgebrochen',
@@ -1012,7 +1017,8 @@
       no_conn_html:ip=>`Нет связи с SolarFlow по адресу <b>${ip}</b>.<br>Телефон в той же сети Wi-Fi? Возможно, SolarFlow получил новый IP-адрес.<br><button class="btn" id="msgFind">Найти SolarFlow заново</button>`,
       d_theme:'Оформление', th_auto:'Авто', th_light:'Светлое', th_dark:'Тёмное',
       d_size:'Размер шрифта', sz_normal:'Обычный', sz_big:'Крупный', sz_xl:'Очень крупный',
-      z_grp_bat:'Накопитель', z_grp_meter:'Умный счётчик', z_values:'Значения', meter_dev:'Умный счётчик', modbus_dev:'Другое устройство (Modbus)',
+      z_grp_bat:'Накопитель',
+      z_loss:'Потери в устройстве', z_grp_meter:'Умный счётчик', z_values:'Значения', meter_dev:'Умный счётчик', modbus_dev:'Другое устройство (Modbus)',
       dg_1:'1 из 4 · чтение накопителя', dg_2:'2 из 4 · поиск в сети Wi-Fi',
       dg_2b:'2 из 4 · идёт поиск, около 20 секунд', dg_3:'3 из 4 · второе устройство',
       dg_4:'Готово — теперь поделиться', dg_err:'Прервано',
@@ -1476,8 +1482,19 @@
     // minus was hinausgeht. Das Netzladen laeuft am Haus vorbei und faellt weg.
     const hausW = hatMeter ? Math.max(0, home + mNetz - grid) : home;
     const netzW = hatMeter ? Math.max(bezug, einsp) : grid;
+    // Was im Geraet bleibt: was hineingeht minus was herauskommt. Gegengerechnet
+    // an vier Berichten - 40/30, 51/41, 118/106 und 859/799 beim Vater.
+    // Hinein: Solar vom MPPT, Entladen des Akkus, Laden aus dem Netz.
+    // Heraus: Abgabe auf die Wechselstromseite, Laden des Akkus.
+    // Die Werte stammen von verschiedenen Messstellen und aus demselben Bericht,
+    // sind also nicht auf das Watt genau. Unter 15 W Zufluss ist die Differenz
+    // nur noch Rauschen, und negativ kann sie durch Rundung ebenfalls werden -
+    // in beiden Faellen zeigen wir lieber nichts als eine erfundene Zahl.
+    const rein = solar + discharge + grid, raus = home + charge;
+    const verlust = (rein >= 15 && rein - raus >= 1) ? Math.round(rein - raus) : null;
 
     $('devname').textContent = d.product ? prodName(d.product, d) : 'SolarFlow';
+    $('tLoss').textContent = verlust == null ? '' : '\u2212' + fmtW(verlust);
     $('tSolar').textContent = fmtW(solar);
     // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
     // Wie viele Solareingaenge das Geraet hat, steht nirgends - es meldet sie
@@ -1864,6 +1881,12 @@
     const laedt = Number(p.outputPackPower || 0), ent = Number(p.packInputPower || 0);
     s('zPackState', p.packState == null ? null
         : laedt > 0 ? t('z_charging') : ent > 0 ? t('z_discharging') : t('z_standby'));
+    // Dieselbe Rechnung wie am Hub im Flussdiagramm: hinein minus heraus.
+    // Bei Stillstand und bei einer Differenz, die nur aus Rundung stammen kann,
+    // kommt null - die Zeile zeigt dann einen Strich wie jede andere auch.
+    const zRein = Number(p.solarInputPower || 0) + ent + Number(p.gridInputPower || 0);
+    const zRaus = Number(p.outputHomePower || 0) + laedt;
+    s('zLoss', (zRein >= 15 && zRein - zRaus >= 1) ? fmtW(Math.round(zRein - zRaus)) : null);
     // Beide Felder stehen bei 800 Plus und Pro 2 dauerhaft auf 0 – dann sind es nur zwei
     // Zeilen Rauschen. Nur zeigen, wenn wirklich ein Wert kommt.
     const avc = Number(p.chargeAvailPower || 0), avd = Number(p.dischargeAvailPower || 0);
