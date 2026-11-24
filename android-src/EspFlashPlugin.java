@@ -254,9 +254,14 @@ public class EspFlashPlugin extends Plugin {
     /** Holt die MD5-Summe eines Flash-Bereichs beim Chip ab. */
     private byte[] letzteAntwort;
 
-    private String flashMd5(UsbSerialPort port, int laenge, int[] antwortLaenge) throws Exception {
+    private String flashMd5(UsbSerialPort port, int adresse, int laenge) throws Exception {
+        return flashMd5(port, adresse, laenge, null);
+    }
+
+    private String flashMd5(UsbSerialPort port, int adresse, int laenge, int[] antwortLaenge)
+            throws Exception {
         byte[] nutz = new byte[16];
-        setz32(nutz, 0, 0);
+        setz32(nutz, 0, adresse);
         setz32(nutz, 4, laenge);
         byte[] antwort = befehl(port, CMD_FLASH_MD5, nutz, 0, 30000);
         letzteAntwort = antwort;
@@ -289,17 +294,27 @@ public class EspFlashPlugin extends Plugin {
         System.arraycopy(abbild, 0, voll, 0, abbild.length);
 
         int[] al = new int[]{-1};
-        String roh = flashMd5(port, abbild.length, al);
+        String roh = flashMd5(port, 0, abbild.length, al);
         if (roh == null) return;                                  // nichts Lesbares: nicht pruefen
         if (roh.equalsIgnoreCase(md5(abbild))) return;
+        if (flashMd5(port, 0, laenge).equalsIgnoreCase(md5(voll))) return;
 
-        String pad = flashMd5(port, laenge, null);
-        if (pad != null && pad.equalsIgnoreCase(md5(voll))) return;
+        // Passt keins von beiden, grenzen wir ein, wo der Inhalt abweicht: kleine
+        // Bereiche am Anfang, dazu die Stelle der ersten App-Partition. Die
+        // Vergleichswerte dazu lassen sich am Rechner ausrechnen, also sagt die
+        // Antwort, ob gar nicht, teilweise oder woanders hin geschrieben wurde.
+        StringBuilder sb = new StringBuilder();
+        int[][] bereiche = {{0, 1024}, {0, 4096}, {0, 65536}, {0x10000, 1024}};
+        for (int[] b : bereiche) {
+            String m = flashMd5(port, b[0], b[1]);
+            sb.append(" 0x").append(Integer.toHexString(b[0])).append("+").append(b[1])
+              .append("=").append(kurz(m));
+        }
 
         throw new Exception("Pruefsumme stimmt nicht."
-            + " Abbild " + abbild.length + " B, aufgefuellt " + laenge + " B."
-            + " Erwartet roh " + kurz(md5(abbild)) + ", gefuellt " + kurz(md5(voll)) + "."
-            + " Antwort (" + al[0] + " B): " + hex(letzteAntwort));
+            + " Abbild " + abbild.length + " B, erwartet " + kurz(md5(abbild)) + "."
+            + " Chip:" + sb + "."
+            + " Antwortlaenge " + al[0] + " B.");
     }
 
     private static String kurz(String s) { return s == null ? "-" : s.substring(0, 8); }
@@ -332,10 +347,17 @@ public class EspFlashPlugin extends Plugin {
             int len = (p[2] & 0xFF) | ((p[3] & 0xFF) << 8);
             byte[] rest = new byte[Math.max(0, Math.min(len, p.length - 8))];
             System.arraycopy(p, 8, rest, 0, rest.length);
-            // Der ROM-Loader haengt zwei Byte an: Status und Fehlernummer.
-            if (rest.length >= 2 && rest[rest.length - 2] != 0) {
-                throw new Exception("Befehl " + cmd + " abgelehnt, Fehler "
-                                    + (rest[rest.length - 1] & 0xFF));
+            // Der ROM haengt den Status hinten an - beim ESP32-S3 sind es VIER
+            // Byte, nicht zwei. Am Board gemessen: die Antwort auf FLASH_MD5 ist
+            // 36 Byte lang, also 32 Textzeichen plus vier. Mit der Annahme "zwei"
+            // haben wir das Fuellbyte geprueft, das immer null ist - jede
+            // Ablehnung des ROM lief dadurch als Erfolg durch, und am Ende stand
+            // nur eine falsche Pruefsumme, ohne Grund.
+            int st = rest.length >= 4 ? rest.length - 4 : rest.length - 2;
+            if (st >= 0 && rest[st] != 0) {
+                throw new Exception("Befehl 0x" + Integer.toHexString(cmd)
+                                    + " abgelehnt, Status " + (rest[st] & 0xFF)
+                                    + ", Fehler " + (rest[st + 1] & 0xFF));
             }
             return rest;
         }
