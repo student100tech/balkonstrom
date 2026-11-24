@@ -107,7 +107,16 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: PV-Monitor – Build ${{ github.run_number }} (${{ env.DATUM }})
           body: |
-            Live-Anzeige, Statistik (Zendure-Cloud) und Steuerung für den SolarFlow 800 Plus.
+            Live-Anzeige für Balkon- und Hausspeicher, rein lokal im WLAN –
+            kein Konto, keine Cloud. Es wird nur gelesen, nichts gesteuert.
+
             Installation: APK herunterladen, öffnen, installieren.
-          files: ${{ env.APKNAME }}
+
+            `4.0_LvglWidgets.bin` ist **nicht** die Firmware des Monitors,
+            sondern die Demo des Board-Herstellers. Sie liegt bei, damit sich
+            der Aufspielvorgang in der App prüfen lässt, solange unsere eigene
+            Firmware noch nicht existiert. Siehe `firmware/pruefbild/`.
+          files: |
+            ${{ env.APKNAME }}
+            firmware/pruefbild/4.0_LvglWidgets.bin
           make_latest: true
