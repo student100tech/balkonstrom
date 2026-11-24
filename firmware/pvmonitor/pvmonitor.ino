@@ -59,7 +59,7 @@ static volatile uint32_t anfragen = 0;
 static portMUX_TYPE anfrageMux = portMUX_INITIALIZER_UNLOCKED;
 static void anfrage(uint32_t bit) { portENTER_CRITICAL(&anfrageMux); anfragen |= bit; portEXIT_CRITICAL(&anfrageMux); }
 static uint32_t holeAnfragen() {
-  portENTER_CRITICAL(&anfrageMux); uint32_t a = holeAnfragen(); portEXIT_CRITICAL(&anfrageMux);
+  portENTER_CRITICAL(&anfrageMux); uint32_t a = anfragen; anfragen = 0; portEXIT_CRITICAL(&anfrageMux);
   return a;
 }
 static volatile uint32_t letzteOk = 0;  // millis() des letzten guten Berichts, 0 = nie
