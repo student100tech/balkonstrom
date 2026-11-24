@@ -125,11 +125,11 @@ void setup() {
   gfx->begin(16000000);
   gfx->fillScreen(C_GRUND);
 
-  // ESP32-Kern 2.x: Kanal einrichten, Pin anhaengen, dann schreiben.
-  // 150 Hz wie im Herstellerdemo.
-  ledcSetup(0, 150, 8);
-  ledcAttachPin(PIN_LICHT, 0);
-  ledcWrite(0, 200);
+  // Hintergrundlicht genau wie im Herstellerdemo: einfach einschalten.
+  // Build 4 steuerte es per PWM (150 Hz) - das Board blieb danach schwarz.
+  // Dimmen kommt zurueck, sobald ein Bild steht.
+  pinMode(PIN_LICHT, OUTPUT);
+  digitalWrite(PIN_LICHT, HIGH);
 
   Wire.begin(PIN_SDA, PIN_SCL, 400000);
   touchAdr = sucheTouch();
