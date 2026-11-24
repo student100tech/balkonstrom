@@ -26,6 +26,7 @@
 #include <WiFiClientSecure.h>
 #include <Update.h>
 #include "esp_ota_ops.h"
+#include "lwip/sockets.h"
 #include "seiten.h"
 #include "zertifikate.h"
 
@@ -347,18 +348,72 @@ static bool holeBericht(const char *ip, Werte &w, int timeoutMs) {
   return ok;
 }
 
+// Alle Adressen des eigenen /24-Netzes auf Port 80 abklopfen, je 8 zugleich.
+// Gibt die letzte Stelle jeder Adresse zurück, die eine Verbindung annimmt.
+static int klopfeNetz(uint8_t *offen, int max) {
+  IPAddress ich = WiFi.localIP();
+  const int ZUGLEICH = 8;                 // lwIP hat nur wenige Sockets frei
+  int anz = 0;
+  for (int start = 1; start < 255; start += ZUGLEICH) {
+    int fd[ZUGLEICH], nr[ZUGLEICH], n = 0;
+    for (int i = start; i < start + ZUGLEICH && i < 255; i++) {
+      if (i == ich[3]) continue;
+      int so = socket(AF_INET, SOCK_STREAM, 0);
+      if (so < 0) continue;
+      fcntl(so, F_SETFL, O_NONBLOCK);
+      struct sockaddr_in a; memset(&a, 0, sizeof a);
+      a.sin_family = AF_INET; a.sin_port = htons(80);
+      a.sin_addr.s_addr = (uint32_t)IPAddress(ich[0], ich[1], ich[2], i);
+      connect(so, (struct sockaddr *)&a, sizeof a);
+      fd[n] = so; nr[n] = i; n++;
+    }
+    bool fertig[ZUGLEICH] = {};
+    uint32_t t0 = millis();
+    while (millis() - t0 < 500) {
+      fd_set w; FD_ZERO(&w); int hoch = -1;
+      for (int k = 0; k < n; k++) if (!fertig[k]) { FD_SET(fd[k], &w); if (fd[k] > hoch) hoch = fd[k]; }
+      if (hoch < 0) break;
+      struct timeval tv = {0, 50000};
+      if (select(hoch + 1, nullptr, &w, nullptr, &tv) <= 0) continue;
+      for (int k = 0; k < n; k++) if (!fertig[k] && FD_ISSET(fd[k], &w)) {
+        int fehler = 0; socklen_t l = sizeof fehler;
+        getsockopt(fd[k], SOL_SOCKET, SO_ERROR, &fehler, &l);
+        fertig[k] = true;
+        if (!fehler && anz < max) offen[anz++] = (uint8_t)nr[k];
+      }
+    }
+    for (int k = 0; k < n; k++) close(fd[k]);
+  }
+  return anz;
+}
+
+// Wie die App: erst mDNS, dann immer das ganze Netz absuchen. Manche Geräte
+// melden sich per mDNS nicht oder nicht rechtzeitig - beim ersten echten Test
+// am 24.11. fand mDNS allein den Speicher nicht.
 static void sucheSpeicher() {
   mdnsStart();
   Fund tmp[6]; int anz = 0;
-  int n = mdnsLaeuft ? MDNS.queryService("zendure", "tcp") : 0;
-  for (int i = 0; i < n && anz < 6; i++) {
-    Fund &f = tmp[anz];
-    snprintf(f.host, sizeof f.host, "%s", MDNS.hostname(i).c_str());
-    snprintf(f.ip, sizeof f.ip, "%s", MDNS.IP(i).toString().c_str());
-    f.produkt[0] = 0;
+  static Werte probe;
+  auto aufnehmen = [&](const char *host, const char *ip) {
+    for (int k = 0; k < anz; k++) if (!strcmp(tmp[k].ip, ip)) return;
+    if (anz >= 6) return;
     // Nur Speicher übernehmen: ein Smart Meter antwortet ohne "properties"
-    static Werte probe;
-    if (holeBericht(f.ip, probe, 2500)) { snprintf(f.produkt, sizeof f.produkt, "%s", probe.produkt); anz++; }
+    if (!holeBericht(ip, probe, 2500)) return;
+    Fund &f = tmp[anz++];
+    snprintf(f.host, sizeof f.host, "%s", host);
+    snprintf(f.ip, sizeof f.ip, "%s", ip);
+    snprintf(f.produkt, sizeof f.produkt, "%s", probe.produkt);
+  };
+  int n = mdnsLaeuft ? MDNS.queryService("zendure", "tcp") : 0;
+  for (int i = 0; i < n; i++) aufnehmen(MDNS.hostname(i).c_str(), MDNS.IP(i).toString().c_str());
+  Serial.printf("Suche: mDNS %d Treffer\n", n);
+  uint8_t offen[40];
+  int k = klopfeNetz(offen, 40);
+  Serial.printf("Suche: %d Geraete mit Port 80\n", k);
+  IPAddress ich = WiFi.localIP();
+  for (int i = 0; i < k; i++) {
+    char ip[16]; snprintf(ip, sizeof ip, "%d.%d.%d.%d", ich[0], ich[1], ich[2], offen[i]);
+    aufnehmen("", ip);
   }
   sperren();
   memcpy(lage.funde, tmp, sizeof(Fund) * anz); lage.fundAnz = anz; lage.sucheLaeuft = false;
@@ -366,7 +421,6 @@ static void sucheSpeicher() {
   sucheFertig = true; listeNeu = true;
   Serial.printf("Suche: %d Speicher gefunden\n", anz);
 }
-
 
 // =====================================================================
 // Update über WLAN aus den GitHub-Freigaben
@@ -622,9 +676,17 @@ static void lichtStellen() {
 // =====================================================================
 // Bild: Leinwand -> Bildspeicher des Panels
 // =====================================================================
+// Eine neue Seite in Häppchen von 16 Zeilen übertragen, mit kurzer Pause
+// dazwischen: Ein Kopieren von 460 KB am Stück nimmt dem Panel den Zugriff auf
+// den PSRAM, und das Bild zittert.
 static void allesZeigen() {
-  memcpy(fb, basisBuf, 480 * 480 * 2);
-  Cache_WriteBack_Addr((uint32_t)fb, 480 * 480 * 2);
+  const int Z = 16;
+  for (int r = 0; r < 480; r += Z) {
+    uint16_t *q = basisBuf + r * 480, *d = fb + r * 480;
+    memcpy(d, q, Z * 480 * 2);
+    Cache_WriteBack_Addr((uint32_t)d, Z * 480 * 2);
+    delayMicroseconds(300);
+  }
 }
 static void teilZeigen(Leinwand &q, int x, int y, int w, int h) {
   for (int xx = x; xx < x + w; xx++) memcpy(fb + (479 - xx) * 480 + y, q.an(xx, y), h * 2);
@@ -684,7 +746,12 @@ void setup() {
   sperre = xSemaphoreCreateMutex();
 
   ledcSetup(0, 5000, 8); ledcAttachPin(PIN_LICHT, 0); ledcWrite(0, 0);
-  gfx->begin(16000000);       // schickt danach selbst 0x20, wie im Herstellerdemo
+  // 12 statt 16 MHz Pixeltakt (rund 42 statt 56 Bilder je Sekunde), wie in der
+  // ESPHome-Beschreibung dieses Boards. Das Panel liest sein Bild ununterbrochen
+  // aus dem PSRAM; schreibt die Firmware gleichzeitig eine ganze Seite dorthin,
+  // kommt es nicht mehr hinterher und das Bild zittert - genau das zeigte Build 12
+  // bei jedem Antippen. Weniger Lesebedarf lässt mehr Luft.
+  gfx->begin(12000000);       // schickt danach selbst 0x20, wie im Herstellerdemo
   fb = gfx->getFramebuffer();
   basisBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
   teilBuf = (uint16_t *)heap_caps_malloc(TEIL_PX * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
