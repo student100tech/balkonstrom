@@ -38,10 +38,22 @@ jobs:
           arduino-cli lib install "GFX Library for Arduino"@1.2.9
           arduino-cli core list && arduino-cli lib list
 
+      # Die Menuewerte fuer PartitionScheme unterscheiden sich je Kern und Board;
+      # "custom" kennt der S3 im Kern 2.0.14 nicht. Statt im Menue zu raten legen
+      # wir die Tabelle in den Kern und verweisen ueber build.partitions darauf.
+      - name: Partitionstabelle einhaengen
+        run: |
+          KERN=$(find ~/.arduino15/packages/esp32/hardware/esp32 -maxdepth 1 -mindepth 1 -type d | head -1)
+          echo "Kern: $KERN"
+          cp firmware/pvmonitor/partitions.csv "$KERN/tools/partitions/pvmonitor.csv"
+          arduino-cli board details --fqbn esp32:esp32:esp32s3 | sed -n '/PartitionScheme/,/^$/p' | head -20
+
       - name: Übersetzen
         run: |
           arduino-cli compile \
-            --fqbn 'esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,FlashMode=qio,PartitionScheme=custom,CPUFreq=240,DebugLevel=none' \
+            --fqbn 'esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,FlashMode=qio,CPUFreq=240,DebugLevel=none' \
+            --build-property "build.partitions=pvmonitor" \
+            --build-property "upload.maximum_size=4194304" \
             --build-property "compiler.cpp.extra_flags=-DFW_BUILD=${{ github.run_number }}" \
             --output-dir build \
             firmware/pvmonitor
