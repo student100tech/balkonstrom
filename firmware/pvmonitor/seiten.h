@@ -62,6 +62,8 @@ struct Lage {
   int updBuild = 0;                      // neuestes Build auf GitHub, 0 = unbekannt
   int updStatus = 0;                     // 0 nichts, 1 prüft, 2 lädt, 3 fertig, 4 Fehler
   int updProzent = 0; bool updGeprueft = false; char updFehler[64] = "";
+  // Ergebnis der letzten Speichersuche, -1 = noch keine
+  int sucheMdns = -1, suchePort = -1, sucheAntwort = -1;
 };
 
 // ---------- Knöpfe ----------
@@ -758,6 +760,11 @@ struct Oberflaeche {
       knopf(20, y, 440, 56, K_GERAET, i);
     }
     if (!g.sucheLaeuft && g.fundAnz == 0) L.text(240, 220, T(T_KEIN_GERAET), R150, C_MUTED, 1);
+    // Zählerzeile: zeigt am Bildschirm, an welcher Stelle eine Suche hängen bleibt
+    if (!g.sucheLaeuft && g.sucheMdns >= 0) {
+      char z[64]; snprintf(z, sizeof z, T(T_SUCHZAHLEN), g.sucheMdns, g.suchePort, g.sucheAntwort);
+      L.text(240, 352, z, R125, C_DIM, 1);
+    }
     taste(L, 20, 372, 215, 52, T(T_NEU_SUCHEN), R150, C_CARD, C_MUTED2, K_NEU_SUCHEN, 0);
     taste(L, 245, 372, 215, 52, T(T_IP_EINTIPPEN), R150, C_CARD, C_MUTED2, K_IP, 0);
   }

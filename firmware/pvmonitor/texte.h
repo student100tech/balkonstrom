@@ -21,7 +21,7 @@ enum Txt {
   T_SPEICHER_SUCHEN, T_SUCHE_GERAETE, T_N_GEFUNDEN, T_KEIN_GERAET, T_IP_EINTIPPEN, T_IP_ADRESSE,
   T_KEINE_DATEN, T_WARTE, T_MP_PV, T_ANTIPPEN,
   T_FIRMWARE, T_INSTALLIERT, T_VERFUEGBAR, T_AKTUELL, T_PRUEFE, T_JETZT_PRUEFEN, T_INSTALLIEREN,
-  T_UPD_HINWEIS, T_LADE, T_NEUSTART, T_UPD_PILLE, T_UPD_FEHLER, T_NICHT_GEPRUEFT,
+  T_UPD_HINWEIS, T_LADE, T_NEUSTART, T_UPD_PILLE, T_UPD_FEHLER, T_NICHT_GEPRUEFT, T_SUCHZAHLEN,
   T_ANZ
 };
 
@@ -53,7 +53,7 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Installieren",
     "WLAN, Speicher und Verlauf bleiben erhalten. Der Monitor startet danach neu.",
     "Lade Build %d … %d %%", "Fertig – Neustart …", "Update: Build %d", "Update fehlgeschlagen",
-    "noch nicht geprüft"
+    "noch nicht geprüft", "mDNS: %d · Port 80: %d · Antwort: %d"
   },
   { // Русский
     "Поток энергии", "Солнце", "Сеть", "Сеть \xE2\x86\x92 АКБ", "В дом", "Аккумулятор",
@@ -83,7 +83,7 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Установить",
     "Wi-Fi, накопитель и журнал сохранятся. Затем монитор перезапустится.",
     "Загрузка сборки %d … %d %%", "Готово — перезапуск …", "Обновление: сборка %d", "Ошибка обновления",
-    "ещё не проверено"
+    "ещё не проверено", "mDNS: %d · порт 80: %d · ответ: %d"
   }
 };
 

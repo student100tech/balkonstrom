@@ -52,9 +52,8 @@ Arduino_ESP32RGBPanel *bus = new Arduino_ESP32RGBPanel(
 // COLCTRL (0xCD) auf 0x00 gesetzt (sein Kommentar nennt das Original 0x08) und "Umkehr an" (0x21)
 // herausgenommen. 0xCD legt fest, wie die 16 Datenleitungen auf die Farbbits
 // des Panels verteilt werden. Mit 0x08 kamen reine Farben richtig an, Mischtöne
-// aber verdreht - der fast schwarze Grund wurde orange (Build 9). Deshalb auch
-// kein invertDisplay(true) mehr: Das war in Build 7 nur das Gegenmittel zur
-// falschen Startfolge.
+// aber verdreht - der fast schwarze Grund wurde orange (Build 9). Die
+// Farbumkehr braucht das Panel trotzdem, siehe setup().
 static const uint8_t herstellerInit[] = {
     BEGIN_WRITE,
     WRITE_COMMAND_8, 0xFF,
@@ -392,24 +391,33 @@ static int klopfeNetz(uint8_t *offen, int max) {
 // am 24.11. fand mDNS allein den Speicher nicht.
 static void sucheSpeicher() {
   mdnsStart();
-  Fund tmp[6]; int anz = 0;
+  Fund tmp[6]; int anz = 0, antworten = 0;
   static Werte probe;
+  // Bis zu dreimal fragen, mit Geduld: Kleine Webserver wie der im SolarFlow
+  // brauchen nach einer kurz geöffneten und gleich wieder geschlossenen
+  // Verbindung (dem Anklopfen) einen Moment, bevor sie wieder antworten.
   auto aufnehmen = [&](const char *host, const char *ip) {
     for (int k = 0; k < anz; k++) if (!strcmp(tmp[k].ip, ip)) return;
     if (anz >= 6) return;
-    // Nur Speicher übernehmen: ein Smart Meter antwortet ohne "properties"
-    if (!holeBericht(ip, probe, 2500)) return;
+    bool ok = false;
+    for (int v = 0; v < 3 && !ok; v++) { if (v) delay(600); ok = holeBericht(ip, probe, 3500); }
+    if (!ok) return;
+    antworten++;
     Fund &f = tmp[anz++];
     snprintf(f.host, sizeof f.host, "%s", host);
     snprintf(f.ip, sizeof f.ip, "%s", ip);
     snprintf(f.produkt, sizeof f.produkt, "%s", probe.produkt);
   };
+  // Der Speicher, der gerade Daten liefert, gehört immer dazu
+  char akt[16]; sperren(); snprintf(akt, sizeof akt, "%s", ein.ip); freigeben();
+  if (akt[0]) aufnehmen("", akt);
   int n = mdnsLaeuft ? MDNS.queryService("zendure", "tcp") : 0;
   for (int i = 0; i < n; i++) aufnehmen(MDNS.hostname(i).c_str(), MDNS.IP(i).toString().c_str());
   Serial.printf("Suche: mDNS %d Treffer\n", n);
   uint8_t offen[40];
   int k = klopfeNetz(offen, 40);
   Serial.printf("Suche: %d Geraete mit Port 80\n", k);
+  delay(1500);                                   // den Geräten Zeit geben, sich zu fangen
   IPAddress ich = WiFi.localIP();
   for (int i = 0; i < k; i++) {
     char ip[16]; snprintf(ip, sizeof ip, "%d.%d.%d.%d", ich[0], ich[1], ich[2], offen[i]);
@@ -417,6 +425,7 @@ static void sucheSpeicher() {
   }
   sperren();
   memcpy(lage.funde, tmp, sizeof(Fund) * anz); lage.fundAnz = anz; lage.sucheLaeuft = false;
+  lage.sucheMdns = n; lage.suchePort = k; lage.sucheAntwort = antworten;
   freigeben();
   sucheFertig = true; listeNeu = true;
   Serial.printf("Suche: %d Speicher gefunden\n", anz);
@@ -751,7 +760,12 @@ void setup() {
   // aus dem PSRAM; schreibt die Firmware gleichzeitig eine ganze Seite dorthin,
   // kommt es nicht mehr hinterher und das Bild zittert - genau das zeigte Build 12
   // bei jedem Antippen. Weniger Lesebedarf lässt mehr Luft.
-  gfx->begin(12000000);       // schickt danach selbst 0x20, wie im Herstellerdemo
+  gfx->begin(12000000);
+  // Farbumkehr AN (0x21). Mit der Startfolge des Herstellers stimmen die
+  // Farbbits, das Bild war in Build 12/13 aber genau umgekehrt: weißer Grund,
+  // blaues Solar, roter Akku - jede Farbe ihr Gegenstück. Dieses Panel braucht
+  // die Umkehr, das Herstellerdemo offenbar mit anderer Einstellung nicht.
+  gfx->invertDisplay(true);
   fb = gfx->getFramebuffer();
   basisBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
   teilBuf = (uint16_t *)heap_caps_malloc(TEIL_PX * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
