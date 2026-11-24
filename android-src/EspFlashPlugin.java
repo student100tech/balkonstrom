@@ -252,13 +252,24 @@ public class EspFlashPlugin extends Plugin {
     }
 
     /** Holt die MD5-Summe eines Flash-Bereichs beim Chip ab. */
+    private byte[] letzteAntwort;
+
     private String flashMd5(UsbSerialPort port, int laenge, int[] antwortLaenge) throws Exception {
         byte[] nutz = new byte[16];
         setz32(nutz, 0, 0);
         setz32(nutz, 4, laenge);
         byte[] antwort = befehl(port, CMD_FLASH_MD5, nutz, 0, 30000);
+        letzteAntwort = antwort;
         if (antwortLaenge != null) antwortLaenge[0] = antwort == null ? -1 : antwort.length;
         return md5AusAntwort(antwort);
+    }
+
+    /** Antwort als Hexfolge, damit sich das Format ablesen statt erraten laesst. */
+    private static String hex(byte[] b) {
+        if (b == null) return "-";
+        StringBuilder sb = new StringBuilder();
+        for (byte x : b) sb.append(String.format("%02x", x & 0xFF));
+        return sb.toString();
     }
 
     /**
@@ -286,10 +297,9 @@ public class EspFlashPlugin extends Plugin {
         if (pad != null && pad.equalsIgnoreCase(md5(voll))) return;
 
         throw new Exception("Pruefsumme stimmt nicht."
-            + " Abbild " + abbild.length + " B, aufgefuellt " + laenge + " B,"
-            + " Antwort " + al[0] + " B."
+            + " Abbild " + abbild.length + " B, aufgefuellt " + laenge + " B."
             + " Erwartet roh " + kurz(md5(abbild)) + ", gefuellt " + kurz(md5(voll)) + "."
-            + " Vom Chip roh " + kurz(roh) + ", gefuellt " + kurz(pad) + ".");
+            + " Antwort (" + al[0] + " B): " + hex(letzteAntwort));
     }
 
     private static String kurz(String s) { return s == null ? "-" : s.substring(0, 8); }
