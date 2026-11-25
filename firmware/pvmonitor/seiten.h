@@ -59,6 +59,7 @@ struct Lage {
   bool uhr = false; int hh = 0, mm = 0, ss = 0;
   int okHH = 0, okMM = 0, okSS = 0;      // Uhrzeit des letzten guten Berichts
   bool wlanOk = false; int wlanRssi = 0; // WLAN des Monitors selbst
+  float sonneF = -1;                     // Tageslauf 0..1 zwischen Auf- und Untergang, <0 = nachts/unbekannt
   Netz netze[24]; int netzAnz = 0; bool scanLaeuft = false;
   Fund funde[6]; int fundAnz = 0; bool sucheLaeuft = false;
   int verbinden = 0;                     // 0 nichts, 1 läuft, 2 ok, 3 Fehler
@@ -165,17 +166,33 @@ struct Oberflaeche {
     L.rund(x + 26.74f * k, y + 25.6f * k, 1.2f * k, 2.34f * k, 0.38f * k, C_BAT);
     ikone(L, IK_LOGO_BLITZ, x, y, k, 0, C_BAT, true);
   }
-  // Kopfzeile aller Hauptseiten: Logo + PV-Monitor links, WLAN + "Stand" rechts
+  // Kopfreihe wie im Flussdiagramm der App (dort y = -37): winziges Logo und
+  // "PV-Monitor" links, WLAN des Monitors und "Stand" rechts. Darüber hat die
+  // Sonne ihre eigene Spur am oberen Rand.
   void kopf(Leinwand &L, const Lage &g) {
-    logo(L, 14, 6, 30);
-    L.text(52, 28, "PV-Monitor", S180, C_TEXT);
+    sonne(L, g);
+    float yb = AY(-37);
+    logo(L, 14, AY(-48), 13 * K);
+    L.text(14 + 13 * K + 5, yb, "PV-Monitor", M178, C_MUTED);
     char t[40];
     bool offline = g.alterS > 10;
     if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
     else if (offline) snprintf(t, sizeof t, "%s %02d:%02d", T(T_OFFLINE), g.okHH, g.okMM);
-    else snprintf(t, sizeof t, "%s %02d:%02d", T(T_STAND), g.okHH, g.okMM);
-    float b = L.text(464, 27, t, R150, offline ? C_WARN : C_MUTED, 2, true);
-    wlanBalken(L, 464 - b - 10 - 25, 27, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
+    else snprintf(t, sizeof t, "%s %02d:%02d:%02d", T(T_STAND), g.okHH, g.okMM, g.okSS);
+    float b = L.text(466, yb, t, M178, offline ? C_WARN : C_MUTED, 2, true);
+    wlanBalken(L, 466 - b - 8 - 25, yb, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
+  }
+  // Sonne am oberen Rand: halbe Scheibe, Strahlen nach unten, wandert zwischen
+  // Auf- und Untergang von links nach rechts. Nachts nicht zu sehen.
+  void sonne(Leinwand &L, const Lage &g) {
+    if (g.sonneF < 0 || g.sonneF > 1) return;
+    float cx = AX(14 + 322 * g.sonneF), r = 6 * K;
+    float pt[2 * 14];
+    for (int i = 0; i < 14; i++) { float w = (float)M_PI * i / 13; pt[2 * i] = cx + r * cosf(w); pt[2 * i + 1] = r * sinf(w); }
+    L.vieleck(pt, 14, C_SOLAR);
+    static const float STR[5][4] = {{0, 9.7f, 0, 12.5f}, {5.7f, 7.8f, 7.4f, 10.1f}, {-5.7f, 7.8f, -7.4f, 10.1f},
+                                    {9.2f, 3.0f, 11.9f, 3.9f}, {-9.2f, 3.0f, -11.9f, 3.9f}};
+    for (auto &st : STR) L.linie(cx + st[0] * K, st[1] * K, cx + st[2] * K, st[3] * K, 1.7f * K, C_SOLAR);
   }
   // Reiterleiste wie in der App: Fluss, Zustand, Verlauf, Einstellungen
   void reiter(Leinwand &L) {
@@ -236,7 +253,7 @@ struct Oberflaeche {
 
     // Solar
     if (!f.ohnePv) {
-      L.text(AX(175), AY(-44), T(T_SOLAR), R165, C_MUTED, 1);
+      L.text(AX(175), AY(-37), T(T_SOLAR), R165, C_MUTED, 1);
       fmtW(b, sizeof b, f.solar); L.text(AX(175), AY(-12), b, S261, C_TEXT, 1, true);
       L.scheibe(AX(175), AY(42), 30.5f * K, C_SOLARBG);
       int n = f.pvAnz; float gap = n == 2 ? 12 : 10;

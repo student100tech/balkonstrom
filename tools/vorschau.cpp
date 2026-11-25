@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
   snprintf(e.ssid, sizeof e.ssid, "FRITZ!Box 7590 OG"); snprintf(e.ip, sizeof e.ip, "192.168.178.52");
   snprintf(e.produkt, sizeof e.produkt, "solarFlow800Pro2");
   o.e = &e;
-  g.uhr = true; g.hh = 18; g.mm = 54; g.ss = 14; g.alterS = 2; g.okHH = 18; g.okMM = 54; g.okSS = 12; g.wlanOk = true; g.wlanRssi = -61; g.build = 8;
+  g.uhr = true; g.hh = 18; g.mm = 54; g.ss = 14; g.alterS = 2; g.okHH = 18; g.okMM = 54; g.okSS = 12; g.wlanOk = true; g.wlanRssi = -61; g.sonneF = 0.62f; g.build = 8;
   if (!leseBericht(PRO2, g.w)) { printf("Bericht nicht gelesen!\n"); return 1; }
   // Verlauf: ein Tag mit Sonne und Abendverbrauch, wie im Entwurf
   v.leeren(20261124);

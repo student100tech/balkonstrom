@@ -245,6 +245,17 @@ static void wlanAusSpeicher(char *ssid, char *pass) {
 // Verlauf: 5-Minuten-Mittel und Tagesenergie, alle 15 min gesichert
 // =====================================================================
 static int slotAkt = -1; static float sumS = 0, sumH = 0, sumL = 0; static int sumN = 0;
+// Auf- und Untergang lernt der Monitor aus dem eigenen Verlauf: erste und
+// letzte Minute mit Solarleistung des Vortags. Er kennt keinen Standort, und
+// so braucht es keine weitere Einstellung. Am ersten Tag ist die Sonne nicht zu sehen.
+static int sonneAuf = -1, sonneUnter = -1;
+static void sonneLernen(const Verlauf &v) {
+  int a = -1, u = -1;
+  for (int i = 0; i < SLOTS; i++) if (v.solar[i] > 5) { if (a < 0) a = i; u = i; }
+  if (a < 0 || u - a < 24) return;                 // weniger als 2 h Sonne: nichts lernen
+  sonneAuf = a * 5; sonneUnter = (u + 1) * 5;
+  Preferences p; p.begin("sonne", false); p.putInt("auf", sonneAuf); p.putInt("unter", sonneUnter); p.end();
+}
 static uint32_t letzteBuchung = 0, letzteSicherung = 0;
 
 static void verlaufLaden() {
@@ -267,7 +278,7 @@ static void verlaufBuchen(const Werte &w) {
   uint32_t ms = millis();
   sperren();
   if (verl.tag != tag) {
-    if (verl.tag) verlaufSichern();                  // gestern noch festhalten
+    if (verl.tag) { verlaufSichern(); sonneLernen(verl); }   // gestern festhalten und daraus lernen
     verl.leeren(tag); slotAkt = -1;
   }
   int slot = (t.tm_hour * 60 + t.tm_min) / 5;
@@ -738,6 +749,12 @@ static void lageHolen() {
     zeichenLage.okHH = u.tm_hour; zeichenLage.okMM = u.tm_min; zeichenLage.okSS = u.tm_sec;
   }
   zeichenLage.build = FW_BUILD;
+  zeichenLage.sonneF = -1;
+  if (zeichenLage.uhr && sonneAuf >= 0 && sonneUnter > sonneAuf) {
+    float m = t.tm_hour * 60 + t.tm_min + t.tm_sec / 60.0f;
+    float f = (m - sonneAuf) / (sonneUnter - sonneAuf);
+    if (f >= 0 && f <= 1) zeichenLage.sonneF = f;
+  }
   zeichenLage.wlanOk = WiFi.status() == WL_CONNECTED;
   zeichenLage.wlanRssi = zeichenLage.wlanOk ? WiFi.RSSI() : 0;
   zeichenLage.verlauf = &verlUI;
@@ -785,6 +802,7 @@ void setup() {
 
   einstLaden();
   verlaufLaden();
+  { Preferences p; p.begin("sonne", true); sonneAuf = p.getInt("auf", -1); sonneUnter = p.getInt("unter", -1); p.end(); }
   ui.e = &ein;
   if (!ein.ssid[0]) {
     ui.einrichtung = true; ui.gehe(S_NETZE);
@@ -887,7 +905,7 @@ void loop() {
     static bool warOffline = false;
     uint32_t ok = letzteOk;
     bool offline = ok && millis() - ok > 10000;
-    if (offline != warOffline || (ui.seite == S_VERLAUF && tt.tm_sec == 0)) { warOffline = offline; seiteZeichnen(); }
+    if (offline != warOffline || (ui.hauptseite() && tt.tm_sec == 0)) { warOffline = offline; seiteZeichnen(); }
     lichtStellen();
   }
   if (ui.seite == S_FLUSS && ui.drahtAnz && jetzt - letzteAnim >= 33) {
