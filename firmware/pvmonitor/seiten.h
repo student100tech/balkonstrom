@@ -46,6 +46,7 @@ struct Verlauf {
 
 struct Einst {
   char ssid[33] = "", pass[65] = "", ip[16] = "", host[48] = "", produkt[32] = "";
+  char plz[6] = "";                      // Postleitzahl für Sonnenauf- und -untergang
   int peaks[4] = {200, 200, 200, 200};
   int cap = 0;                           // Wh, 0 = aus der Zahl der Packs
   int nachtHell = 20;                    // Prozent
@@ -179,7 +180,7 @@ struct Oberflaeche {
     if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
     else if (offline) snprintf(t, sizeof t, "%s %02d:%02d", T(T_OFFLINE), g.okHH, g.okMM);
     else snprintf(t, sizeof t, "%s %02d:%02d:%02d", T(T_STAND), g.okHH, g.okMM, g.okSS);
-    float b = L.text(466, yb, t, M178, offline ? C_WARN : C_MUTED, 2, true);
+    float b = L.text(466, yb, t, M142, offline ? C_WARN : C_MUTED, 2, true);   // 20 % kleiner als die Kopfreihe
     wlanBalken(L, 466 - b - 8 - 25, yb, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
   }
   // Sonne am oberen Rand: halbe Scheibe, Strahlen nach unten, wandert zwischen
@@ -279,7 +280,7 @@ struct Oberflaeche {
           anker = fabsf(cosf(wi)) <= 0.05f ? 1 : cosf(wi) > 0.05f ? 0 : 2;
         }
         char z[16]; fmtW(z, sizeof z, f.pv[i]);
-        snprintf(b, sizeof b, "PV%d %s", i + 1, z);
+        snprintf(b, sizeof b, "PV%d \xC2\xB7 %s", i + 1, z);
         L.text(AX(x), AY(y), b, M171, C_MUTED2, anker);
       }
     }
@@ -426,15 +427,17 @@ struct Oberflaeche {
     Fluss f = rechneFluss(w);
     char kopf[64]; Zeile z[6]; int n;
     float x0 = 20, bw = (440 - 12) / 2.0f, y = 52;
-    // Solar
+    // Grenzen statt PV-Eingänge (die stehen im Flussdiagramm, Eugen 25.11.)
     n = 0;
-    for (int i = 0; i < f.pvAnz && n < 4; i++) {
-      static char lab[6][6]; snprintf(lab[i], 6, "PV%d", i + 1);
-      z[n].l = lab[i]; fmtW(z[n].v, 24, f.pv[i]); z[n].c = C_TEXT; n++;
-    }
-    if (sprache) snprintf(kopf, sizeof kopf, "%s · %d %s", T(T_SOLAR), f.pvAnz, ruZahl(f.pvAnz, "вход", "входа", "входов"));
-    else snprintf(kopf, sizeof kopf, "%s · %d Eingänge", T(T_SOLAR), f.pvAnz);
-    float h1 = f.pvAnz ? zKarte(L, x0, y, bw, kopf, z, n) : 0;
+    z[n].l = T(T_LADEN_BIS);
+    if (w.hat(F_SOCSET)) snprintf(z[n].v, 24, "%d %%", (int)(w.f[F_SOCSET] / 10)); else snprintf(z[n].v, 24, "–");
+    z[n++].c = C_TEXT;
+    z[n].l = T(T_ENTLADEN_BIS);
+    if (w.hat(F_MINSOC)) snprintf(z[n].v, 24, "%d %%", (int)(w.f[F_MINSOC] / 10)); else snprintf(z[n].v, 24, "–");
+    z[n++].c = C_TEXT;
+    z[n].l = T(T_MAX_LADEN); fmtW(z[n].v, 24, w.hat(F_CHGMAX) ? w.f[F_CHGMAX] : NAN); z[n++].c = C_TEXT;
+    z[n].l = T(T_MAX_ABGABE); fmtW(z[n].v, 24, w.hat(F_INVMAX) ? w.f[F_INVMAX] : NAN); z[n++].c = C_TEXT;
+    float h1 = zKarte(L, x0, y, bw, T(T_GRENZEN), z, n);
     // Akku
     int packs = (int)w.n(F_PACKNUM), cap = kapazitaet(w);
     if (sprache) snprintf(kopf, sizeof kopf, "АКБ · %d %s", packs, ruZahl(packs, "блок", "блока", "блоков"));
@@ -453,10 +456,7 @@ struct Oberflaeche {
       fmtKomma(t, sizeof t, roh / UM_STROMTEILER, 1); snprintf(z[n].v, 24, "%s A", t);
     }
     z[n++].c = C_TEXT;
-    z[n].l = T(T_ENTLADEN_BIS);
-    if (w.hat(F_MINSOC)) snprintf(z[n].v, 24, "%d %%", (int)(w.f[F_MINSOC] / 10)); else snprintf(z[n].v, 24, "–");
-    z[n++].c = C_TEXT;
-    float h2 = zKarte(L, f.pvAnz ? x0 + bw + 12 : x0, y, f.pvAnz ? bw : 440, kopf, z, n);
+    float h2 = zKarte(L, x0 + bw + 12, y, bw, kopf, z, n);
     y += fmaxf(h1, h2) + 12;
     // Zellen
     n = 0;
@@ -597,9 +597,8 @@ struct Oberflaeche {
 
   // ===================== Einstellungen =====================
   void einst(Leinwand &L, const Lage &g) {
-    ikone(L, IK_ZURUECK, 12, 10, 1.1f, 2.2f, C_MUTED2);
-    knopf(0, 0, 230, 48, K_ZURUECK);
-    L.text(44, 33, T(T_EINSTELLUNGEN), S200, C_TEXT);
+    // Kein Zurück-Knopf (Eugen, 25.11.): wie die anderen Hauptseiten über die Reiter
+    L.text(20, 33, T(T_EINSTELLUNGEN), S200, C_TEXT);
     char b[64];
     if (g.updBuild > g.build) {
       snprintf(b, sizeof b, T(T_UPD_PILLE), g.updBuild);
@@ -636,7 +635,10 @@ struct Oberflaeche {
       snprintf(b, sizeof b, "%d", e->peaks[i]);
       feld(L, x, y + 52, fw, b, K_FELD, i, false);
     }
-    L.text(34, y + 123, T(T_KAPAZITAET), R120, C_MUTED);
+    // Unten links die Postleitzahl (Sonnenauf- und -untergang), rechts die Kapazität
+    L.text(34, y + 123, T(T_PLZ_KURZ), R120, C_MUTED);
+    feld(L, 74, y + 98, 110, e->plz[0] ? e->plz : "–", K_FELD, 6, false);
+    L.text(310, y + 123, T(T_AKKU_WH), R120, C_MUTED, 2);
     snprintf(b, sizeof b, "%d", e->cap > 0 ? e->cap : kapazitaet(g.w));
     feld(L, 318, y + 98, 128, b, K_FELD, 4, true);
     // Sprache, Zeitzone, Helligkeit
@@ -662,6 +664,7 @@ struct Oberflaeche {
     L.rund(34, y + 126, 412, 6, 3, C_CARD2);
     L.rund(34, y + 126, fmaxf(6, 412 * e->nachtHell / 100.0f), 6, 3, C_BAT);
     knopf(24, y + 98, 432, 48, K_REGLER);
+    reiter(L);
   }
   void feld(Leinwand &L, float x, float y, float w, const char *t, uint8_t id, int arg, bool rechts) {
     L.rund(x, y, w, 38, 12, C_LINE); L.rund(x + 1, y + 1, w - 2, 36, 11, C_BG);
@@ -828,7 +831,7 @@ struct Oberflaeche {
   void zahl(Leinwand &L, const Lage &g) {
     char t[48];
     if (zahlFeld < 4) snprintf(t, sizeof t, T(T_MP_PV), zahlFeld + 1);
-    else snprintf(t, sizeof t, "%s", T(zahlFeld == 4 ? T_KAPAZITAET : T_IP_ADRESSE));
+    else snprintf(t, sizeof t, "%s", T(zahlFeld == 4 ? T_KAPAZITAET : zahlFeld == 6 ? T_PLZ : T_IP_ADRESSE));
     ikone(L, IK_ZURUECK, 12, 14, 1.1f, 2.2f, C_MUTED2); knopf(0, 0, 70, 56, K_ZURUECK);
     L.text(46, 37, t, S200, C_TEXT);
     L.rund(20, 60, 440, 54, 14, C_BAT); L.rund(21, 61, 438, 52, 13, C_CARD);
@@ -953,11 +956,13 @@ struct Oberflaeche {
     if (seite != S_FLUSS) drahtAnz = 0;
     neu = false;
   }
-  bool hauptseite() const { return seite <= S_VERLAUF; }
+  // Seiten mit Reiterleiste: Fluss, Zustand, Verlauf, Einstellungen
+  bool hauptseite() const { return seite <= S_EINST; }
   void zahlStart(int feldNr, const Lage &g) {
     zahlFeld = feldNr;
     if (feldNr < 4) snprintf(eingabe, sizeof eingabe, "%d", e->peaks[feldNr]);
     else if (feldNr == 4) snprintf(eingabe, sizeof eingabe, "%d", e->cap > 0 ? e->cap : kapazitaet(g.w));
+    else if (feldNr == 6) snprintf(eingabe, sizeof eingabe, "%s", e->plz);
     else snprintf(eingabe, sizeof eingabe, "%s", e->ip);
     gehe(S_ZAHL);
   }
@@ -986,7 +991,7 @@ struct Oberflaeche {
           if (seite == S_EINST) gehe(S_FLUSS);
           else if (seite == S_UPDATE) gehe(S_EINST);
           else if (seite == S_TASTATUR) gehe(S_NETZE);
-          else if (seite == S_ZAHL) gehe(zahlFeld == 5 ? S_SPEICHER : S_EINST);
+          else if (seite == S_ZAHL) gehe(zahlFeld == 5 ? S_SPEICHER : S_EINST);   // PLZ (6) zurück in die Einstellungen
           else gehe(einrichtung ? S_NETZE : S_EINST);
           break;
         case K_GERAET:
@@ -1015,6 +1020,7 @@ struct Oberflaeche {
         case K_OK:
           if (zahlFeld < 4) { int v = atoi(eingabe); if (v > 0 && v <= 3000) e->peaks[zahlFeld] = v; }
           else if (zahlFeld == 4) { int v = atoi(eingabe); e->cap = v >= 0 && v <= 100000 ? v : e->cap; }
+          else if (zahlFeld == 6) { snprintf(e->plz, sizeof e->plz, "%s", eingabe); }
           else {
             snprintf(e->ip, sizeof e->ip, "%s", eingabe); e->host[0] = 0; e->produkt[0] = 0;
             wuensche |= W_GERAET; einrichtung = false;

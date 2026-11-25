@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
   static Einst e; static Lage g; static Verlauf v; static Oberflaeche o;
   e.peaks[0] = 450; e.peaks[1] = 450; e.peaks[2] = 400; e.peaks[3] = 400;
   snprintf(e.ssid, sizeof e.ssid, "FRITZ!Box 7590 OG"); snprintf(e.ip, sizeof e.ip, "192.168.178.52");
-  snprintf(e.produkt, sizeof e.produkt, "solarFlow800Pro2");
+  snprintf(e.produkt, sizeof e.produkt, "solarFlow800Pro2"); snprintf(e.plz, sizeof e.plz, "40210");
   o.e = &e;
   g.uhr = true; g.hh = 18; g.mm = 54; g.ss = 14; g.alterS = 2; g.okHH = 18; g.okMM = 54; g.okSS = 12; g.wlanOk = true; g.wlanRssi = -61; g.sonneF = 0.62f; g.build = 8;
   if (!leseBericht(PRO2, g.w)) { printf("Bericht nicht gelesen!\n"); return 1; }

@@ -23,6 +23,7 @@ enum Txt {
   T_FIRMWARE, T_INSTALLIERT, T_VERFUEGBAR, T_AKTUELL, T_PRUEFE, T_JETZT_PRUEFEN, T_INSTALLIEREN,
   T_UPD_HINWEIS, T_LADE, T_NEUSTART, T_UPD_PILLE, T_UPD_FEHLER, T_NICHT_GEPRUEFT, T_SUCHZAHLEN, T_OFFLINE,
   T_STAND, T_WARTE_KURZ, T_TAB_FLUSS, T_TAB_VERLAUF, T_DEV_ERR, T_DEV_COLD, T_DEV_HEAT, T_DEV_DERATE,
+  T_PLZ, T_PLZ_KURZ, T_AKKU_WH, T_GRENZEN, T_LADEN_BIS, T_MAX_LADEN, T_MAX_ABGABE,
   T_ANZ
 };
 
@@ -55,7 +56,8 @@ static const char *const TEXTE[2][T_ANZ] = {
     "WLAN, Speicher und Verlauf bleiben erhalten. Der Monitor startet danach neu.",
     "Lade Build %d … %d %%", "Fertig – Neustart …", "Update: Build %d", "Update fehlgeschlagen",
     "noch nicht geprüft", "mDNS: %d · Port 80: %d · Antwort: %d", "Offline",
-    "Stand", "warte …", "Fluss", "Verlauf", "Störung", "Akku kalt", "Akku heizt", "gedrosselt"
+    "Stand", "warte …", "Fluss", "Verlauf", "Störung", "Akku kalt", "Akku heizt", "gedrosselt",
+    "Postleitzahl", "PLZ", "Akku (Wh)", "Grenzen", "Laden bis", "Max. Laden", "Max. Abgabe"
   },
   { // Русский
     "Поток энергии", "Солнце", "Сеть", "Сеть \xE2\x86\x92 АКБ", "В дом", "Аккумулятор",
@@ -86,7 +88,8 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Wi-Fi, накопитель и журнал сохранятся. Затем монитор перезапустится.",
     "Загрузка сборки %d … %d %%", "Готово — перезапуск …", "Обновление: сборка %d", "Ошибка обновления",
     "ещё не проверено", "mDNS: %d · порт 80: %d · ответ: %d", "Не в сети",
-    "Обновлено", "ожидание …", "Поток", "Журнал", "Неисправность", "АКБ холодный", "Подогрев АКБ", "Мощность снижена"
+    "Обновлено", "ожидание …", "Поток", "Журнал", "Неисправность", "АКБ холодный", "Подогрев АКБ", "Мощность снижена",
+    "Почтовый индекс", "Индекс", "АКБ (Вт·ч)", "Пределы", "Заряжать до", "Макс. заряд", "Макс. выдача"
   }
 };
 

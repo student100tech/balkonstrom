@@ -62,10 +62,9 @@
   .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
   .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
   /* Statt Live-Pille: "Stand 07:37", davor das WLAN des Handys wie am Monitor */
-  .stand{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-  .stand.err{color:var(--warn)} .stand.demo{color:var(--solar)}
-  .hdrwlan{padding-bottom:0} .hdrwlan[hidden]{display:none}
-  .hdrwlan.aus i{background:var(--warn)}
+  .stand{font-variant-numeric:tabular-nums} .flowlbl.stand{font-size:calc(10.4px * min(var(--zoom,1), 1.2))}  /* 20 % kleiner */
+  .stand.err{fill:var(--warn)} .stand.demo{fill:var(--solar)}
+  .hdrwlan rect{fill:var(--line3)} .hdrwlan rect.on{fill:var(--ok)} .hdrwlan.aus rect{fill:var(--warn)}
   .iconbtn{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
   .iconbtn svg{width:20px;height:20px}
   .iconbtn.has-update::after,
@@ -341,18 +340,7 @@
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="brand">
-      <!-- Dieselbe Zeichnung wie das Start-Icon, nur in 42 Einheiten:
-           Faktor 42/1024 mal die 0,92 des Originals. Farben aus dem dunklen
-           Thema (--solar, --bat), weil die Kachel immer dunkel bleibt. -->
-      <svg viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1A1E26"/><g stroke="#E8B44C" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#E8B44C"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#E8B44C" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#5ED3A5" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#5ED3A5"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#5ED3A5"/></svg>
-      <h1>PV-Monitor</h1>
-    </div>
-    <div class="hdr-right">
-      <span class="bars4 hdrwlan" id="hdrWlan" aria-hidden="true" hidden><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span><span class="stand" id="status" data-i18n="connecting">Verbinde…</span>
-    </div>
-  </header>
+  <!-- Kopfzeile entfällt seit 25.11.: Logo, WLAN und Stand stehen im Flussdiagramm, wie am Monitor -->
 
   <div class="msg" id="msg"></div>
 
@@ -371,31 +359,6 @@
       <button class="linkbtn" id="btnNetzSetup" data-i18n="nz_link">Anderes System? Netz prüfen</button>
     </div>
 
-    <div class="sun">
-      <svg viewBox="0 0 358 96" aria-hidden="true">
-        <line x1="0" y1="88" x2="358" y2="88" stroke="var(--line)" stroke-width="1.5"/>
-        <path id="sunArc" d="" fill="none" stroke="var(--line3)" stroke-width="1.5" stroke-dasharray="2 5"/>
-        <path id="sunArcDone" d="" fill="none" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
-        <!-- Sonne im Design des App-Icons: Scheibe mit Strahlen, Verhaeltnisse
-             von dort uebernommen (Strahl von 1,6 bis 2,1 Radien, Strich 0,28
-             Radien, runde Enden). Die fuenf Strahlen des Icons stehen 36 Grad
-             auseinander; rundherum sind das bei gleicher Dichte zehn, weil die Sonne
-             hier frei am Himmel steht und nicht auf dem Horizont aufliegt. -->
-        <g id="sunMark" opacity="0">
-          <g stroke="var(--solar)" stroke-width="1.98" stroke-linecap="round"><line x1="0.00" y1="-11.29" x2="0.00" y2="-14.60"/><line x1="6.64" y1="-9.13" x2="8.58" y2="-11.81"/><line x1="10.74" y1="-3.49" x2="13.89" y2="-4.51"/><line x1="10.74" y1="3.49" x2="13.89" y2="4.51"/><line x1="6.64" y1="9.13" x2="8.58" y2="11.81"/><line x1="0.00" y1="11.29" x2="0.00" y2="14.60"/><line x1="-6.64" y1="9.13" x2="-8.58" y2="11.81"/><line x1="-10.74" y1="3.49" x2="-13.89" y2="4.51"/><line x1="-10.74" y1="-3.49" x2="-13.89" y2="-4.51"/><line x1="-6.64" y1="-9.13" x2="-8.58" y2="-11.81"/></g>
-          <circle r="7.0" fill="var(--solar)"/>
-        </g>
-        <g id="moon" opacity="0">
-          <g id="moonPos" transform="translate(179 30)">
-            <circle r="12.5" fill="none" stroke="var(--line3)" stroke-width="1"/>
-            <path id="moonLit" d="" fill="var(--moon)"/>
-          </g>
-        </g>
-        <text id="moonTxt" x="179" y="62" text-anchor="middle" class="moontxt"></text>
-      </svg>
-      <div class="sunrow"><span id="sunrise">–</span><span id="daylight"></span><span id="sunset">–</span></div>
-    </div>
-
     <div class="card flow">
       <svg id="svgFlow" viewBox="0 -60 350 350" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
         <g id="grpSolarW"><path id="bSolar" class="wbase" d="M175 70 V122"/><path id="wSolar" class="wire" d="M175 70 V122"/></g>
@@ -409,8 +372,26 @@
         <circle cx="175" cy="42" r="30.5" fill="var(--solarBg)"/>
         <g id="pvArcs" fill="none" stroke-width="5"></g>
         <g id="solarIcon" transform="translate(160 27) scale(1.25)" fill="none" stroke="var(--solar)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2h2"/><path d="m14.28 14-4.56 8"/><path d="m21 22-1.558-4H4.558"/><path d="M3 10v2"/><path d="M6.245 15.04A2 2 0 0 1 8 14h12a1 1 0 0 1 .864 1.505l-3.11 5.457A2 2 0 0 1 16 22H4a1 1 0 0 1-.863-1.506z"/><path d="M7 2a4 4 0 0 1-4 4"/><path d="m8.66 7.66 1.41 1.41"/></g>
-        <text class="flowlbl" x="0" y="-44" data-i18n="flow">Energiefluss</text>
-        <text class="node-label" x="175" y="-44" text-anchor="middle" data-i18n="solar">Solar</text>
+        <g id="kopfReihe">
+        <!-- Kopfreihe (PV-Monitor, Solar, Stand) steht auf -37 statt -44, damit
+             die Sonne darüber eine eigene Spur hat (-60 bis -47,5).
+             Sonne am oberen Rand: halbe Scheibe, Strahlen nach unten, wandert
+             zwischen Auf- und Untergang von links nach rechts (drawSun).
+             Nachts ausgeblendet. Zuerst gezeichnet, damit Schrift darüber liegt. -->
+        <g id="sunTop" opacity="0" transform="translate(-50 -60)">
+          <g stroke="var(--solar)" stroke-width="1.7" stroke-linecap="round">
+            <line x1="0" y1="9.7" x2="0" y2="12.5"/><line x1="5.7" y1="7.8" x2="7.4" y2="10.1"/><line x1="-5.7" y1="7.8" x2="-7.4" y2="10.1"/>
+            <line x1="9.2" y1="3.0" x2="11.9" y2="3.9"/><line x1="-9.2" y1="3.0" x2="-11.9" y2="3.9"/></g>
+          <path d="M-6 0 A6 6 0 0 0 6 0 Z" fill="var(--solar)"/>
+        </g>
+        <!-- Oben links: winziges Logo + PV-Monitor (wie am Monitor) -->
+        <svg x="0" y="-48" width="13" height="13" viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1A1E26"/><g stroke="#E8B44C" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#E8B44C"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#E8B44C" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#5ED3A5" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#5ED3A5"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#5ED3A5"/></svg>
+        <text class="flowlbl" x="17" y="-37">PV-Monitor</text>
+        <!-- Oben rechts: WLAN des Handys und Stand des letzten Abrufs -->
+        <text class="flowlbl stand" x="350" y="-37" text-anchor="end" id="status" data-i18n="connecting">Verbinde…</text>
+        <g id="hdrWlan" class="hdrwlan" opacity="0"><rect width="2.9" height="4.4" rx="1"/><rect width="2.9" height="7.3" rx="1"/><rect width="2.9" height="10.2" rx="1"/><rect width="2.9" height="13.1" rx="1"/></g>
+        </g>
+        <text class="node-label" x="175" y="-37" text-anchor="middle" data-i18n="solar">Solar</text>
         <text class="node-val" x="175" y="-12" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
         <g id="pvLabs"></g>
 
@@ -1361,7 +1342,7 @@
       b.setAttribute('stroke-linecap', f > 0.012 ? 'round' : 'butt');
       const [x, y, anker] = pos[i], el = $('pvL' + i);
       el.setAttribute('x', x); el.setAttribute('y', y); el.setAttribute('text-anchor', anker);
-      el.textContent = `PV${i + 1} ${w == null ? '–' : fmtW(w)}`;
+      el.textContent = `PV${i + 1} · ${w == null ? '–' : fmtW(w)}`;
     });
   }
 
@@ -1629,6 +1610,8 @@
     // Ohne Solarzweig faellt das obere Drittel weg, dann wird das Bild flacher
     // statt eine leere Flaeche zu zeigen.
     $('svgFlow').setAttribute('viewBox', acOhnePv ? '0 86 350 204' : '0 -60 350 350');
+    // Ohne Solarzweig beginnt das Bild bei 86: Kopfreihe und Sonne mitnehmen
+    $('kopfReihe').setAttribute('transform', acOhnePv ? 'translate(0 146)' : '');
     if (hatOff) {
       $('tOff').textContent = offW > 0 ? fmtW(offW) : (p.gridOffMode ? t('z_ready') : t('z_off'));
       $('tOff').style.fill = offW > 0 ? '' : 'var(--muted)';
@@ -1725,7 +1708,12 @@
     if (last) render(last); else zeigeZustand();   // render frischt den Zustand mit auf
   }
 
-  function setStatus(kind, text){ $('status').className = 'stand ' + kind; $('status').textContent = text; }
+  function setStatus(kind, text){
+    const st = $('status'); st.setAttribute('class', 'flowlbl stand ' + kind); st.textContent = text;
+    // Balken links vor den Text, 6 Einheiten Abstand
+    const b = st.getBBox ? st.getBBox() : null, x0 = (b && b.width ? b.x : 290) - 6 - 4 * 4.1;
+    $('hdrWlan').querySelectorAll('rect').forEach((r, i) => { r.setAttribute('x', (x0 + i * 4.1).toFixed(1)); r.setAttribute('y', (-37 - (4.4 + 2.9 * i)).toFixed(1)); });
+  }
   function showMsg(html){ const m = $('msg'); if (!html) { m.style.display = 'none'; m.innerHTML = ''; return; } m.innerHTML = html; m.style.display = 'block'; }
 
   // WLAN des Handys, wie oben rechts am Monitor: rot ohne WLAN, sonst die Stufe.
@@ -1735,11 +1723,11 @@
     try {
       const plug = cap.Plugins?.Discovery;
       const r = plug?.wlan ? await plug.wlan() : await cap.nativePromise('Discovery', 'wlan', {});
-      el.hidden = false;
+      el.setAttribute('opacity', 1);
       el.classList.toggle('aus', !r.wlan);
       const st = r.wlan ? Math.max(1, rssiStufe(r.rssi)) : 4;
-      el.querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', r.wlan && i < st));
-    } catch { el.hidden = true; }
+      el.querySelectorAll('rect').forEach((b, i) => b.classList.toggle('on', r.wlan && i < st));
+    } catch { el.setAttribute('opacity', 0); }
   }
   setInterval(handyWlan, 10000); setTimeout(handyWlan, 500);
 
@@ -1748,7 +1736,7 @@
       render(await fetchReport());
       fails = 0; showMsg('');
       lastOk = new Date();
-      setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : t('stand') + ' ') + hm(lastOk));
+      setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : t('stand') + ' ') + lastOk.toLocaleTimeString(LOC(), {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
       $('foot').textContent = demo ? t('foot_demo') + ' · ' + t('dz_' + demoNr)
                                    : t('foot_live', cfg.ip, cfg.interval);
       holeMeter();   // zweites Geraet nebenher, ein Fehler dort stoert die Live-Werte nicht
@@ -2576,49 +2564,12 @@
   }
   function drawSun(){
     const now = new Date(), {rise, set} = sunTimes(now);
-    // Scheitel bei 70 statt 76: die Sonne hat Strahlen bis 14,7 Einheiten,
-    // bei 76 ragte der obere mittags aus dem Bild.
-    const pt = f => [16 + 326*f, 88 - 70*Math.sin(Math.PI*f)];
-    const arc = (to, steps) => { let d = ''; for (let i = 0; i <= steps; i++) { const [x, y] = pt(to*i/steps); d += (i ? ' L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1); } return d; };
-    $('sunArc').setAttribute('d', arc(1, 48));
-    const f = (now - rise) / (set - rise), sonne = $('sunMark');
+    const f = (now - rise) / (set - rise), sonne = $('sunTop');
+    if (!sonne) return;
     if (f >= 0 && f <= 1) {
-      const [x, y] = pt(f);
-      // Scheibe, Strahlen und Schein sitzen in einer Gruppe und wandern gemeinsam
-      sonne.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      sonne.setAttribute('transform', `translate(${(14 + 322 * f).toFixed(1)} -60)`);
       sonne.setAttribute('opacity', 1);
-      $('sunArcDone').setAttribute('d', arc(f, Math.max(2, Math.round(48*f))));
-    } else {
-      sonne.setAttribute('opacity', 0);
-      $('sunArcDone').setAttribute('d', '');   // nachts kein Sonnenbogen, nur der Mond
-    }
-    $('sunrise').textContent = t('sunrise') + ' ' + hm(rise); $('sunset').textContent = t('sunset') + ' ' + hm(set);
-
-    const nacht = f < 0 || f > 1;
-    if (nacht) {
-      // Nach Sonnenuntergang zählt der Aufgang von morgen
-      const naechster = f > 1 ? sunTimes(new Date(+now + 86400000)).rise : rise;
-      const bis = Math.max(0, Math.round((naechster - now) / 60000));
-      $('daylight').textContent = t('till_sunrise', Math.floor(bis/60), String(bis%60).padStart(2,'0'));
-
-      const ph = mondPhase(now), mz = mondZeiten(now);
-      $('moonLit').setAttribute('d', mondPfad(ph, 12));
-      $('moon').setAttribute('opacity', mz.oben ? 1 : 0);
-      if (mz.oben) {
-        const mf = (now - mz.auf) / (mz.unter - mz.auf);
-        const [mx, my] = pt(Math.max(0, Math.min(1, mf)));
-        $('moonPos').setAttribute('transform', `translate(${mx.toFixed(1)} ${my.toFixed(1)})`);
-        $('moonTxt').textContent = `${t('moon')[Math.round(ph*8) % 8]} · ${t('moonset')} ${hm(new Date(mz.unter))}`;
-      } else {
-        $('moonTxt').textContent = mz.naechsterAuf
-          ? `${t('moon')[Math.round(ph*8) % 8]} · ${t('moonrise')} ${hm(new Date(mz.naechsterAuf))}`
-          : t('moon')[Math.round(ph*8) % 8];
-      }
-    } else if (f > 0 && f < 1) {
-      $('moon').setAttribute('opacity', 0); $('moonTxt').textContent = '';
-      const left = Math.round((set - now)/60000);
-      $('daylight').textContent = t('daylight', Math.floor(left/60), String(left%60).padStart(2,'0'));
-    } else { $('daylight').textContent = ''; $('moon').setAttribute('opacity', 0); $('moonTxt').textContent = ''; }
+    } else sonne.setAttribute('opacity', 0);   // nachts ausgeblendet, vorerst kein Mond
   }
 
   function zeigeOrt(){
@@ -2633,7 +2584,7 @@
     const hell = thema === 'light' || (thema === 'auto' && dunkelAbfrage && !dunkelAbfrage.matches);
     document.documentElement.dataset.theme = hell ? 'light' : 'dark';
     const m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.setAttribute('content', hell ? '#F3F5F9' : '#0A0C11');
+    if (m) m.setAttribute('content', hell ? '#F4F1EA' : '#0B0D12');
     document.querySelectorAll('#themeSel button').forEach(b => b.classList.toggle('on', b.dataset.t === thema));
   }
   function waehleThema(w){ thema = w; store.set('theme', w); setzeThema(); }

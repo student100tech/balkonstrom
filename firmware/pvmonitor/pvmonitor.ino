@@ -29,6 +29,7 @@
 #include "lwip/sockets.h"
 #include "seiten.h"
 #include "zertifikate.h"
+#include "plz.h"
 
 #ifndef FW_BUILD
 #define FW_BUILD 0
@@ -214,6 +215,7 @@ static void einstLaden() {
   prefs.getString("ip", ein.ip, sizeof ein.ip);
   prefs.getString("host", ein.host, sizeof ein.host);
   prefs.getString("prod", ein.produkt, sizeof ein.produkt);
+  prefs.getString("plz", ein.plz, sizeof ein.plz);
   if (prefs.getBytesLength("peaks") == sizeof ein.peaks) prefs.getBytes("peaks", ein.peaks, sizeof ein.peaks);
   ein.cap = prefs.getInt("cap", 0);
   ein.nachtHell = prefs.getInt("hell", 20);
@@ -227,7 +229,7 @@ static void einstSichern() {
   Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
   prefs.begin("pvm", false);
   prefs.putString("ssid", ein.ssid); prefs.putString("pass", ein.pass);
-  prefs.putString("ip", ein.ip); prefs.putString("host", ein.host); prefs.putString("prod", ein.produkt);
+  prefs.putString("ip", ein.ip); prefs.putString("host", ein.host); prefs.putString("prod", ein.produkt); prefs.putString("plz", ein.plz);
   prefs.putBytes("peaks", ein.peaks, sizeof ein.peaks);
   prefs.putInt("cap", ein.cap); prefs.putInt("hell", ein.nachtHell);
   prefs.putInt("zone", ein.zone); prefs.putInt("spr", ein.sprache);
@@ -750,7 +752,26 @@ static void lageHolen() {
   }
   zeichenLage.build = FW_BUILD;
   zeichenLage.sonneF = -1;
-  if (zeichenLage.uhr && sonneAuf >= 0 && sonneUnter > sonneAuf) {
+  float lat, lon;
+  if (zeichenLage.uhr && plzOrt(ein.plz, lat, lon)) {
+    // Mit Postleitzahl: Auf- und Untergang gerechnet, dieselbe Formel wie
+    // sunTimes() in der App (NOAA, Refraktion 90,833 Grad), in UTC-Sekunden.
+    int y = t.tm_year + 1900, mo = t.tm_mon + 1, d = t.tm_mday;
+    int n = t.tm_yday + 1;
+    float gw = 2 * (float)M_PI / 365 * (n - 1), rad = (float)M_PI / 180;
+    float eqt = 229.18f * (0.000075f + 0.001868f * cosf(gw) - 0.032077f * sinf(gw) - 0.014615f * cosf(2 * gw) - 0.040849f * sinf(2 * gw));
+    float decl = 0.006918f - 0.399912f * cosf(gw) + 0.070257f * sinf(gw) - 0.006758f * cosf(2 * gw) + 0.000907f * sinf(2 * gw) - 0.002697f * cosf(3 * gw) + 0.00148f * sinf(3 * gw);
+    float ha = acosf(cosf(90.833f * rad) / (cosf(lat * rad) * cosf(decl)) - tanf(lat * rad) * tanf(decl)) / rad;
+    float mittag = 720 - 4 * lon - eqt;
+    // Tage seit 1970 für das heutige Ortsdatum (Howard Hinnant, days_from_civil)
+    int yy = mo <= 2 ? y - 1 : y, era = yy / 400, yoe = yy - era * 400;
+    int doy = (153 * (mo + (mo > 2 ? -3 : 9)) + 2) / 5 + d - 1, doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    double mitte = (double)(era * 146097 + doe - 719468) * 86400;
+    double auf = mitte + (mittag - 4 * ha) * 60, unter = mitte + (mittag + 4 * ha) * 60;
+    double f = ((double)j - auf) / (unter - auf);
+    if (!isnan(f) && f >= 0 && f <= 1) zeichenLage.sonneF = (float)f;
+  } else if (zeichenLage.uhr && sonneAuf >= 0 && sonneUnter > sonneAuf) {
+    // Ohne Postleitzahl: aus dem Verlauf des Vortags gelernt
     float m = t.tm_hour * 60 + t.tm_min + t.tm_sec / 60.0f;
     float f = (m - sonneAuf) / (sonneUnter - sonneAuf);
     if (f >= 0 && f <= 1) zeichenLage.sonneF = f;
