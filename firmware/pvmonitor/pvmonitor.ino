@@ -246,7 +246,7 @@ static void wlanAusSpeicher(char *ssid, char *pass) {
 // =====================================================================
 // Verlauf: 5-Minuten-Mittel und Tagesenergie, alle 15 min gesichert
 // =====================================================================
-static int slotAkt = -1; static float sumS = 0, sumH = 0, sumL = 0; static int sumN = 0;
+static int slotAkt = -1; static float sumS = 0, sumH = 0, sumL = 0, sumN2 = 0; static int sumN = 0;
 // Auf- und Untergang lernt der Monitor aus dem eigenen Verlauf: erste und
 // letzte Minute mit Solarleistung des Vortags. Er kennt keinen Standort, und
 // so braucht es keine weitere Einstellung. Am ersten Tag ist die Sonne nicht zu sehen.
@@ -284,12 +284,13 @@ static void verlaufBuchen(const Werte &w) {
     verl.leeren(tag); slotAkt = -1;
   }
   int slot = (t.tm_hour * 60 + t.tm_min) / 5;
-  if (slot != slotAkt) { slotAkt = slot; sumS = sumH = sumL = 0; sumN = 0; }
+  if (slot != slotAkt) { slotAkt = slot; sumS = sumH = sumL = sumN2 = 0; sumN = 0; }
   float solar = w.n(F_SOLAR), haus = w.n(F_HOME), laden = w.n(F_LADEN), netz = w.n(F_GRID);
-  sumS += solar; sumH += haus; sumL += laden; sumN++;
+  sumS += solar; sumH += haus; sumL += laden; sumN2 += netz; sumN++;
   verl.solar[slot] = (int16_t)lroundf(sumS / sumN);
   verl.haus[slot] = (int16_t)lroundf(sumH / sumN);
   verl.laden[slot] = (int16_t)lroundf(sumL / sumN);
+  verl.netz[slot] = (int16_t)lroundf(sumN2 / sumN);
   if (letzteBuchung) {
     uint32_t d = ms - letzteBuchung; if (d > 30000) d = 30000;   // Lücken nicht hochrechnen
     float h = d / 3600000.0f;

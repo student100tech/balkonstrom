@@ -36,11 +36,11 @@ struct Fund { char host[48]; char ip[16]; char produkt[32]; };
 static const int SLOTS = 288;            // 5-Minuten-Werte eines Tages
 struct Verlauf {
   uint32_t tag = 0;                      // JJJJMMTT, 0 = leer
-  int16_t solar[SLOTS], haus[SLOTS], laden[SLOTS];   // -1 = keine Daten
-  float whSolar = 0, whHaus = 0, whNetz = 0;
+  int16_t solar[SLOTS], haus[SLOTS], laden[SLOTS], netz[SLOTS];   // -1 = keine Daten
+  float whSolar = 0, whHaus = 0, whNetz = 0, whEinsp = -1;         // whEinsp -1 = nicht messbar (kein Zähler)
   void leeren(uint32_t t) {
-    tag = t; whSolar = whHaus = whNetz = 0;
-    for (int i = 0; i < SLOTS; i++) solar[i] = haus[i] = laden[i] = -1;
+    tag = t; whSolar = whHaus = whNetz = 0; whEinsp = -1;
+    for (int i = 0; i < SLOTS; i++) solar[i] = haus[i] = laden[i] = netz[i] = -1;
   }
 };
 
@@ -173,8 +173,8 @@ struct Oberflaeche {
   void kopf(Leinwand &L, const Lage &g) {
     sonne(L, g);
     float yb = AY(-37);
-    logo(L, 14, AY(-48), 13 * K);
-    L.text(14 + 13 * K + 5, yb, "PV-Monitor", M178, C_MUTED);
+    logo(L, 14, AY(-52), 17 * K);
+    L.text(14 + 17 * K + 5, yb, "PV-Monitor", M178, C_MUTED);
     char t[40];
     bool offline = g.alterS > 10;
     if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
@@ -317,7 +317,7 @@ struct Oberflaeche {
 
     knoten(304, 142, 26, C_HOMEBG, C_HOMELN, C_HOME, f.home / fmaxf(50, grenzeAus));
     ikone(L, IK_HAUS, AX(289), AY(127), 1.25f * K, 1.6f * 1.25f * K, C_HOME);
-    L.text(AX(304), AY(102), T(T_INS_HAUS), R165, C_MUTED, 1);
+    L.text(AX(304), AY(102), T(hausW > 2 ? T_INS_HAUS : T_HAUS), R165, C_MUTED, 1);   // ruht: nur "Haus"
     fmtW(b, sizeof b, hausW);
     L.text(AX(304), AY(192), b, ziffern(b) > 3 ? S199 : S233, C_TEXT, 1, true);
 
@@ -511,8 +511,8 @@ struct Oberflaeche {
     kopf(L, g);
     // Legende
     float lx = 20;
-    struct { uint16_t c; int t; } leg[3] = {{C_SOLAR, T_SOLAR}, {C_HOME, T_INS_HAUS}, {C_BAT, T_LEG_LAEDT}};
-    for (int i = 0; i < 3; i++) {
+    struct { uint16_t c; int t; } leg[4] = {{C_SOLAR, T_SOLAR}, {C_HOME, T_HAUS}, {C_BAT, T_AKKU_KURZ}, {C_GRID, T_NETZ}};
+    for (int i = 0; i < 4; i++) {
       L.rund(lx, 46, 9, 9, 3, leg[i].c);
       lx += 15 + L.text(lx + 15, 55, T(leg[i].t), R125, C_MUTED2) + 16;
     }
@@ -521,7 +521,7 @@ struct Oberflaeche {
     // Massstab: vier Abschnitte, runde Schritte
     int maxW = 0;
     if (v && v->tag) for (int i = 0; i < SLOTS; i++) {
-      int m = v->solar[i]; if (v->haus[i] > m) m = v->haus[i]; if (v->laden[i] > m) m = v->laden[i];
+      int m = v->solar[i]; if (v->haus[i] > m) m = v->haus[i]; if (v->laden[i] > m) m = v->laden[i]; if (v->netz[i] > m) m = v->netz[i];
       if (m > maxW) maxW = m;
     }
     static const int SCHRITTE[] = {50, 100, 150, 200, 250, 300, 400, 500, 600, 750, 1000, 1500, 2000, 2500};
@@ -558,6 +558,7 @@ struct Oberflaeche {
       }
       kurve(L, v->solar, sx, sy, C_SOLAR);
       kurve(L, v->haus, sx, sy, C_HOME);
+      kurve(L, v->netz, sx, sy, C_GRID);
       if (jetzt >= 0) {
         float xj = sx(jetzt + 0.5f);
         for (float yy = Y0; yy < Y1; yy += 7) L.flaeche((int)xj, (int)yy, 1, 3, C_MUTED);
@@ -565,16 +566,20 @@ struct Oberflaeche {
         if (hz >= 0) L.scheibe(xj, sy(hz), 3.5f, C_HOME);
       }
     }
-    // Tagesbilanz
-    struct { int t; float wh; uint16_t c; } bil[3] = {
-      {T_SOLAR_HEUTE, v ? v->whSolar : 0, C_SOLAR}, {T_INS_HAUS, v ? v->whHaus : 0, C_HOME}, {T_AUS_NETZ, v ? v->whNetz : 0, C_GRID}};
-    for (int i = 0; i < 3; i++) {
-      float x = 20 + i * (140 + 10);
-      L.karte(x, 396, 140, 58, 16, C_CARD, C_LINE2);
-      L.text(x + 14, 417, T(bil[i].t), R115, C_MUTED);
-      char t[24], z[16]; fmtKomma(z, sizeof z, bil[i].wh / 1000, 1);
-      snprintf(t, sizeof t, "%s %s", z, T(T_KWH));
-      L.text(x + 14, 443, t, S180, bil[i].c, 0, true);
+    // Tagesbilanz: PV-Ertrag, Eigenverbrauch, Einspeisung, aus dem Netz.
+    // Einspeisung braucht einen Zähler; ohne steht dort ein Strich.
+    struct { int t; float wh; uint16_t c; } bil[4] = {
+      {T_PV_ERTRAG, v ? v->whSolar : 0, C_SOLAR}, {T_EIGENVERBRAUCH, v ? v->whHaus : 0, C_HOME},
+      {T_EINSPEISUNG, v ? v->whEinsp : -1, C_BAT}, {T_AUS_NETZ, v ? v->whNetz : 0, C_GRID}};
+    float kb = (440 - 3 * 8) / 4.0f;
+    for (int i = 0; i < 4; i++) {
+      float x = 20 + i * (kb + 8);
+      L.karte(x, 396, kb, 58, 14, C_CARD, C_LINE2);
+      L.text(x + 10, 416, T(bil[i].t), R105, C_MUTED);
+      char t[24], z[16];
+      if (bil[i].wh < 0) snprintf(t, sizeof t, "–");
+      else { fmtKomma(z, sizeof z, bil[i].wh / 1000, 1); snprintf(t, sizeof t, "%s %s", z, T(T_KWH)); }
+      L.text(x + 10, 442, t, S160, bil[i].wh < 0 ? C_MUTED : bil[i].c, 0, true);
     }
     reiter(L);
   }
@@ -597,19 +602,9 @@ struct Oberflaeche {
 
   // ===================== Einstellungen =====================
   void einst(Leinwand &L, const Lage &g) {
-    // Kein Zurück-Knopf (Eugen, 25.11.): wie die anderen Hauptseiten über die Reiter
-    L.text(20, 33, T(T_EINSTELLUNGEN), S200, C_TEXT);
+    // Kopf wie auf den anderen Hauptseiten (Eugen, 25.11.); kein Zurück-Knopf
+    kopf(L, g);
     char b[64];
-    if (g.updBuild > g.build) {
-      snprintf(b, sizeof b, T(T_UPD_PILLE), g.updBuild);
-      float bw = Leinwand::breite(b, S150) + 24;
-      L.rund(460 - bw, 13, bw, 30, 15, C_BAT);
-      L.text(460 - bw / 2, 33, b, S150, C_ONBAT, 1);
-      knopf(450 - bw, 4, bw + 20, 46, K_UPDATE);
-    } else {
-      snprintf(b, sizeof b, "Build %d", g.build); L.text(460, 32, b, R130, C_MUTED, 2);
-      knopf(360, 4, 120, 46, K_UPDATE);
-    }
     // Speicher und WLAN
     float y = 50;
     L.karte(20, y, 440, 118, 16, C_CARD, C_LINE2);
@@ -626,6 +621,10 @@ struct Oberflaeche {
     y = 176;
     L.karte(20, y, 440, 142, 16, C_CARD, C_LINE2);
     L.text(34, y + 22, T(T_MODULLEISTUNG), R120, C_MUTED);
+    // Firmware-Stand rechts in derselben Zeile; mit neuem Build grün
+    if (g.updBuild > g.build) snprintf(b, sizeof b, T(T_UPD_PILLE), g.updBuild); else snprintf(b, sizeof b, "Build %d", g.build);
+    L.text(446, y + 22, b, g.updBuild > g.build ? S150 : R120, g.updBuild > g.build ? C_BAT : C_MUTED, 2);
+    knopf(300, y, 160, 34, K_UPDATE);
     Fluss f = rechneFluss(g.w);
     int n = g.w.da && f.pvAnz ? (f.pvAnz > 4 ? 4 : f.pvAnz) : 4;
     float fw = (412 - (n - 1) * 8.0f) / n;
