@@ -26,14 +26,14 @@ static constexpr int SCHWELLE_FAULTLEVELSTOERUNGAB = 2;
 static constexpr int SCHWELLE_PVTOTZONEWATTJEEINGANG = 10;
 
 // Farben (0xRRGGBB)
-static constexpr unsigned FARBE_HELL_SOLAR = 0xB36A00;
-static constexpr unsigned FARBE_HELL_BAT = 0x0A7D5E;
-static constexpr unsigned FARBE_HELL_GRID = 0xBE123C;
-static constexpr unsigned FARBE_HELL_HOME = 0x5B3FD0;
-static constexpr unsigned FARBE_DUNKEL_SOLAR = 0xFFB547;
-static constexpr unsigned FARBE_DUNKEL_BAT = 0x3DDBB0;
-static constexpr unsigned FARBE_DUNKEL_GRID = 0xFF8FA3;
-static constexpr unsigned FARBE_DUNKEL_HOME = 0xA594FF;
+static constexpr unsigned FARBE_HELL_SOLAR = 0xC98A00;
+static constexpr unsigned FARBE_HELL_BAT = 0x0F8A64;
+static constexpr unsigned FARBE_HELL_GRID = 0x2F6FB3;
+static constexpr unsigned FARBE_HELL_HOME = 0x3D3A35;
+static constexpr unsigned FARBE_DUNKEL_SOLAR = 0xE8B44C;
+static constexpr unsigned FARBE_DUNKEL_BAT = 0x5ED3A5;
+static constexpr unsigned FARBE_DUNKEL_GRID = 0x8FA3BF;
+static constexpr unsigned FARBE_DUNKEL_HOME = 0xF2F4F8;
 
 // Eingangsgrenze je MPPT nach Modell
 // solarFlow800Pro2: 660 W

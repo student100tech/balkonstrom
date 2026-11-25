@@ -12,27 +12,30 @@
   font-weight:200 800;font-style:normal;font-display:block}</style>
 <!-- Icons „solar-panel“ und „house-plug“: Lucide (https://lucide.dev), ISC License, © Lucide Contributors -->
 <style>
+  /* Farben seit 25.11.2026: Variante F ("Nacht & Gold") dunkel, Variante G
+     ("Papier") hell - eigene Palette statt Netz rot / Haus lila, siehe
+     Projektdoku Abschnitt 13. Dieselben Werte stehen in shared/modell.json. */
   :root{
-    --bg:#0A0C11; --card:#13161E; --card2:#1B1F2A; --card3:#181C26; --line:#252A36; --line2:#1F2430; --line3:#2A3040;
-    --text:#F2F4F8; --muted:#8E95A5; --muted2:#C9CED8; --dim:#6B7282;
-    --solar:#FFB547; --home:#A594FF; --bat:#3DDBB0; --batText:#7EEACB; --grid:#FF8FA3; --warn:#F87171; --ok:#4ADE80; --limLo:#FF6B81; --limHi:#6FA8FF;
+    --bg:#0B0D12; --card:#14171E; --card2:#1A1E26; --card3:#171A22; --line:#20242D; --line2:#1A1E26; --line3:#2A2F3A;
+    --text:#F2F4F8; --muted:#858C9B; --muted2:#BFC5D0; --dim:#646B7A;
+    --solar:#E8B44C; --home:#F2F4F8; --bat:#5ED3A5; --batText:#8FE3C2; --grid:#8FA3BF; --warn:#F87171; --ok:#4ADE80; --limLo:#FF6B81; --limHi:#6FA8FF;
     --gridin:#F87171; --feed:#60A5FA;
-    --onbat:#052219; --onfeed:#07213d; --tabon:#232838;
-    --solarBg:#1E1A12; --solarLn:#3A3124; --gridBg:#241319; --gridLn:#45242D;
-    --homeBg:#18162A; --homeLn:#2B2745; --batBg:#112420; --batLn:#21342F;
-    --moon:#C9D4E8; --noteBg:#12161F; --noteTx:#A8AFBD; --navBg:rgba(22,25,33,.92);
+    --onbat:#06261B; --onfeed:#07213d; --tabon:#20242D;
+    --solarBg:#211E18; --solarLn:#423720; --gridBg:#181C23; --gridLn:#2C323D;
+    --homeBg:#1D1F24; --homeLn:#393B40; --batBg:#132121; --batLn:#203E37;
+    --moon:#C9D4E8; --noteBg:#12151C; --noteTx:#A3A9B6; --navBg:rgba(20,23,30,.92);
     --errBg:#3a1f25; --errLn:#6b2a33; --errTx:#fecaca; --errBtn:#4a2229; --errBtnLn:#7a3340;
     --num:Manrope,system-ui,sans-serif;
   }
   :root[data-theme="light"]{
-    --bg:#F3F5F9; --card:#FFFFFF; --card2:#EDF0F6; --card3:#F8FAFD; --line:#DCE1EA; --line2:#E7EBF2; --line3:#C5CCD9;
-    --text:#10131A; --muted:#5C6475; --muted2:#39414F; --dim:#8A92A3;
-    --solar:#B36A00; --home:#5B3FD0; --bat:#0A7D5E; --batText:#07614A; --grid:#BE123C; --warn:#C62828; --ok:#0A7D5E; --limLo:#D81B45; --limHi:#1D4ED8;
+    --bg:#F4F1EA; --card:#FFFFFF; --card2:#EFEBE2; --card3:#FAF8F3; --line:#DDD6C8; --line2:#E8E2D6; --line3:#CFC6B4;
+    --text:#1E1D1A; --muted:#6F6A60; --muted2:#4A463F; --dim:#8F897D;
+    --solar:#C98A00; --home:#3D3A35; --bat:#0F8A64; --batText:#0B6B4E; --grid:#2F6FB3; --warn:#C62828; --ok:#15803D; --limLo:#D81B45; --limHi:#1D4ED8;
     --gridin:#C62828; --feed:#1D4ED8;
-    --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E2E7F1;
-    --solarBg:#FFF5E4; --solarLn:#EBD3A6; --gridBg:#FFEDF1; --gridLn:#F3C4D0;
-    --homeBg:#F1EEFF; --homeLn:#D3C9F8; --batBg:#E3F6F0; --batLn:#AFE2D4;
-    --moon:#6F7A8C; --noteBg:#EDF1F8; --noteTx:#49515F; --navBg:rgba(255,255,255,.92);
+    --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E8E2D6;
+    --solarBg:#FAF3E6; --solarLn:#EFDCB2; --gridBg:#EEF3F9; --gridLn:#CBDBEC;
+    --homeBg:#F3F3F3; --homeLn:#D8D8D7; --batBg:#ECF6F3; --batLn:#C3E2D8;
+    --moon:#6F7A8C; --noteBg:#EEE9DF; --noteTx:#4A463F; --navBg:rgba(255,253,248,.92);
     --errBg:#FDECEC; --errLn:#F2BDBA; --errTx:#8E1C17; --errBtn:#FAD6D4; --errBtnLn:#E8A29E;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -58,6 +61,11 @@
   .pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
   .dot.ok{background:var(--ok)} .dot.err{background:var(--warn)} .dot.demo{background:var(--solar)}
+  /* Statt Live-Pille: "Stand 07:37", davor das WLAN des Handys wie am Monitor */
+  .stand{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stand.err{color:var(--warn)} .stand.demo{color:var(--solar)}
+  .hdrwlan{padding-bottom:0} .hdrwlan[hidden]{display:none}
+  .hdrwlan.aus i{background:var(--warn)}
   .iconbtn{position:relative;width:44px;height:44px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--muted2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none}
   .iconbtn svg{width:20px;height:20px}
   .iconbtn.has-update::after,
@@ -104,6 +112,9 @@
   /* Vierstellige Werte am linken und rechten Rand eine Stufe schmaler … */
   .node-val.small.lang{font-size:calc(14.5px * min(var(--zoom,1), 1.25))}
   .pvlab{font-weight:500}
+  .devname{font-size:11px;font-weight:600;fill:var(--text)}
+  .devsub{font-size:10px;fill:var(--muted)} .devsub.hinweis{fill:var(--text);font-weight:600}
+  #devBars rect{fill:var(--line3)} #devBars rect.on{fill:var(--ok)}
   .wbase{stroke:var(--line);stroke-width:3;fill:none;stroke-linecap:round}
 /* CSS-MODELL-ANFANG – erzeugt aus shared/modell.json */
   .wire{stroke:transparent;stroke-width:3;fill:none;stroke-linecap:round}
@@ -335,11 +346,11 @@
       <!-- Dieselbe Zeichnung wie das Start-Icon, nur in 42 Einheiten:
            Faktor 42/1024 mal die 0,92 des Originals. Farben aus dem dunklen
            Thema (--solar, --bat), weil die Kachel immer dunkel bleibt. -->
-      <svg viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1B1F2A"/><g stroke="#FFB547" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#FFB547"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#FFB547" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#3DDBB0" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#3DDBB0"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#3DDBB0"/></svg>
-      <h1>PV-Monitor<small id="devname">SolarFlow 800 Plus</small></h1>
+      <svg viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1A1E26"/><g stroke="#E8B44C" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#E8B44C"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#E8B44C" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#5ED3A5" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#5ED3A5"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#5ED3A5"/></svg>
+      <h1>PV-Monitor</h1>
     </div>
     <div class="hdr-right">
-      <div class="pill"><span class="dot" id="dot"></span><span id="status" data-i18n="connecting">Verbinde…</span></div>
+      <span class="bars4 hdrwlan" id="hdrWlan" aria-hidden="true" hidden><i style="height:6px"></i><i style="height:10px"></i><i style="height:14px"></i><i style="height:18px"></i></span><span class="stand" id="status" data-i18n="connecting">Verbinde…</span>
     </div>
   </header>
 
@@ -387,10 +398,10 @@
 
     <div class="card flow">
       <svg id="svgFlow" viewBox="0 -60 350 350" role="img" data-i18n-al="al_flow" aria-label="Energiefluss">
-        <g id="grpSolarW"><path class="wbase" d="M175 70 V118"/><path id="wSolar" class="wire" d="M175 70 V118"/></g>
-        <path class="wbase" d="M72 142 H152"/><path id="wGrid" class="wire" d="M72 142 H152"/><path id="wGrid2" class="wire" d="M72 142 H152"/>
-        <path class="wbase" d="M198 142 H278"/><path id="wHome" class="wire" d="M198 142 H278"/><path id="wHome2" class="wire" d="M198 142 H278"/><path id="wHome3" class="wire" d="M198 142 H278"/>
-        <path class="wbase" d="M175 166 V220"/><path id="wBat" class="wire" d="M175 166 V220"/><path id="wBat2" class="wire" d="M175 166 V220"/>
+        <g id="grpSolarW"><path id="bSolar" class="wbase" d="M175 70 V122"/><path id="wSolar" class="wire" d="M175 70 V122"/></g>
+        <path id="bGrid" class="wbase" d="M72 142 H125"/><path id="wGrid" class="wire" d="M72 142 H125"/><path id="wGrid2" class="wire" d="M72 142 H125"/>
+        <path id="bHome" class="wbase" d="M225 142 H278"/><path id="wHome" class="wire" d="M225 142 H278"/><path id="wHome2" class="wire" d="M225 142 H278"/><path id="wHome3" class="wire" d="M225 142 H278"/>
+        <path id="bBat" class="wbase" d="M175 162 V220"/><path id="wBat" class="wire" d="M175 162 V220"/><path id="wBat2" class="wire" d="M175 162 V220"/>
 
         <!-- Solar: der Ring ist in so viele Boegen geteilt, wie das Geraet Eingaenge
              hat. Jeder Bogen fuellt sich im Uhrzeigersinn an seinem eigenen Anteil
@@ -403,11 +414,13 @@
         <text class="node-val" x="175" y="-12" text-anchor="middle" id="tSolar" data-i18n="dash_w">– W</text>
         <g id="pvLabs"></g>
 
-        <circle cx="175" cy="142" r="22" fill="var(--card2)" stroke="var(--line3)"/>
-        <path d="M179 128 l-11 16 h8 l-3 12 l11-16 h-8z" fill="var(--text)"/>
-        <!-- Was im Geraet bleibt: rechts neben der Nabe, ueber der Leitung zum Haus.
-             Dort ist Platz frei, egal welche Zweige gerade fliessen. -->
-        <text class="node-sub" x="202" y="137" id="tLoss"></text>
+        <!-- Mitte: der Speicher selbst als Karte mit Modellname und WLAN-Balken
+             (gleiche Stufen wie #rssiBars). Gibt es etwas zu melden - Störung,
+             Akku kalt -, steht der Hinweis statt der zweiten Namenszeile. -->
+        <rect x="125" y="122" width="100" height="40" rx="12" fill="var(--card2)" stroke="var(--line3)"/>
+        <text class="devname" x="167" y="139" text-anchor="middle" id="tDev1">SolarFlow</text>
+        <text class="devsub" x="167" y="154" text-anchor="middle" id="tDev2"></text>
+        <g id="devBars"><rect x="204" y="137.6" width="2.33" height="3.5" rx="1"/><rect x="208.1" y="135.3" width="2.33" height="5.83" rx="1"/><rect x="212.2" y="133" width="2.33" height="8.17" rx="1"/><rect x="216.3" y="130.6" width="2.33" height="10.5" rx="1"/></g>
 
         <circle cx="46" cy="142" r="26" fill="var(--gridBg)" stroke="var(--gridLn)" stroke-width="5"/>
         <circle id="gridRing" cx="46" cy="142" r="26" fill="none" stroke="var(--grid)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 46 142)"/>
@@ -428,7 +441,7 @@
         <!-- Off-Grid-Dose: haengt am Akku, deshalb links daneben an einer eigenen
              kurzen Leitung. Nur sichtbar, wenn das Geraet die Felder meldet. -->
         <g id="grpOff" style="display:none">
-          <path class="wbase" d="M144 248 H66"/>
+          <path id="bOff" class="wbase" d="M144 248 H66"/>
           <path id="wOff" class="wire" d="M144 248 H66"/>
           <circle cx="40" cy="248" r="22" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
           <g transform="translate(29 237)" fill="none" stroke="var(--home)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v5"/><path d="M15 2v5"/><path d="M5 7h14v4.5a7 7 0 0 1-14 0z"/><path d="M12 18.5V22"/></g>
@@ -694,7 +707,7 @@
 </div>
 
 <nav class="tabs" data-i18n-al="al_areas" aria-label="Bereiche">
-  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M13 3 5 14h6l-1 7 8-11h-6z"/></svg><span data-i18n="tab_live">Live</span></button>
+  <button class="on" data-v="vLive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="4.5" r="2.5"/><path d="m10.2 6.3-3.9 3.9"/><circle cx="4.5" cy="12" r="2.5"/><path d="M7 12h10"/><circle cx="19.5" cy="12" r="2.5"/><path d="m13.8 17.7 3.9-3.9"/><circle cx="12" cy="19.5" r="2.5"/></svg><span data-i18n="tab_live">Fluss</span></button>
   <button data-v="vStats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg><span data-i18n="state">Zustand</span></button>
   <button id="btnSettings" data-v="vSet" data-i18n-al="al_settings" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span data-i18n="d_title">Einstellungen</span></button>
 </nav>
@@ -932,7 +945,7 @@
       e_notconn:'Gerät noch nicht verbunden', e_nologin:'Kein Zendure-Login eingetragen',
       e_nodev:'Kein Gerät im Zendure-Konto gefunden',
       foot_src:'Daten direkt vom Gerät im WLAN (zenSDK)',
-      tab_live:'Live',
+      tab_live:'Fluss', stand:'Stand', dev_err:'Störung', dev_cold:'Akku kalt', dev_heat:'Akku heizt', dev_derate:'gedrosselt',
       d_title:'Einstellungen', d_grp_look:'Anzeige', d_grp_conn:'Verbindung',
       d_grp_plant:'Meine Anlage', d_lang:'Sprache', d_app:'App', d_version:'Version __APPVERSION__',
       check_update:'Nach Update suchen', update_to:n=>`Jetzt updaten auf Build ${n}`,
@@ -1090,7 +1103,7 @@
       e_notconn:'Устройство ещё не подключено', e_nologin:'Данные Zendure не введены',
       e_nodev:'В учётной записи Zendure устройств не найдено',
       foot_src:'Данные напрямую с устройства в сети Wi-Fi (zenSDK)',
-      tab_live:'Онлайн',
+      tab_live:'Поток', stand:'Обновлено', dev_err:'Неисправность', dev_cold:'АКБ холодный', dev_heat:'Подогрев АКБ', dev_derate:'Мощность снижена',
       d_title:'Настройки', d_grp_look:'Отображение', d_grp_conn:'Подключение',
       d_grp_plant:'Моя установка', d_lang:'Язык', d_app:'Приложение', d_version:'Версия __APPVERSION__',
       check_update:'Проверить обновление', update_to:n=>`Обновить до сборки ${n}`,
@@ -1362,18 +1375,19 @@
       "strichbreite": 3,
       "minWatt": 2
     },
+    "_hinweisFarben": "Seit 25.11.2026 eigene Palette: dunkel = Variante F (Nacht & Gold), hell = Variante G (Papier). Vorher Netz rot und Haus lila - zu nah an SunAlyze.",
     "farben": {
       "hell": {
-        "solar": "#B36A00",
-        "bat": "#0A7D5E",
-        "grid": "#BE123C",
-        "home": "#5B3FD0"
+        "solar": "#C98A00",
+        "bat": "#0F8A64",
+        "grid": "#2F6FB3",
+        "home": "#3D3A35"
       },
       "dunkel": {
-        "solar": "#FFB547",
-        "bat": "#3DDBB0",
-        "grid": "#FF8FA3",
-        "home": "#A594FF"
+        "solar": "#E8B44C",
+        "bat": "#5ED3A5",
+        "grid": "#8FA3BF",
+        "home": "#F2F4F8"
       }
     },
     "umrechnung": {
@@ -1462,9 +1476,16 @@
   requestAnimationFrame(flussUhr);
 
   // Hier wird nur noch gesagt, wer mitlaeuft und auf welchem Platz.
+  // WLAN-Stufe wie in der App seit jeher: ab -55 dBm vier Balken, -67 drei, -75 zwei
+  const rssiStufe = r => !r ? 0 : r >= -55 ? 4 : r >= -67 ? 3 : r >= -75 ? 2 : 1;
+  // Leitungen nur leicht nach Leistung: 2,5 in Ruhe bis 4 ab 800 W
+  const dicke = w => (2.5 + 1.5 * Math.min(1, Math.max(0, w) / 800)).toFixed(2);
   function setWire(ids, watts, reverse, farben){
     const cols = [].concat(farben), an = watts > MODELL.fluss.minWatt;
     const spuren = [].concat(ids).map(i => $(i)).filter(Boolean);
+    const sw = dicke(watts), basis = $('b' + [].concat(ids)[0].slice(1));
+    if (basis) basis.style.strokeWidth = sw;
+    spuren.forEach(el => el.style.strokeWidth = sw);
     const n = an ? Math.min(cols.length, spuren.length) : 0;
     spuren.forEach((el, i) => {
       const laeuft = i < n;
@@ -1510,8 +1531,19 @@
     const rein = solar + discharge + grid, raus = home + charge;
     const verlust = (rein >= 15 && rein - raus >= 1) ? Math.round(rein - raus) : null;
 
-    $('devname').textContent = d.product ? prodName(d.product, d) : 'SolarFlow';
-    $('tLoss').textContent = verlust == null ? '' : '\u2212' + fmtW(verlust);
+    // Gerätekarte: erstes Wort des Modellnamens oben, der Rest darunter -
+    // oder statt des Rests ein Hinweis, wenn das Gerät etwas zu melden hat.
+    const nm = (d.product ? prodName(d.product, d) : 'SolarFlow').split(' ');
+    const tpk = tempC(d.packData?.[0]?.maxTemp);
+    const hinweis = (p.is_error || (p.faultLevel ?? 0) >= MODELL.schwellen.faultLevelStoerungAb) ? t('dev_err')
+                  : p.heatState ? t('dev_heat') : (tpk != null && tpk < 0) ? t('dev_cold')
+                  : p.derateFlag ? t('dev_derate') : '';
+    $('tDev1').textContent = nm[0];
+    $('tDev2').textContent = hinweis || nm.slice(1).join(' ');
+    $('tDev2').classList.toggle('hinweis', !!hinweis);
+    const dlvl = rssiStufe(p.rssi);
+    $('devBars').querySelectorAll('rect').forEach((r, i) => r.classList.toggle('on', i < dlvl));
+    void verlust;   // der Verlust steht nur noch in der Ansicht Zustand
     $('tSolar').textContent = fmtW(solar);
     // Der 800 Pro 2 hat vier Solareingaenge, das 800 Plus zwei
     // Wie viele Solareingaenge das Geraet hat, steht nirgends - es meldet sie
@@ -1641,7 +1673,7 @@
     $('cWifiT').textContent = (cfg.meterIp || demo) ? t('wifi_of', t('z_grp_bat')) : t('wifi');
     // Die Einheit steht jetzt am Wert, nicht mehr in einer Unterzeile.
     $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : '–';
-    const lvl = !p.rssi ? 0 : p.rssi >= -55 ? 4 : p.rssi >= -67 ? 3 : p.rssi >= -75 ? 2 : 1;
+    const lvl = rssiStufe(p.rssi);
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
     zeigeZustand();
   }
@@ -1693,15 +1725,30 @@
     if (last) render(last); else zeigeZustand();   // render frischt den Zustand mit auf
   }
 
-  function setStatus(kind, text){ $('dot').className = 'dot ' + kind; $('status').textContent = text; }
+  function setStatus(kind, text){ $('status').className = 'stand ' + kind; $('status').textContent = text; }
   function showMsg(html){ const m = $('msg'); if (!html) { m.style.display = 'none'; m.innerHTML = ''; return; } m.innerHTML = html; m.style.display = 'block'; }
+
+  // WLAN des Handys, wie oben rechts am Monitor: rot ohne WLAN, sonst die Stufe.
+  async function handyWlan(){
+    const el = $('hdrWlan'), cap = window.Capacitor;
+    if (!isApp || !el) return;
+    try {
+      const plug = cap.Plugins?.Discovery;
+      const r = plug?.wlan ? await plug.wlan() : await cap.nativePromise('Discovery', 'wlan', {});
+      el.hidden = false;
+      el.classList.toggle('aus', !r.wlan);
+      const st = r.wlan ? Math.max(1, rssiStufe(r.rssi)) : 4;
+      el.querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', r.wlan && i < st));
+    } catch { el.hidden = true; }
+  }
+  setInterval(handyWlan, 10000); setTimeout(handyWlan, 500);
 
   async function tick(){
     try {
       render(await fetchReport());
       fails = 0; showMsg('');
       lastOk = new Date();
-      setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : '') + lastOk.toLocaleTimeString(LOC()));
+      setStatus(demo ? 'demo' : 'ok', (demo ? t('demo_pfx') : t('stand') + ' ') + hm(lastOk));
       $('foot').textContent = demo ? t('foot_demo') + ' · ' + t('dz_' + demoNr)
                                    : t('foot_live', cfg.ip, cfg.interval);
       holeMeter();   // zweites Geraet nebenher, ein Fehler dort stoert die Live-Werte nicht

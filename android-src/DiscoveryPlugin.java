@@ -56,6 +56,33 @@ public class DiscoveryPlugin extends Plugin {
 
     private static final String SERVICE = "_zendure._tcp";
 
+    /**
+     * WLAN des Handys fuer die Kopfzeile: ob es im WLAN haengt und mit welchem
+     * Pegel. Nur die Signalstaerke, nicht der Netzname - dafuer braucht Android
+     * keine Standortfreigabe, ACCESS_WIFI_STATE genuegt.
+     */
+    @PluginMethod
+    public void wlan(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean wlan = false; int rssi = 0;
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+            Network n = cm.getActiveNetwork();
+            NetworkCapabilities nc = n == null ? null : cm.getNetworkCapabilities(n);
+            wlan = nc != null && nc.hasTransport(NetworkCapabilities.TRANSPORT_WIFI);
+            if (wlan) {
+                if (android.os.Build.VERSION.SDK_INT >= 29) rssi = nc.getSignalStrength();
+                if (rssi == 0 || rssi == Integer.MIN_VALUE) {
+                    WifiManager wm = (WifiManager) getContext().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                    rssi = wm.getConnectionInfo().getRssi();
+                }
+            }
+        } catch (Exception ignored) { }
+        r.put("wlan", wlan);
+        r.put("rssi", rssi);
+        call.resolve(r);
+    }
+
     @PluginMethod
     public void search(PluginCall call) {
         final int mdnsMs = call.getInt("mdnsMs", 4000);

@@ -15,15 +15,19 @@
 #include "texte.h"
 
 // ---------- Farben (dunkles Thema der App) ----------
-static const uint16_t C_BG = rgb(0x0A0C11), C_CARD = rgb(0x13161E), C_CARD2 = rgb(0x1B1F2A),
-  C_LINE = rgb(0x252A36), C_LINE2 = rgb(0x1F2430), C_LINE3 = rgb(0x2A3040),
-  C_TEXT = rgb(0xF2F4F8), C_MUTED = rgb(0x8E95A5), C_MUTED2 = rgb(0xC9CED8), C_DIM = rgb(0x6B7282),
+// Variante F ("Nacht & Gold") seit 25.11.2026 - dieselben Werte wie das
+// dunkle Thema der App. Kreisgrund und Ringspur sind die Knotenfarbe zu 10 bzw.
+// 25 % auf dem Grund (Haus 8/20 %, weil es fast weiß ist).
+static const uint16_t C_BG = rgb(0x0B0D12), C_CARD = rgb(0x14171E), C_CARD2 = rgb(0x1A1E26),
+  C_LINE = rgb(0x20242D), C_LINE2 = rgb(0x1A1E26), C_LINE3 = rgb(0x2A2F3A),
+  C_TEXT = rgb(0xF2F4F8), C_MUTED = rgb(0x858C9B), C_MUTED2 = rgb(0xBFC5D0), C_DIM = rgb(0x646B7A),
   C_SOLAR = rgb(FARBE_DUNKEL_SOLAR), C_HOME = rgb(FARBE_DUNKEL_HOME), C_BAT = rgb(FARBE_DUNKEL_BAT),
   C_GRID = rgb(FARBE_DUNKEL_GRID), C_OK = rgb(0x4ADE80), C_WARN = rgb(0xF87171),
   C_LIMLO = rgb(0xFF6B81), C_LIMHI = rgb(0x6FA8FF),
-  C_SOLARBG = rgb(0x1E1A12), C_SOLARLN = rgb(0x3A3124), C_GRIDBG = rgb(0x241319), C_GRIDLN = rgb(0x45242D),
-  C_HOMEBG = rgb(0x18162A), C_HOMELN = rgb(0x2B2745), C_BATBG = rgb(0x112420), C_BATLN = rgb(0x21342F),
-  C_ONBAT = rgb(0x052219), C_NACHT = rgb(0x12161F), C_TASTE = rgb(0x1B1F2A), C_SONDER = rgb(0x252A36);
+  C_SOLARBG = rgb(0x22200F), C_SOLARLN = rgb(0x412E1B), C_GRIDBG = rgb(0x181B21), C_GRIDLN = rgb(0x2C3343),
+  C_HOMEBG = rgb(0x1E2025), C_HOMELN = rgb(0x3A3C42), C_BATBG = rgb(0x111B1C), C_BATLN = rgb(0x1E4136),
+  C_ONBAT = rgb(0x06261B), C_NACHT = rgb(0x12151C), C_TASTE = rgb(0x1A1E26), C_SONDER = rgb(0x20242D),
+  C_NAV = rgb(0x14171E), C_TABON = rgb(0x20242D);
 
 // ---------- Zustand, den die Hardware liefert ----------
 struct Netz { char ssid[33]; int rssi; bool offen; };
@@ -53,6 +57,8 @@ struct Lage {
   Werte w;
   int alterS = -1;                       // Sekunden seit dem letzten Bericht, -1 = noch keiner
   bool uhr = false; int hh = 0, mm = 0, ss = 0;
+  int okHH = 0, okMM = 0, okSS = 0;      // Uhrzeit des letzten guten Berichts
+  bool wlanOk = false; int wlanRssi = 0; // WLAN des Monitors selbst
   Netz netze[24]; int netzAnz = 0; bool scanLaeuft = false;
   Fund funde[6]; int fundAnz = 0; bool sucheLaeuft = false;
   int verbinden = 0;                     // 0 nichts, 1 läuft, 2 ok, 3 Fehler
@@ -70,7 +76,7 @@ struct Lage {
 enum KnopfId {
   K_PILLE = 1, K_PUNKT, K_NETZ, K_WEITERE, K_NAME, K_TASTE, K_ZEIGEN, K_VERBINDEN, K_ZURUECK,
   K_GERAET, K_NEU_SUCHEN, K_IP, K_SP_AENDERN, K_WLAN_AENDERN, K_FELD, K_SPRACHE, K_ZONE,
-  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL
+  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL, K_TAB
 };
 struct Knopf { int16_t x, y, w, h; uint8_t id; int16_t arg; };
 
@@ -81,7 +87,7 @@ enum { W_SCAN = 1, W_VERBINDEN = 2, W_SUCHE = 4, W_SICHERN = 8, W_GERAET = 16, W
        W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256 };
 
 // Eine Leitung im Flussdiagramm mit ihren laufenden Strichen
-struct Draht { float x0, y0, x1, y1; uint16_t farbe[3]; int anz; bool rueck; bool an; };
+struct Draht { float x0, y0, x1, y1; uint16_t farbe[3]; int anz; bool rueck; bool an; float dicke; };
 
 static const float K = 480.0f / 350.0f;
 static inline float AX(float x) { return x * K; }
@@ -99,10 +105,10 @@ static void fmtKomma(char *b, int n, float v, int stellen) {
 }
 static void ikone(Leinwand &L, const float *ik, float dx, float dy, float s, float strich, uint16_t c, bool fuellen = false) {
   int teile = (int)ik[0], i = 1;
-  float pts[160];
+  static float pts[512];
   for (int t = 0; t < teile; t++) {
     int n = (int)ik[i], zu = (int)ik[i + 1]; i += 2;
-    int m = n < 80 ? n : 80;
+    int m = n < 256 ? n : 256;
     for (int k = 0; k < m; k++) { pts[2 * k] = dx + ik[i + 2 * k] * s; pts[2 * k + 1] = dy + ik[i + 2 * k + 1] * s; }
     i += 2 * n;
     if (fuellen) L.vieleck(pts, m, c); else L.polylinie(pts, m, strich, c, zu);
@@ -133,35 +139,59 @@ struct Oberflaeche {
   void gehe(Seite s) { seite = s; neu = true; }
 
   // ===================== gemeinsame Teile =====================
-  // Lage der Uhr-Pille der aktuellen Seite, damit sie jede Sekunde allein
-  // neu gezeichnet werden kann, ohne die ganze Seite.
-  float pilleR = -1, pilleO = 0; bool pilleTeil = false;
-  void pille(Leinwand &L, const Lage &g, float rechts, float oben) {
-    pilleR = rechts; pilleO = oben;
-    char t[16];
-    if (g.uhr) snprintf(t, sizeof t, "%02d:%02d:%02d", g.hh, g.mm, g.ss); else snprintf(t, sizeof t, "--:--:--");
-    float b = Leinwand::breite(t, M125, true), w = 11 + 8 + 6 + b + 11, x = rechts - w;
-    L.karte(x, oben, w, 30, 15, C_CARD, C_LINE);
-    uint16_t punkt = g.alterS < 0 ? C_DIM : g.alterS <= 15 ? C_OK : g.alterS <= 60 ? C_SOLAR : C_WARN;
-    L.scheibe(x + 15, oben + 15, 4, punkt);
-    L.text(x + 25, oben + 19.5f, t, M125, C_MUTED2, 0, true);
-    if (!pilleTeil) knopf(x - 10, oben - 8, w + 20, 46, K_PILLE);
+  bool tabs = false;                  // Reiterleiste eingeblendet (setzt die Hardware)
+
+  // WLAN-Stufe wie in der App: ab -55 dBm vier Balken, -67 drei, -75 zwei, sonst einer
+  static int rssiStufe(int r) { return !r ? 0 : r >= -55 ? 4 : r >= -67 ? 3 : r >= -75 ? 2 : 1; }
+  // Vier Balken 6/10/14/18 hoch, 4 breit, 3 Abstand (mal m); unten bei yu.
+  // aus = true: alle rot, wie ohne WLAN.
+  void wlanBalken(Leinwand &L, float x, float yu, int stufe, float m, bool aus) {
+    for (int i = 0; i < 4; i++) {
+      float h = (6 + 4 * i) * m;
+      L.rund(x + i * 7 * m, yu - h, 4 * m, h, 2 * m, aus ? C_WARN : i < stufe ? C_OK : C_LINE3);
+    }
   }
-  // Nur die Pille neu; gibt den Bereich zurück, der ins Bild kopiert werden muss.
-  bool nurPille(Leinwand &L, const Lage &g, int &x, int &y, int &w, int &h) {
-    if (pilleR < 0) return false;
-    x = (int)pilleR - 140; y = (int)pilleO - 2; w = 142; h = 34;
-    L.flaeche(x, y, w, h, C_BG);
-    pilleTeil = true; pille(L, g, pilleR, pilleO); pilleTeil = false;
-    return true;
+  // Logo der App, Kantenlänge s px
+  void logo(Leinwand &L, float x, float y, float s) {
+    float k = s / 42;
+    L.rund(x, y, s, s, 13 * k, C_CARD2);
+    static const float STR[5][4] = {{21, 11.11f, 21, 13.38f}, {15.11f, 13.53f, 16.47f, 15.11f}, {26.89f, 13.53f, 25.53f, 15.11f},
+                                    {12.62f, 18.74f, 14.7f, 19.23f}, {29.38f, 18.74f, 27.3f, 19.23f}};
+    for (auto &st : STR) L.linie(x + st[0] * k, y + st[1] * k, x + st[2] * k, y + st[3] * k, 1.28f * k, C_SOLAR);
+    ikone(L, IK_LOGO_SONNE, x, y, k, 0, C_SOLAR, true);
+    L.rund(x + 13 * k, y + 21.83f * k, 16 * k, 0.9f * k, 0.42f * k, Oberflaeche::mische(C_SOLAR, C_CARD2, 140));
+    float rp[8] = {x + 14.96f * k, y + 23.94f * k, x + 26.28f * k, y + 23.94f * k, x + 26.28f * k, y + 29.6f * k, x + 14.96f * k, y + 29.6f * k};
+    L.polylinie(rp, 4, 1.13f * k, C_BAT, true);
+    L.rund(x + 26.74f * k, y + 25.6f * k, 1.2f * k, 2.34f * k, 0.38f * k, C_BAT);
+    ikone(L, IK_LOGO_BLITZ, x, y, k, 0, C_BAT, true);
   }
-  // Seitenpunkte unten rechts: In der Mitte säße der mittlere Punkt im Akkuring.
-  void punkte(Leinwand &L, int aktiv, float y) {
-    (void)y; y = 461;
-    float x0 = 460 - (3 * 7 + 2 * 8);
-    for (int i = 0; i < 3; i++) {
-      L.scheibe(x0 + i * 15 + 3.5f, y + 3.5f, 3.5f, i == aktiv ? C_TEXT : C_LINE3);
-      knopf(x0 + i * 15 - 8, y - 12, 23, 31, K_PUNKT, i);
+  // Kopfzeile aller Hauptseiten: Logo + PV-Monitor links, WLAN + "Stand" rechts
+  void kopf(Leinwand &L, const Lage &g) {
+    logo(L, 14, 6, 30);
+    L.text(52, 28, "PV-Monitor", S180, C_TEXT);
+    char t[40];
+    bool offline = g.alterS > 10;
+    if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
+    else if (offline) snprintf(t, sizeof t, "%s %02d:%02d", T(T_OFFLINE), g.okHH, g.okMM);
+    else snprintf(t, sizeof t, "%s %02d:%02d", T(T_STAND), g.okHH, g.okMM);
+    float b = L.text(464, 27, t, R150, offline ? C_WARN : C_MUTED, 2, true);
+    wlanBalken(L, 464 - b - 10 - 25, 27, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
+  }
+  // Reiterleiste wie in der App: Fluss, Zustand, Verlauf, Einstellungen
+  void reiter(Leinwand &L) {
+    if (!tabs) return;
+    const float X = 16, Y = 400, W = 448, H = 68;
+    L.karte(X, Y, W, H, 24, C_NAV, C_LINE);
+    static const float *IK[4] = {IK_FLUSS, IK_ZUSTAND, IK_VERLAUF, IK_ZAHNRAD};
+    static const int TX[4] = {T_TAB_FLUSS, T_ZUSTAND, T_TAB_VERLAUF, T_EINSTELLUNGEN};
+    float bw = (W - 12 - 3 * 6) / 4;
+    for (int i = 0; i < 4; i++) {
+      float bx = X + 6 + i * (bw + 6);
+      bool an = (int)seite == i || (i == 3 && seite == S_EINST);
+      if (an) L.rund(bx, Y + 6, bw, H - 12, 18, C_TABON);
+      ikone(L, IK[i], bx + bw / 2 - 11, Y + 13, 22 / 24.0f, 2 * 22 / 24.0f, an ? C_BAT : C_MUTED);
+      L.text(bx + bw / 2, Y + 54, T(TX[i]), an ? M125 : R120, an ? C_TEXT : C_MUTED, 1);
+      knopf(bx, Y, bw + 6, H, K_TAB, i);
     }
   }
   void titel(Leinwand &L, const char *t, const char *unter, bool zurueck) {
@@ -186,22 +216,23 @@ struct Oberflaeche {
     const Werte &w = g.w;
     Fluss f = rechneFluss(w);
     char b[48];
-    L.text(16, 22, T(T_ENERGIEFLUSS), M178, C_MUTED);
-    pille(L, g, 464, 8);
+    kopf(L, g);
     drahtAnz = 0;
     if (!w.da) {
       L.text(240, 250, T(g.alterS < 0 ? T_WARTE : T_KEINE_DATEN), R180, C_MUTED, 1);
-      punkte(L, 0, 459);
+      reiter(L);
       return;
     }
     float hausW = f.home, netzW = f.grid, bezug = f.grid;
     // Leitungen (Grund)
-    auto grundLinie = [&](float x0, float y0, float x1, float y1) {
-      L.linie(AX(x0), AY(y0), AX(x1), AY(y1), 3 * K, C_LINE);
+    // Leitungen nur leicht nach Leistung: 2,5 in Ruhe bis 4 ab 800 W (wie die App)
+    auto dicke = [](float watt) { return (2.5f + 1.5f * klemm(watt / 800, 0, 1)) * K; };
+    auto grundLinie = [&](float x0, float y0, float x1, float y1, float watt) {
+      L.linie(AX(x0), AY(y0), AX(x1), AY(y1), dicke(watt), C_LINE);
     };
-    if (!f.ohnePv) grundLinie(175, 70, 175, 118);
-    grundLinie(72, 142, 152, 142); grundLinie(198, 142, 278, 142); grundLinie(175, 166, 175, 220);
-    if (f.hatOff) grundLinie(144, 248, 66, 248);
+    if (!f.ohnePv) grundLinie(175, 70, 175, 122, f.solar);
+    grundLinie(72, 142, 125, 142, netzW); grundLinie(225, 142, 278, 142, hausW); grundLinie(175, 162, 175, 220, f.batW);
+    if (f.hatOff) grundLinie(144, 248, 66, 248, f.offW);
 
     // Solar
     if (!f.ohnePv) {
@@ -235,13 +266,21 @@ struct Oberflaeche {
         L.text(AX(x), AY(y), b, M171, C_MUTED2, anker);
       }
     }
-    // Nabe mit Verlust
-    L.scheibe(AX(175), AY(142), 22 * K + 0.5f * K, C_LINE3);
-    L.scheibe(AX(175), AY(142), 22 * K - 0.5f * K, C_CARD2);
-    ikone(L, IK_BLITZ, 0, 60 * K, K, 0, C_TEXT, true);
-    if (!isnan(f.verlust)) {
-      char z[16]; fmtW(z, sizeof z, f.verlust); snprintf(b, sizeof b, "\xE2\x88\x92%s", z);
-      L.text(AX(202), AY(137), b, R171, C_MUTED2);
+    // Mitte: der Speicher als Karte mit Modellname und WLAN-Balken. Gibt es
+    // etwas zu melden, steht der Hinweis statt der zweiten Namenszeile.
+    {
+      L.karte(AX(125), AY(122), 100 * K, 40 * K, 12 * K, C_CARD2, C_LINE3);
+      char name[40]; produktName(w.produkt[0] ? w.produkt : e->produkt, name, sizeof name);
+      char *rest = strchr(name, ' ');
+      if (rest) *rest++ = 0;
+      float tpk = tempC(w.pk[P_MAXTEMP]);
+      int hinweis = (w.n(F_ISERR) || w.n(F_FAULT) >= SCHWELLE_FAULTLEVELSTOERUNGAB) ? T_DEV_ERR
+                  : w.n(F_HEAT) ? T_DEV_HEAT : (!isnan(tpk) && tpk < 0) ? T_DEV_COLD
+                  : w.n(F_DERATE) ? T_DEV_DERATE : -1;
+      L.text(AX(167), AY(139), name, S150, C_TEXT, 1);
+      if (hinweis >= 0) L.text(AX(167), AY(154), T(hinweis), R140, C_TEXT, 1);
+      else if (rest) L.text(AX(167), AY(154), rest, R140, C_MUTED, 1);
+      wlanBalken(L, AX(204), AY(141.1f), rssiStufe((int)w.n(F_RSSI)), 0.8f, false);
     }
     // Ringe: Netz und Haus an der Gerätegrenze, Akku am Ladestand
     float grenzeAus = w.hat(F_INVMAX) && w.f[F_INVMAX] > 0 ? w.f[F_INVMAX] : 800;
@@ -306,17 +345,17 @@ struct Oberflaeche {
     for (int i = 0; i < qn; i++) if (q[i] != C_BAT && on < 2) ohneAkku[on++] = q[i];
     auto neuerDraht = [&](float x0, float y0, float x1, float y1, float watt, bool rueck, const uint16_t *c, int n) {
       Draht &d = draht[drahtAnz++];
-      d = {AX(x0), AY(y0), AX(x1), AY(y1), {c[0], n > 1 ? c[1] : c[0], n > 2 ? c[2] : c[0]}, n, rueck, watt > FLUSS_MINWATT};
+      d = {AX(x0), AY(y0), AX(x1), AY(y1), {c[0], n > 1 ? c[1] : c[0], n > 2 ? c[2] : c[0]}, n, rueck, watt > FLUSS_MINWATT, dicke(watt)};
     };
-    if (!f.ohnePv) neuerDraht(175, 70, 175, 118, f.solar, false, &C_SOLAR, 1);
-    neuerDraht(72, 142, 152, 142, netzW, false, &C_GRID, 1);
+    if (!f.ohnePv) neuerDraht(175, 70, 175, 122, f.solar, false, &C_SOLAR, 1);
+    neuerDraht(72, 142, 125, 142, netzW, false, &C_GRID, 1);
     if (f.hatOff) neuerDraht(144, 248, 66, 248, f.offW, false, &C_BAT, 1);
-    if (f.entladen > 0) neuerDraht(175, 166, 175, 220, f.batW, true, &C_BAT, 1);
-    else if (on) neuerDraht(175, 166, 175, 220, f.batW, false, ohneAkku, on);
-    else neuerDraht(175, 166, 175, 220, f.batW, false, &C_BAT, 1);
-    if (qn) neuerDraht(198, 142, 278, 142, hausW, false, q, qn);
-    else neuerDraht(198, 142, 278, 142, hausW, false, &C_HOME, 1);
-    punkte(L, 0, 459);
+    if (f.entladen > 0) neuerDraht(175, 162, 175, 220, f.batW, true, &C_BAT, 1);
+    else if (on) neuerDraht(175, 162, 175, 220, f.batW, false, ohneAkku, on);
+    else neuerDraht(175, 162, 175, 220, f.batW, false, &C_BAT, 1);
+    if (qn) neuerDraht(225, 142, 278, 142, hausW, false, q, qn);
+    else neuerDraht(225, 142, 278, 142, hausW, false, &C_HOME, 1);
+    reiter(L);
   }
   static int ziffern(const char *s) { int n = 0; for (; *s; s++) if (*s >= '0' && *s <= '9') n++; return n; }
   void zeitText(char *b, int n, int min, int hm, int m) {
@@ -329,7 +368,7 @@ struct Oberflaeche {
   }
   // Bereich, den ein Draht samt Strichen braucht (für das Teil-Neuzeichnen)
   static void drahtRahmen(const Draht &d, int &x, int &y, int &w, int &h) {
-    float r = 3 * K / 2 + 2;
+    float r = 4 * K / 2 + 2;
     x = (int)floorf(fminf(d.x0, d.x1) - r); y = (int)floorf(fminf(d.y0, d.y1) - r);
     w = (int)ceilf(fmaxf(d.x0, d.x1) + r) - x; h = (int)ceilf(fmaxf(d.y0, d.y1) + r) - y;
   }
@@ -344,7 +383,7 @@ struct Oberflaeche {
       for (float a = start - P; a < len; a += P) {
         float s0 = fmaxf(a, 0), s1 = fminf(a + S, len);
         if (s1 < s0) continue;
-        L.linie(d.x0 + ux * s0, d.y0 + uy * s0, d.x0 + ux * s1, d.y0 + uy * s1, FLUSS_STRICHBREITE * K, d.farbe[platz]);
+        L.linie(d.x0 + ux * s0, d.y0 + uy * s0, d.x0 + ux * s1, d.y0 + uy * s1, d.dicke, d.farbe[platz]);
       }
     }
   }
@@ -365,9 +404,8 @@ struct Oberflaeche {
   }
   void zustand(Leinwand &L, const Lage &g) {
     const Werte &w = g.w;
-    L.text(20, 30, T(T_ZUSTAND), R130, C_MUTED);
-    pille(L, g, 460, 10);
-    if (!w.da) { L.text(240, 250, T(g.alterS < 0 ? T_WARTE : T_KEINE_DATEN), R180, C_MUTED, 1); punkte(L, 1, 459); return; }
+    kopf(L, g);
+    if (!w.da) { L.text(240, 250, T(g.alterS < 0 ? T_WARTE : T_KEINE_DATEN), R180, C_MUTED, 1); reiter(L); return; }
     Fluss f = rechneFluss(w);
     char kopf[64]; Zeile z[6]; int n;
     float x0 = 20, bw = (440 - 12) / 2.0f, y = 52;
@@ -442,18 +480,18 @@ struct Oberflaeche {
     L.text(x0 + 16, y + 24, T(T_MODUS), R130, C_MUTED);
     L.text(x0 + 16, y + 48, modus, S160, C_TEXT);
     char v[24];
-    L.text(x0 + 300, y + 24, T(T_AUSGANGSLIMIT), R130, C_MUTED, 2);
-    fmtW(v, sizeof v, w.hat(F_OUTLIMIT) ? w.f[F_OUTLIMIT] : NAN); L.text(x0 + 300, y + 48, v, S160, C_TEXT, 2, true);
-    L.text(x0 + 424, y + 24, T(T_WLAN), R130, C_MUTED, 2);
-    if (w.hat(F_RSSI) && w.f[F_RSSI]) snprintf(v, sizeof v, "\xE2\x88\x92%d dBm", (int)fabsf(w.f[F_RSSI])); else snprintf(v, sizeof v, "–");
+    L.text(x0 + 268, y + 24, T(T_AUSGANGSLIMIT), R130, C_MUTED, 2);
+    fmtW(v, sizeof v, w.hat(F_OUTLIMIT) ? w.f[F_OUTLIMIT] : NAN); L.text(x0 + 268, y + 48, v, S160, C_TEXT, 2, true);
+    // Der Verlust steht seit 25.11. nicht mehr im Diagramm, sondern hier.
+    L.text(x0 + 424, y + 24, T(T_VERLUST), R130, C_MUTED, 2);
+    if (!isnan(f.verlust)) { char z[16]; fmtW(z, sizeof z, f.verlust); snprintf(v, sizeof v, "\xE2\x88\x92%s", z); } else snprintf(v, sizeof v, "–");
     L.text(x0 + 424, y + 48, v, S160, C_TEXT, 2, true);
-    punkte(L, 1, 459);
+    reiter(L);
   }
 
   // ===================== Verlauf =====================
   void verlauf(Leinwand &L, const Lage &g) {
-    L.text(20, 30, T(T_HEUTE), R130, C_MUTED);
-    pille(L, g, 464, 10);
+    kopf(L, g);
     // Legende
     float lx = 20;
     struct { uint16_t c; int t; } leg[3] = {{C_SOLAR, T_SOLAR}, {C_HOME, T_INS_HAUS}, {C_BAT, T_LEG_LAEDT}};
@@ -521,7 +559,7 @@ struct Oberflaeche {
       snprintf(t, sizeof t, "%s %s", z, T(T_KWH));
       L.text(x + 14, 443, t, S180, bil[i].c, 0, true);
     }
-    punkte(L, 2, 459);
+    reiter(L);
   }
   static uint16_t mische(uint16_t a, uint16_t b, int t) {   // t/256 von a
     int r = ((a >> 11) * t + (b >> 11) * (256 - t)) >> 8;
@@ -881,7 +919,7 @@ struct Oberflaeche {
 
   // ===================== Zeichnen und Tippen =====================
   void zeichne(Leinwand &L, const Lage &g) {
-    knAnz = 0; pilleR = -1;
+    knAnz = 0;
     L.fuellen(C_BG);
     switch (seite) {
       case S_FLUSS: fluss(L, g); break;
@@ -899,13 +937,6 @@ struct Oberflaeche {
     neu = false;
   }
   bool hauptseite() const { return seite <= S_VERLAUF; }
-  void wische(int richtung) {         // +1 nach links gewischt = nächste Seite
-    if (!hauptseite()) return;
-    int s = (int)seite + richtung;
-    if (s < 0 || s > 2) return;
-    gehe((Seite)s);
-  }
-  void lange() { if (hauptseite()) gehe(S_EINST); }
   void zahlStart(int feldNr, const Lage &g) {
     zahlFeld = feldNr;
     if (feldNr < 4) snprintf(eingabe, sizeof eingabe, "%d", e->peaks[feldNr]);
@@ -918,11 +949,10 @@ struct Oberflaeche {
       const Knopf &k = kn[i];
       if (x < k.x || y < k.y || x >= k.x + k.w || y >= k.y + k.h) continue;
       switch (k.id) {
-        case K_PILLE: gehe(S_EINST); break;
+        case K_TAB: gehe(k.arg == 3 ? S_EINST : (Seite)k.arg); break;
         case K_UPDATE: wuensche |= W_UPD_PRUEFEN; gehe(S_UPDATE); break;
         case K_UPD_PRUEFEN: wuensche |= W_UPD_PRUEFEN; neu = true; break;
         case K_UPD_INSTALL: wuensche |= W_UPD_LADEN; neu = true; break;
-        case K_PUNKT: gehe((Seite)k.arg); break;
         case K_NETZ:
           snprintf(zielSsid, sizeof zielSsid, "%s", g.netze[k.arg].ssid);
           eingabe[0] = 0; tastZweck = 0; tastModus = 0;

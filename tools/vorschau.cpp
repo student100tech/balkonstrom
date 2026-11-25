@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
   snprintf(e.ssid, sizeof e.ssid, "FRITZ!Box 7590 OG"); snprintf(e.ip, sizeof e.ip, "192.168.178.52");
   snprintf(e.produkt, sizeof e.produkt, "solarFlow800Pro2");
   o.e = &e;
-  g.uhr = true; g.hh = 18; g.mm = 54; g.ss = 12; g.alterS = 2; g.build = 8;
+  g.uhr = true; g.hh = 18; g.mm = 54; g.ss = 14; g.alterS = 2; g.okHH = 18; g.okMM = 54; g.okSS = 12; g.wlanOk = true; g.wlanRssi = -61; g.build = 8;
   if (!leseBericht(PRO2, g.w)) { printf("Bericht nicht gelesen!\n"); return 1; }
   // Verlauf: ein Tag mit Sonne und Abendverbrauch, wie im Entwurf
   v.leeren(20261124);
@@ -88,6 +88,9 @@ int main(int argc, char **argv) {
   sichern(ziel + "_fluss_plus.ppm");
   o.seite = S_ZUSTAND; o.zeichne(L, g); sichern(ziel + "_zustand_plus.ppm");
   o.seite = S_FLUSS; g.w.leeren(); g.alterS = -1; o.zeichne(L, g); sichern(ziel + "_fluss_leer.ppm");
+  sprache = 0; o.seite = S_FLUSS; o.tabs = true; leseBericht(PRO2, g.w); o.zeichne(L, g);
+  for (int i = 0; i < o.drahtAnz; i++) Oberflaeche::striche(L, o.draht[i], 400);
+  sichern(ziel + "_fluss_reiter.ppm"); o.tabs = false;
   g.updBuild = 11; g.updGeprueft = true; o.seite = S_EINST; o.zeichne(L, g); sichern(ziel + "_einst_upd.ppm");
   o.seite = S_UPDATE; o.zeichne(L, g); sichern(ziel + "_update.ppm");
   g.updStatus = 2; g.updProzent = 45; o.zeichne(L, g); sichern(ziel + "_update_laedt.ppm");

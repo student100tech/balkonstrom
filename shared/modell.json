@@ -11,9 +11,10 @@
     "minWatt": 2
   },
 
+  "_hinweisFarben": "Seit 25.11.2026 eigene Palette: dunkel = Variante F (Nacht & Gold), hell = Variante G (Papier). Vorher Netz rot und Haus lila - zu nah an SunAlyze.",
   "farben": {
-    "hell":   { "solar": "#B36A00", "bat": "#0A7D5E", "grid": "#BE123C", "home": "#5B3FD0" },
-    "dunkel": { "solar": "#FFB547", "bat": "#3DDBB0", "grid": "#FF8FA3", "home": "#A594FF" }
+    "hell":   { "solar": "#C98A00", "bat": "#0F8A64", "grid": "#2F6FB3", "home": "#3D3A35" },
+    "dunkel": { "solar": "#E8B44C", "bat": "#5ED3A5", "grid": "#8FA3BF", "home": "#F2F4F8" }
   },
 
   "umrechnung": {

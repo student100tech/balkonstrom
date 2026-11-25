@@ -715,6 +715,7 @@ static void stricheRechnen(uint32_t ms) {
     t.L.init(teilBuf + belegt, t.x, t.y, t.w, t.h);
     belegt += t.w * t.h;
     for (int xx = t.x; xx < t.x + t.w; xx++) memcpy(t.L.an(xx, t.y), basis.an(xx, t.y), t.h * 2);
+    if (ui.tabs) t.L.beschnitt(t.x, t.y, t.x + t.w, 400);   // nicht über die Reiterleiste
     Oberflaeche::striche(t.L, ui.draht[i], ms);
     teilAnz++;
   }
@@ -732,7 +733,13 @@ static void lageHolen() {
   time_t j = time(nullptr); struct tm t; localtime_r(&j, &t);
   zeichenLage.uhr = t.tm_year >= 124;
   zeichenLage.hh = t.tm_hour; zeichenLage.mm = t.tm_min; zeichenLage.ss = t.tm_sec;
+  if (zeichenLage.alterS >= 0) {
+    time_t z = j - zeichenLage.alterS; struct tm u; localtime_r(&z, &u);
+    zeichenLage.okHH = u.tm_hour; zeichenLage.okMM = u.tm_min; zeichenLage.okSS = u.tm_sec;
+  }
   zeichenLage.build = FW_BUILD;
+  zeichenLage.wlanOk = WiFi.status() == WL_CONNECTED;
+  zeichenLage.wlanRssi = zeichenLage.wlanOk ? WiFi.RSSI() : 0;
   zeichenLage.verlauf = &verlUI;
 }
 static void seiteZeichnen() {
@@ -792,7 +799,8 @@ void setup() {
   xTaskCreatePinnedToCore(netzTask, "netz", 12288, nullptr, 1, nullptr, 0);
 }
 
-static bool unten = false, lang = false, schlucken = false;
+static bool unten = false, schlucken = false;
+static uint32_t tabsBis = 0;      // bis wann die Reiterleiste stehen bleibt
 static int tx0, ty0, txl, tyl; static uint32_t t0 = 0, tZuletzt = 0;
 static uint32_t letzteAnim = 0, letzteSekunde = 0, letzterTouch = 0, letztesLaufen = 0;
 static int letzteSek = -1;
@@ -800,30 +808,33 @@ static int letzteSek = -1;
 void loop() {
   uint32_t jetzt = millis();
 
-  // ---- Touch: Tippen, Wischen, lang Drücken ----
+  // ---- Touch ----
+  // Auf Fluss, Zustand und Verlauf blendet die erste Berührung nur die
+  // Reiterleiste ein; sie verschwindet 3 s nach der letzten Berührung wieder.
+  // Gewischt wird nicht mehr (Entscheidung 25.11.).
   if (jetzt - letzterTouch >= 15) {
     letzterTouch = jetzt;
     int x, y, st = liesTouch(x, y);
     if (st == 1) {
       tZuletzt = jetzt;
       if (!unten) {
-        unten = true; lang = false; tx0 = txl = x; ty0 = tyl = y; t0 = jetzt;
+        unten = true; tx0 = txl = x; ty0 = tyl = y; t0 = jetzt;
         schlucken = lichtJetzt < 100;          // nachts weckt die erste Berührung nur das Licht
         letzteBeruehrung = jetzt; lichtStellen();
       } else { txl = x; tyl = y; }
+      if (ui.tabs) tabsBis = jetzt + 3000;
     }
     if (unten && (st == 0 || jetzt - tZuletzt > 150)) {
       unten = false;
       int dx = txl - tx0, dy = tyl - ty0;
-      if (!lang && !schlucken) {
-        if (abs(dx) > 60 && abs(dx) > abs(dy) * 3 / 2) ui.wische(dx < 0 ? 1 : -1);
-        else if (abs(dx) < 25 && abs(dy) < 25) ui.tippe(tx0, ty0, zeichenLage);
+      if (!schlucken && abs(dx) < 30 && abs(dy) < 30) {
+        if (ui.hauptseite() && !ui.tabs) { ui.tabs = true; ui.neu = true; }
+        else ui.tippe(tx0, ty0, zeichenLage);
+        if (ui.hauptseite()) tabsBis = jetzt + 3000;
       }
     }
-    if (unten && !lang && !schlucken && jetzt - t0 > 1500 && abs(txl - tx0) < 25 && abs(tyl - ty0) < 25) {
-      lang = true; ui.lange();
-    }
   }
+  if (ui.tabs && (!ui.hauptseite() || (int32_t)(jetzt - tabsBis) > 0)) { ui.tabs = false; ui.neu = true; }
 
   // ---- Wünsche der Oberfläche ----
   uint32_t w = ui.wuensche; ui.wuensche = 0;
@@ -870,13 +881,13 @@ void loop() {
     letzteSek = tt.tm_sec;
   } else if (tt.tm_sec != letzteSek) {
     letzteSek = tt.tm_sec;
-    // Jede Sekunde nur die Uhr; der Verlauf bekommt einmal je Minute neue Punkte
-    if (ui.seite == S_VERLAUF && tt.tm_sec == 0) seiteZeichnen();
-    else {
-      lageHolen();
-      int x, y, pw, ph;
-      if (ui.nurPille(basis, zeichenLage, x, y, pw, ph)) teilZeigen(basis, x, y, pw, ph);
-    }
+    // "Stand" ändert sich nur mit neuen Daten (dann wird ohnehin gezeichnet).
+    // Jede Sekunde wird nur geprüft, ob die Anzeige auf "Offline" springen muss;
+    // der Verlauf bekommt einmal je Minute neue Punkte.
+    static bool warOffline = false;
+    uint32_t ok = letzteOk;
+    bool offline = ok && millis() - ok > 10000;
+    if (offline != warOffline || (ui.seite == S_VERLAUF && tt.tm_sec == 0)) { warOffline = offline; seiteZeichnen(); }
     lichtStellen();
   }
   if (ui.seite == S_FLUSS && ui.drahtAnz && jetzt - letzteAnim >= 33) {
