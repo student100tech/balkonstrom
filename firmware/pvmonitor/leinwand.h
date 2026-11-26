@@ -89,6 +89,19 @@ struct Leinwand {
       abstand(xx, yy, d, c);
     }
   }
+  // Abgerundetes Rechteck halb durchsichtig darüberlegen (Deckung al von 256) -
+  // Rückmeldung beim Drücken eines Knopfs.
+  void hauch(float x, float y, float rw, float rh, float r, uint16_t c, int al) {
+    int a, b, e, f;
+    if (!kasten(x, y, x + rw, y + rh, a, b, e, f)) return;
+    float mx = x + rw / 2, my = y + rh / 2, hx = rw / 2 - r, hy = rh / 2 - r;
+    for (int xx = a; xx < e; xx++) for (int yy = b; yy < f; yy++) {
+      float qx = fabsf(xx + 0.5f - mx) - hx, qy = fabsf(yy + 0.5f - my) - hy;
+      float ax = qx > 0 ? qx : 0, ay = qy > 0 ? qy : 0;
+      float d = sqrtf(ax * ax + ay * ay) + (qx > qy ? (qx < 0 ? qx : 0) : (qy < 0 ? qy : 0)) - r;
+      if (d < 0.5f) misch(xx, yy, c, d <= -0.5f ? al : (int)((0.5f - d) * al));
+    }
+  }
   // Karte: 1 px Rand in Farbe rand, innen grund - wie border + background in CSS.
   void karte(float x, float y, float rw, float rh, float r, uint16_t grund, uint16_t rand) {
     rund(x, y, rw, rh, r, rand);

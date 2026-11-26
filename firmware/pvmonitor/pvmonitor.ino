@@ -487,7 +487,7 @@ static void updatePruefen() {
     } else Serial.printf("Update: GitHub antwortet %d\n", code);
     http.end();
   }
-  sperren(); lage.updGeprueft = ok; if (ok) lage.updBuild = neuestes; freigeben();
+  sperren(); lage.updGeprueft = ok; if (ok) { lage.updBuild = neuestes; lage.updZeit = time(nullptr); } freigeben();
   updStatus(ok ? 0 : 4, ok ? nullptr : "GitHub nicht erreichbar");
   if (ok) Serial.printf("Update: neuestes Build %d, installiert %d\n", neuestes, FW_BUILD);
 }
@@ -598,9 +598,15 @@ static void netzTask(void *) {
       zeitAngestossen = true;
     }
     if (zeitAngestossen && !zeitGemeldet && zeitGestellt()) { zeitGemeldet = true; Serial.println("Zeit: gestellt"); }
-    static uint32_t letztePruefung = 0; static bool erstePruefung = true;
-    if (verbunden && (erstePruefung ? zeitGestellt() : millis() - letztePruefung > 6UL * 3600 * 1000)) a |= A_UPD_PRUEFEN;
-    if (verbunden && (a & A_UPD_PRUEFEN)) { erstePruefung = false; letztePruefung = millis(); updatePruefen(); }
+    // Selbst nachsehen: gleich nach dem Start, dann stündlich; ist GitHub nicht
+    // erreichbar, nach 2 Minuten wieder (bisher erst nach 6 Stunden).
+    static uint32_t letztePruefung = 0; static bool erstePruefung = true, pruefOk = false;
+    uint32_t abstand = pruefOk ? 3600UL * 1000 : 120UL * 1000;
+    if (verbunden && (erstePruefung ? zeitGestellt() : millis() - letztePruefung > abstand)) a |= A_UPD_PRUEFEN;
+    if (verbunden && (a & A_UPD_PRUEFEN)) {
+      erstePruefung = false; letztePruefung = millis(); updatePruefen();
+      sperren(); pruefOk = lage.updGeprueft; freigeben();
+    }
     else if (a & A_UPD_PRUEFEN) updStatus(4, "kein WLAN");
     if (verbunden && (a & A_UPD_LADEN)) updateLaden();
     // Suche erst, wenn das WLAN steht - nach dem Einschalten dauert das ein paar Sekunden
@@ -839,7 +845,7 @@ void setup() {
   xTaskCreatePinnedToCore(netzTask, "netz", 12288, nullptr, 1, nullptr, 0);
 }
 
-static bool unten = false, schlucken = false;
+static bool unten = false, schlucken = false, gedrueckt = false;
 static uint32_t tabsBis = 0;      // bis wann die Reiterleiste stehen bleibt
 static int tx0, ty0, txl, tyl; static uint32_t t0 = 0, tZuletzt = 0;
 static uint32_t letzteAnim = 0, letzteSekunde = 0, letzterTouch = 0, letztesLaufen = 0;
@@ -861,6 +867,21 @@ void loop() {
         unten = true; tx0 = txl = x; ty0 = tyl = y; t0 = jetzt;
         schlucken = lichtJetzt < 100;          // nachts weckt die erste Berührung nur das Licht
         letzteBeruehrung = jetzt; lichtStellen();
+        // Rückmeldung: Knopf unter dem Finger sofort aufhellen
+        if (!schlucken && !(ui.hauptseite() && !ui.tabs)) {
+          int i = ui.treffer(x, y);
+          if (i >= 0) {
+            const Knopf &k = ui.kn[i];
+            int kx = max(0, (int)k.x), ky = max(0, (int)k.y);
+            int kw = min(480, k.x + k.w) - kx, kh = min(480, k.y + k.h) - ky;
+            if (kw > 0 && kh > 0) {
+              basis.volleFlaeche();
+              basis.hauch(kx, ky, kw, kh, 11, C_TEXT, 70);
+              teilZeigen(basis, kx, ky, kw, kh);
+              gedrueckt = true;
+            }
+          }
+        }
       } else { txl = x; tyl = y; }
       if (ui.tabs) tabsBis = jetzt + 3000;
     }
@@ -869,9 +890,14 @@ void loop() {
       int dx = txl - tx0, dy = tyl - ty0;
       if (!schlucken && abs(dx) < 30 && abs(dy) < 30) {
         if (ui.hauptseite() && !ui.tabs) { ui.tabs = true; ui.neu = true; }
-        else ui.tippe(tx0, ty0, zeichenLage);
+        else {
+          // Aufhellung mindestens 120 ms stehen lassen, sonst sieht man sie nicht
+          if (gedrueckt && millis() - t0 < 120) delay(120 - (millis() - t0));
+          ui.tippe(tx0, ty0, zeichenLage);
+        }
         if (ui.hauptseite()) tabsBis = jetzt + 3000;
       }
+      if (gedrueckt) { gedrueckt = false; ui.neu = true; }   // Aufhellung wieder weg
     }
   }
   if (ui.tabs && (!ui.hauptseite() || (int32_t)(jetzt - tabsBis) > 0)) { ui.tabs = false; ui.neu = true; }

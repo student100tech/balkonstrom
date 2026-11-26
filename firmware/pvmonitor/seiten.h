@@ -8,6 +8,7 @@
 // Maße: Flussdiagramm = App-Koordinaten mal 480/350, alle anderen Seiten nach
 // den Entwürfen im Design-Canvas (je 480 x 480).
 
+#include <time.h>
 #include "leinwand.h"
 #include "schriften.h"
 #include "ikonen.h"
@@ -70,6 +71,7 @@ struct Lage {
   int updBuild = 0;                      // neuestes Build auf GitHub, 0 = unbekannt
   int updStatus = 0;                     // 0 nichts, 1 prüft, 2 lädt, 3 fertig, 4 Fehler
   int updProzent = 0; bool updGeprueft = false; char updFehler[64] = "";
+  time_t updZeit = 0;                    // Zeitpunkt der letzten erfolgreichen Prüfung
   // Ergebnis der letzten Speichersuche, -1 = noch keine
   int sucheMdns = -1, suchePort = -1, sucheAntwort = -1;
 };
@@ -180,8 +182,9 @@ struct Oberflaeche {
     if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
     else if (offline) snprintf(t, sizeof t, "%s %02d:%02d", T(T_OFFLINE), g.okHH, g.okMM);
     else snprintf(t, sizeof t, "%s %02d:%02d:%02d", T(T_STAND), g.okHH, g.okMM, g.okSS);
-    float b = L.text(466, yb, t, M142, offline ? C_WARN : C_MUTED, 2, true);   // 20 % kleiner als die Kopfreihe
-    wlanBalken(L, 466 - b - 8 - 25, yb, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
+    // WLAN-Balken in der Ecke (25 breit, bis x 466), "Stand" links davor
+    wlanBalken(L, 466 - 25, yb, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
+    L.text(466 - 25 - 8, yb, t, M142, offline ? C_WARN : C_MUTED, 2, true);   // 20 % kleiner als die Kopfreihe
   }
   // Sonne am oberen Rand: halbe Scheibe, Strahlen nach unten, wandert zwischen
   // Auf- und Untergang von links nach rechts. Nachts nicht zu sehen.
@@ -623,7 +626,8 @@ struct Oberflaeche {
     L.text(34, y + 22, T(T_MODULLEISTUNG), R120, C_MUTED);
     // Firmware-Stand rechts in derselben Zeile; mit neuem Build grün
     if (g.updBuild > g.build) snprintf(b, sizeof b, T(T_UPD_PILLE), g.updBuild); else snprintf(b, sizeof b, "Build %d", g.build);
-    L.text(446, y + 22, b, g.updBuild > g.build ? S150 : R120, g.updBuild > g.build ? C_BAT : C_MUTED, 2);
+    // grün = aktuell, gelb = neues Build da
+    L.text(446, y + 22, b, g.updBuild > g.build ? S150 : R120, g.updBuild > g.build ? C_SOLAR : C_BAT, 2);
     knopf(300, y, 160, 34, K_UPDATE);
     Fluss f = rechneFluss(g.w);
     int n = g.w.da && f.pvAnz ? (f.pvAnz > 4 ? 4 : f.pvAnz) : 4;
@@ -896,9 +900,15 @@ struct Oberflaeche {
     else if (!g.updGeprueft) snprintf(b, sizeof b, "%s", T(T_NICHT_GEPRUEFT));
     else if (g.updBuild > g.build) snprintf(b, sizeof b, "Build %d", g.updBuild);
     else snprintf(b, sizeof b, "%s", T(T_AKTUELL));
-    L.text(446, 156, b, S160, g.updBuild > g.build ? C_BAT : C_MUTED2, 2, true);
+    L.text(446, 156, b, S160, g.updBuild > g.build ? C_SOLAR : C_MUTED2, 2, true);
+    // Wann zuletzt nachgesehen - Rückmeldung für "Jetzt prüfen"
+    if (g.updZeit) {
+      struct tm t; localtime_r(&g.updZeit, &t);
+      snprintf(b, sizeof b, T(T_GEPRUEFT), t.tm_hour, t.tm_min, t.tm_sec);
+      L.text(446, 208, b, R130, C_MUTED, 2, true);
+    }
     // Hinweis, in Zeilen umbrochen
-    zeilen(L, T(T_UPD_HINWEIS), 34, 222, 412, R140, C_MUTED2);
+    zeilen(L, T(T_UPD_HINWEIS), 34, 244, 412, R140, C_MUTED2);
     if (g.updStatus == 2 || g.updStatus == 3) {
       if (g.updStatus == 2) snprintf(b, sizeof b, T(T_LADE), g.updBuild, g.updProzent);
       else snprintf(b, sizeof b, "%s", T(T_NEUSTART));
@@ -913,7 +923,7 @@ struct Oberflaeche {
     }
     bool neuer = g.updBuild > g.build && g.updStatus != 1;
     taste(L, 20, 400, neuer ? 215 : 440, 56, T(T_JETZT_PRUEFEN), R150, C_CARD, C_MUTED2, K_UPD_PRUEFEN, 0);
-    if (neuer) taste(L, 245, 400, 215, 56, T(T_INSTALLIEREN), S160, C_BAT, C_ONBAT, K_UPD_INSTALL, 0);
+    if (neuer) taste(L, 245, 400, 215, 56, T(T_INSTALLIEREN), S160, C_SOLAR, C_ONBAT, K_UPD_INSTALL, 0);
   }
   // Text an Leerzeichen umbrechen; gibt die Höhe zurück
   float zeilen(Leinwand &L, const char *t, float x, float y, float breit, const Schrift &f, uint16_t c) {
@@ -965,12 +975,20 @@ struct Oberflaeche {
     else snprintf(eingabe, sizeof eingabe, "%s", e->ip);
     gehe(S_ZAHL);
   }
+  // Welcher Knopf liegt unter (x, y)? -1 = keiner. Gleiche Reihenfolge wie tippe().
+  int treffer(int x, int y) const {
+    for (int i = knAnz - 1; i >= 0; i--) {
+      const Knopf &k = kn[i];
+      if (x >= k.x && y >= k.y && x < k.x + k.w && y < k.y + k.h) return i;
+    }
+    return -1;
+  }
   void tippe(int x, int y, const Lage &g) {
     for (int i = knAnz - 1; i >= 0; i--) {
       const Knopf &k = kn[i];
       if (x < k.x || y < k.y || x >= k.x + k.w || y >= k.y + k.h) continue;
       switch (k.id) {
-        case K_TAB: gehe(k.arg == 3 ? S_EINST : (Seite)k.arg); break;
+        case K_TAB: if (k.arg == 3) wuensche |= W_UPD_PRUEFEN; gehe(k.arg == 3 ? S_EINST : (Seite)k.arg); break;
         case K_UPDATE: wuensche |= W_UPD_PRUEFEN; gehe(S_UPDATE); break;
         case K_UPD_PRUEFEN: wuensche |= W_UPD_PRUEFEN; neu = true; break;
         case K_UPD_INSTALL: wuensche |= W_UPD_LADEN; neu = true; break;

@@ -385,10 +385,10 @@
           <path d="M-6 0 A6 6 0 0 0 6 0 Z" fill="var(--solar)"/>
         </g>
         <!-- Oben links: winziges Logo + PV-Monitor (wie am Monitor) -->
-        <svg x="0" y="-48" width="13" height="13" viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1A1E26"/><g stroke="#E8B44C" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#E8B44C"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#E8B44C" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#5ED3A5" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#5ED3A5"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#5ED3A5"/></svg>
-        <text class="flowlbl" x="17" y="-37">PV-Monitor</text>
+        <svg x="0" y="-52" width="17" height="17" viewBox="0 0 42 42" aria-hidden="true"><rect width="42" height="42" rx="13" fill="#1A1E26"/><g stroke="#E8B44C" stroke-width="1.28" stroke-linecap="round"><line x1="21.0" y1="11.11" x2="21.0" y2="13.38"/><line x1="15.11" y1="13.53" x2="16.47" y2="15.11"/><line x1="26.89" y1="13.53" x2="25.53" y2="15.11"/><line x1="12.62" y1="18.74" x2="14.7" y2="19.23"/><line x1="29.38" y1="18.74" x2="27.3" y2="19.23"/></g><path d="M16.47 21.3 A4.53 4.53 0 0 1 25.53 21.3 Z" fill="#E8B44C"/><rect x="13.0" y="21.83" width="16.0" height="0.83" rx="0.42" fill="#E8B44C" opacity=".55"/><rect x="14.96" y="23.94" width="11.32" height="5.66" rx="1.28" fill="none" stroke="#5ED3A5" stroke-width="1.13"/><rect x="26.74" y="25.6" width="1.13" height="2.34" rx="0.38" fill="#5ED3A5"/><path d="M21.6 24.62 L19.11 27.19 H21.0 L20.25 29.0 L22.81 26.28 H20.85 Z" fill="#5ED3A5"/></svg>
+        <text class="flowlbl" x="21" y="-37">PV-Monitor</text>
         <!-- Oben rechts: WLAN des Handys und Stand des letzten Abrufs -->
-        <text class="flowlbl stand" x="350" y="-37" text-anchor="end" id="status" data-i18n="connecting">Verbinde…</text>
+        <text class="flowlbl stand" x="328.8" y="-37" text-anchor="end" id="status" data-i18n="connecting">Verbinde…</text>
         <g id="hdrWlan" class="hdrwlan" opacity="0"><rect width="2.9" height="4.4" rx="1"/><rect width="2.9" height="7.3" rx="1"/><rect width="2.9" height="10.2" rx="1"/><rect width="2.9" height="13.1" rx="1"/></g>
         </g>
         <text class="node-label" x="175" y="-37" text-anchor="middle" data-i18n="solar">Solar</text>
@@ -416,7 +416,7 @@
         <circle cx="304" cy="142" r="26" fill="var(--homeBg)" stroke="var(--homeLn)" stroke-width="5"/>
         <circle id="homeRing" cx="304" cy="142" r="26" fill="none" stroke="var(--home)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 164" transform="rotate(-90 304 142)"/>
         <g transform="translate(289 127) scale(1.25)" fill="none" stroke="var(--home)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12V8.964"/><path d="M14 12V8.964"/><path d="M15 12a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2a1 1 0 0 1 1-1z"/><path d="M8.5 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2v-2"/></g>
-        <text class="node-label" x="304" y="102" text-anchor="middle" data-i18n="to_home">Ins Haus</text>
+        <text class="node-label" x="304" y="102" text-anchor="middle" id="lHome">Ins Haus</text>
         <text class="node-val small" x="304" y="192" text-anchor="middle" id="tHome" data-i18n="dash_w">– W</text>
 
         <!-- Off-Grid-Dose: haengt am Akku, deshalb links daneben an einer eigenen
@@ -851,7 +851,7 @@
       moon:['Neumond','zunehmende Sichel','erstes Viertel','zunehmender Mond','Vollmond','abnehmender Mond','letztes Viertel','abnehmende Sichel'],
       d_loc:'Standort (für Sonnenauf- und -untergang)', d_plz:'Postleitzahl',
       plz_unknown:'Postleitzahl nicht gefunden – Standort unverändert',
-      flow:'Energiefluss', solar:'Solar', grid_bat:'Netz → Akku', to_home:'Ins Haus',
+      flow:'Energiefluss', solar:'Solar', grid_bat:'Netz → Akku', to_home:'Ins Haus', house:'Haus',
       bat:'Akku', bat_idle:'Akku ruht', bat_charge:'Akku lädt', bat_discharge:'Akku entlädt',
       dash_w:'– W', dash_kwh:'– kWh', dash_c:'– °C', pv1:'PV1 – W', pv2:'PV2 – W',
       dis_to:v=>`Entladen bis ${v} %`, chg_to:v=>`Laden bis ${v} %`,
@@ -1008,7 +1008,7 @@
       moon:['Новолуние','растущий серп','первая четверть','растущая луна','Полнолуние','убывающая луна','последняя четверть','убывающий серп'],
       d_loc:'Местоположение (для восхода и заката)', d_plz:'Почтовый индекс',
       plz_unknown:'Индекс не найден — местоположение не изменено',
-      flow:'Поток энергии', solar:'Солнце', grid_bat:'Сеть → АКБ', to_home:'В дом',
+      flow:'Поток энергии', solar:'Солнце', grid_bat:'Сеть → АКБ', to_home:'В дом', house:'Дом',
       bat:'Аккумулятор', bat_idle:'АКБ в покое', bat_charge:'АКБ заряжается', bat_discharge:'АКБ разряжается',
       dash_w:'– Вт', dash_kwh:'– кВт·ч', dash_c:'– °C', pv1:'PV1 – Вт', pv2:'PV2 – Вт',
       dis_to:v=>`Разряд до ${v} %`, chg_to:v=>`Заряд до ${v} %`,
@@ -1657,6 +1657,8 @@
     // Die Einheit steht jetzt am Wert, nicht mehr in einer Unterzeile.
     $('cRssi').textContent = p.rssi ? String(p.rssi).replace('-', '−') + ' ' + t('u_dbm') : '–';
     const lvl = rssiStufe(p.rssi);
+    // Haus: "Ins Haus" nur, wenn etwas fließt, sonst schlicht "Haus"
+    $('lHome').textContent = t(hausW > 2 ? 'to_home' : 'house');
     $('rssiBars').querySelectorAll('i').forEach((b, i) => b.classList.toggle('on', i < lvl));
     zeigeZustand();
   }
@@ -1710,8 +1712,8 @@
 
   function setStatus(kind, text){
     const st = $('status'); st.setAttribute('class', 'flowlbl stand ' + kind); st.textContent = text;
-    // Balken links vor den Text, 6 Einheiten Abstand
-    const b = st.getBBox ? st.getBBox() : null, x0 = (b && b.width ? b.x : 290) - 6 - 4 * 4.1;
+    // Balken in der Ecke rechts (bis x 350), Text links davor mit 6 Einheiten Abstand
+    const x0 = 350 - 3 * 4.1 - 2.9;
     $('hdrWlan').querySelectorAll('rect').forEach((r, i) => { r.setAttribute('x', (x0 + i * 4.1).toFixed(1)); r.setAttribute('y', (-37 - (4.4 + 2.9 * i)).toFixed(1)); });
   }
   function showMsg(html){ const m = $('msg'); if (!html) { m.style.display = 'none'; m.innerHTML = ''; return; } m.innerHTML = html; m.style.display = 'block'; }

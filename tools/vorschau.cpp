@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
   sprache = 0; o.seite = S_FLUSS; o.tabs = true; leseBericht(PRO2, g.w); o.zeichne(L, g);
   for (int i = 0; i < o.drahtAnz; i++) Oberflaeche::striche(L, o.draht[i], 400);
   sichern(ziel + "_fluss_reiter.ppm"); o.tabs = false;
-  g.updBuild = 11; g.updGeprueft = true; o.seite = S_EINST; o.zeichne(L, g); sichern(ziel + "_einst_upd.ppm");
+  g.updBuild = 11; g.updGeprueft = true; g.updZeit = 1795000000; o.seite = S_EINST; o.zeichne(L, g); sichern(ziel + "_einst_upd.ppm");
   o.seite = S_UPDATE; o.zeichne(L, g); sichern(ziel + "_update.ppm");
   g.updStatus = 2; g.updProzent = 45; o.zeichne(L, g); sichern(ziel + "_update_laedt.ppm");
   g.updStatus = 0;
