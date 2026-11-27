@@ -23,7 +23,7 @@ static const uint16_t C_BG = rgb(0x0B0D12), C_CARD = rgb(0x14171E), C_CARD2 = rg
   C_LINE = rgb(0x20242D), C_LINE2 = rgb(0x1A1E26), C_LINE3 = rgb(0x2A2F3A),
   C_TEXT = rgb(0xF2F4F8), C_MUTED = rgb(0x858C9B), C_MUTED2 = rgb(0xBFC5D0), C_DIM = rgb(0x646B7A),
   C_SOLAR = rgb(FARBE_DUNKEL_SOLAR), C_HOME = rgb(FARBE_DUNKEL_HOME), C_BAT = rgb(FARBE_DUNKEL_BAT),
-  C_GRID = rgb(FARBE_DUNKEL_GRID), C_OK = rgb(0x4ADE80), C_WARN = rgb(0xF87171),
+  C_GRID = rgb(FARBE_DUNKEL_GRID), C_OK = rgb(0x4ADE80), C_WARN = rgb(0xF87171), C_HEAT = rgb(0xF0954F),
   C_LIMLO = rgb(0xFF6B81), C_LIMHI = rgb(0x6FA8FF),
   C_SOLARBG = rgb(0x22200F), C_SOLARLN = rgb(0x412E1B), C_GRIDBG = rgb(0x181B21), C_GRIDLN = rgb(0x2C3343),
   C_HOMEBG = rgb(0x1E2025), C_HOMELN = rgb(0x3A3C42), C_BATBG = rgb(0x111B1C), C_BATLN = rgb(0x1E4136),
@@ -66,6 +66,7 @@ struct Lage {
   Fund funde[6]; int fundAnz = 0; bool sucheLaeuft = false;
   int verbinden = 0;                     // 0 nichts, 1 läuft, 2 ok, 3 Fehler
   int build = 0;
+  bool demo = false;                     // Demomodus: feste Werte mit allem gleichzeitig
   Verlauf *verlauf = nullptr;
   // Update über WLAN
   int updBuild = 0;                      // neuestes Build auf GitHub, 0 = unbekannt
@@ -80,7 +81,7 @@ struct Lage {
 enum KnopfId {
   K_PILLE = 1, K_PUNKT, K_NETZ, K_WEITERE, K_NAME, K_TASTE, K_ZEIGEN, K_VERBINDEN, K_ZURUECK,
   K_GERAET, K_NEU_SUCHEN, K_IP, K_SP_AENDERN, K_WLAN_AENDERN, K_FELD, K_SPRACHE, K_ZONE,
-  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL, K_TAB
+  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL, K_TAB, K_LOGO
 };
 struct Knopf { int16_t x, y, w, h; uint8_t id; int16_t arg; };
 
@@ -88,7 +89,7 @@ enum Seite { S_FLUSS, S_ZUSTAND, S_VERLAUF, S_EINST, S_NETZE, S_TASTATUR, S_SPEI
 
 // Wünsche an die Hardware
 enum { W_SCAN = 1, W_VERBINDEN = 2, W_SUCHE = 4, W_SICHERN = 8, W_GERAET = 16, W_HELL = 32, W_ZONE = 64,
-       W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256 };
+       W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256, W_LOGO = 512 };
 
 // Eine Leitung im Flussdiagramm mit ihren laufenden Strichen
 struct Draht { float x0, y0, x1, y1; uint16_t farbe[3]; int anz; bool rueck; bool an; float dicke; };
@@ -179,12 +180,14 @@ struct Oberflaeche {
     L.text(14 + 17 * K + 5, yb, "PV-Monitor", M178, C_MUTED);
     char t[40];
     bool offline = g.alterS > 10;
-    if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
+    if (g.demo) snprintf(t, sizeof t, "Demo %02d:%02d:%02d", g.hh, g.mm, g.ss);
+    else if (!g.uhr || g.alterS < 0) snprintf(t, sizeof t, "%s", T(T_WARTE_KURZ));
     else if (offline) snprintf(t, sizeof t, "%s %02d:%02d", T(T_OFFLINE), g.okHH, g.okMM);
     else snprintf(t, sizeof t, "%s %02d:%02d:%02d", T(T_STAND), g.okHH, g.okMM, g.okSS);
     // WLAN-Balken in der Ecke (25 breit, bis x 466), "Stand" links davor
     wlanBalken(L, 466 - 25, yb, rssiStufe(g.wlanRssi), 1, !g.wlanOk);
-    L.text(466 - 25 - 8, yb, t, M142, offline ? C_WARN : C_MUTED, 2, true);   // 20 % kleiner als die Kopfreihe
+    L.text(466 - 25 - 8, yb, t, M142, g.demo ? C_SOLAR : offline ? C_WARN : C_MUTED, 2, true);
+    knopf(0, 0, 200, 50, K_LOGO);          // dreimal tippen: Demomodus an/aus   // 20 % kleiner als die Kopfreihe
   }
   // Sonne am oberen Rand: halbe Scheibe, Strahlen nach unten, wandert zwischen
   // Auf- und Untergang von links nach rechts. Nachts nicht zu sehen.
@@ -303,22 +306,20 @@ struct Oberflaeche {
       else if (rest) L.text(AX(167), AY(154), rest, R140, C_MUTED, 1);
       wlanBalken(L, AX(204), AY(141.1f), rssiStufe((int)w.n(F_RSSI)), 0.8f, false);
     }
-    // Ringe: Netz und Haus an der Gerätegrenze, Akku am Ladestand
-    float grenzeAus = w.hat(F_INVMAX) && w.f[F_INVMAX] > 0 ? w.f[F_INVMAX] : 800;
+    // Ringe: nur der Akku zeigt einen Füllstand (Ladestand), Netz und Haus nicht
     auto knoten = [&](float cx, float cy, float r, uint16_t bg, uint16_t ln, uint16_t farbe, float q) {
       L.scheibe(AX(cx), AY(cy), r * K, bg);
       L.ring(AX(cx), AY(cy), r * K, 5 * K, ln);
       q = klemm(q, 0, 1);
       if (q > 0.004f) L.bogen(AX(cx), AY(cy), r * K, 5 * K, 0, q * 360, farbe);
     };
-    knoten(46, 142, 26, C_GRIDBG, C_GRIDLN, C_GRID,
-           f.grid / fmaxf(50, w.hat(F_CHGMAX) && w.f[F_CHGMAX] > 0 ? w.f[F_CHGMAX] : grenzeAus));
+    knoten(46, 142, 26, C_GRIDBG, C_GRIDLN, C_GRID, 0);   // kein Füllstand: das Netz hat keine Obergrenze (27.11.)
     ikone(L, IK_MAST, 0, 60 * K, K, 2 * K, C_GRID);
     L.text(AX(46), AY(102), T(f.grid > 2 ? T_NETZ_AKKU : T_NETZ), R165, C_MUTED, 1);
     fmtW(b, sizeof b, netzW);
     L.text(AX(46), AY(192), b, ziffern(b) > 3 ? S199 : S233, netzW > 2 ? C_TEXT : C_MUTED, 1, true);
 
-    knoten(304, 142, 26, C_HOMEBG, C_HOMELN, C_HOME, f.home / fmaxf(50, grenzeAus));
+    knoten(304, 142, 26, C_HOMEBG, C_HOMELN, C_HOME, 0);   // kein Füllstand: das Haus hat keine Obergrenze (27.11.)
     ikone(L, IK_HAUS, AX(289), AY(127), 1.25f * K, 1.6f * 1.25f * K, C_HOME);
     L.text(AX(304), AY(102), T(hausW > 2 ? T_INS_HAUS : T_HAUS), R165, C_MUTED, 1);   // ruht: nur "Haus"
     fmtW(b, sizeof b, hausW);
@@ -343,6 +344,8 @@ struct Oberflaeche {
       L.linie(AX(175 + 24 * cosf(wi)), AY(248 + 24 * sinf(wi)), AX(175 + 32 * cosf(wi)), AY(248 + 32 * sinf(wi)), 2.5f * K, c);
     };
     marke(f.minSoc, C_LIMLO); marke(f.maxSoc, C_LIMHI);
+    // Heizung an: drei Wellen links oben am Akkukreis
+    if (w.n(F_HEAT)) ikone(L, IK_HEIZ, AX(136), AY(209), 0.7f * K, 1.8f * K, C_HEAT);
     L.text(AX(216), AY(224), T(f.batZustand == 1 ? T_AKKU_LAEDT : f.batZustand == 2 ? T_AKKU_ENTLAEDT : T_AKKU_RUHT), R165, C_MUTED);
     fmtW(b, sizeof b, f.batW); L.text(AX(216), AY(248), b, S261, C_TEXT, 0, true);
     // Unter der Akkuleistung: wie lange noch
@@ -992,6 +995,7 @@ struct Oberflaeche {
         case K_UPDATE: wuensche |= W_UPD_PRUEFEN; gehe(S_UPDATE); break;
         case K_UPD_PRUEFEN: wuensche |= W_UPD_PRUEFEN; neu = true; break;
         case K_UPD_INSTALL: wuensche |= W_UPD_LADEN; neu = true; break;
+        case K_LOGO: wuensche |= W_LOGO; break;
         case K_NETZ:
           snprintf(zielSsid, sizeof zielSsid, "%s", g.netze[k.arg].ssid);
           eingabe[0] = 0; tastZweck = 0; tastModus = 0;

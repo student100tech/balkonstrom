@@ -18,7 +18,7 @@
   :root{
     --bg:#0B0D12; --card:#14171E; --card2:#1A1E26; --card3:#171A22; --line:#20242D; --line2:#1A1E26; --line3:#2A2F3A;
     --text:#F2F4F8; --muted:#858C9B; --muted2:#BFC5D0; --dim:#646B7A;
-    --solar:#E8B44C; --home:#F2F4F8; --bat:#5ED3A5; --batText:#8FE3C2; --grid:#8FA3BF; --warn:#F87171; --ok:#4ADE80; --limLo:#FF6B81; --limHi:#6FA8FF;
+    --solar:#E8B44C; --home:#F2F4F8; --bat:#5ED3A5; --batText:#8FE3C2; --grid:#8FA3BF; --warn:#F87171; --heat:#F0954F; --ok:#4ADE80; --limLo:#FF6B81; --limHi:#6FA8FF;
     --gridin:#F87171; --feed:#60A5FA;
     --onbat:#06261B; --onfeed:#07213d; --tabon:#20242D;
     --solarBg:#211E18; --solarLn:#423720; --gridBg:#181C23; --gridLn:#2C323D;
@@ -30,7 +30,7 @@
   :root[data-theme="light"]{
     --bg:#F4F1EA; --card:#FFFFFF; --card2:#EFEBE2; --card3:#FAF8F3; --line:#DDD6C8; --line2:#E8E2D6; --line3:#CFC6B4;
     --text:#1E1D1A; --muted:#6F6A60; --muted2:#4A463F; --dim:#8F897D;
-    --solar:#C98A00; --home:#3D3A35; --bat:#0F8A64; --batText:#0B6B4E; --grid:#2F6FB3; --warn:#C62828; --ok:#15803D; --limLo:#D81B45; --limHi:#1D4ED8;
+    --solar:#C98A00; --home:#3D3A35; --bat:#0F8A64; --batText:#0B6B4E; --grid:#2F6FB3; --warn:#C62828; --heat:#C8602A; --ok:#15803D; --limLo:#D81B45; --limHi:#1D4ED8;
     --gridin:#C62828; --feed:#1D4ED8;
     --onbat:#FFFFFF; --onfeed:#FFFFFF; --tabon:#E8E2D6;
     --solarBg:#FAF3E6; --solarLn:#EFDCB2; --gridBg:#EEF3F9; --gridLn:#CBDBEC;
@@ -432,6 +432,7 @@
         <circle cx="175" cy="248" r="28" fill="var(--batBg)" stroke="var(--batLn)" stroke-width="5"/>
         <circle id="socRing" cx="175" cy="248" r="28" fill="none" stroke="var(--bat)" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 176" transform="rotate(-90 175 248)"/>
         <text x="175" y="254" text-anchor="middle" class="node-val" style="font-size:16px;font-weight:700" id="tSoc">–%</text>
+        <g id="batHeat" transform="translate(136 209) scale(.7)" fill="none" stroke="var(--heat)" stroke-width="2.6" stroke-linecap="round" display="none"><path d="M7 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5"/><path d="M12 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5"/><path d="M17 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5"/></g>
         <line id="socMin" stroke="var(--limLo)" stroke-width="2.5" stroke-linecap="round"/>
         <line id="socMax" stroke="var(--limHi)" stroke-width="2.5" stroke-linecap="round"/>
         <text class="node-label" x="216" y="224" id="tBatState" data-i18n="bat">Akku</text>
@@ -1519,6 +1520,7 @@
     const hinweis = (p.is_error || (p.faultLevel ?? 0) >= MODELL.schwellen.faultLevelStoerungAb) ? t('dev_err')
                   : p.heatState ? t('dev_heat') : (tpk != null && tpk < 0) ? t('dev_cold')
                   : p.derateFlag ? t('dev_derate') : '';
+    $('batHeat').setAttribute('display', p.heatState ? 'inline' : 'none');
     $('tDev1').textContent = nm[0];
     $('tDev2').textContent = hinweis || nm.slice(1).join(' ');
     $('tDev2').classList.toggle('hinweis', !!hinweis);
@@ -1576,8 +1578,8 @@
     // um den ganzen Hausanschluss, und der hat keine sinnvolle Obergrenze: 11 kW
     // Hausabsicherung wuerde den Ring bei 300 W praktisch leer lassen. Dann lieber
     // gar nicht fuellen – die Zahl und die laufenden Punkte sagen alles Noetige.
-    ring('homeRing', hatMeter ? 0 : home,  grenzeAus, 163.4);
-    ring('gridRing', hatMeter ? 0 : grid,  p.chargeMaxLimit || grenzeAus, 163.4);
+    ring('homeRing', 0, grenzeAus, 163.4);   // kein Füllstand: das Haus hat keine Obergrenze (27.11.)
+    ring('gridRing', 0, grenzeAus, 163.4);   // kein Füllstand: das Netz hat keine Obergrenze (27.11.)
     $('tSoc').textContent = `${soc}%`;
     ring('socRing', soc, 100, 175.9);
 

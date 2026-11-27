@@ -26,6 +26,8 @@ IKONEN = {
     'IK_BLITZ': 'M179 128 l-11 16 h8 l-3 12 l11-16 h-8z',
     # Off-Grid-Dose, 24er-Raster (App: translate(29 237))
     'IK_DOSE': 'M9 2v5|M15 2v5|M5 7h14v4.5a7 7 0 0 1-14 0z|M12 18.5V22',
+    # Heizung: drei senkrechte Wellen, 24er-Raster (App: translate(137 211) scale(.6))
+    'IK_HEIZ': 'M7 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5|M12 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5|M17 3.5c-1.7 1.7-1.7 3.3 0 5c1.7 1.7 1.7 3.3 0 5c-1.7 1.7-1.7 3.3 0 5',
     # Tastatur
     'IK_UMSCHALT': 'M12 4 4 13h4v6h8v-6h4z',
     'IK_LOESCHEN': 'M20 6H9l-5 6 5 6h11a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z|m17 10-4 4|m13 10 4 4',

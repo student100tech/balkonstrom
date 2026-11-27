@@ -197,8 +197,13 @@ static volatile bool datenNeu = false, listeNeu = false;
 static volatile int verbindErgebnis = 0;    // 0 nichts, 2 ok, 3 Fehler
 static volatile bool sucheFertig = false;
 
-static uint16_t *fb = nullptr, *basisBuf = nullptr, *teilBuf = nullptr;
-static Leinwand basis;
+static uint16_t *fb = nullptr, *basisBuf = nullptr, *arbeitBuf = nullptr, *teilBuf = nullptr;
+// Zwei Leinwände: "basis" ist das, was gerade zu sehen ist (Grund für die
+// Striche), in "arbeit" wird die nächste Seite gezeichnet. So laufen die
+// Striche weiter, während neu gezeichnet wird - vorher stockten sie bei jedem
+// Bericht (alle 3 s) für die Dauer des Neuzeichnens.
+static Leinwand basis, arbeit;
+static SemaphoreHandle_t bildSperre;   // fb und basis: Striche-Task gegen Seitenwechsel
 static const int TEIL_PX = 8192;
 
 static void sperren() { xSemaphoreTake(sperre, portMAX_DELAY); }
@@ -559,6 +564,32 @@ static void startBestaetigen() {
   p.end();
 }
 
+// Demomodus: dreimal auf Logo/PV-Monitor tippen. Ein 800 Pro 2 mit allem
+// gleichzeitig - vier Eingänge, Off-Grid-Dose, Akku entlädt, Heizung an. Die
+// Werte schwanken leicht, damit sich etwas bewegt. Nicht gespeichert, nach
+// einem Neustart ist er aus; der Verlauf bleibt unberührt.
+static volatile bool demoAn = false;
+static bool demoBericht(Werte &w) {
+  float t = millis() / 1000.0f;
+  int p1 = 210 + (int)(18 * sinf(t / 7)), p2 = 180 + (int)(15 * sinf(t / 9 + 1));
+  int p3 = 160 + (int)(12 * sinf(t / 8 + 2)), p4 = 140 + (int)(10 * sinf(t / 11 + 3));
+  int solar = p1 + p2 + p3 + p4, haus = 800, dose = 120 + (int)(8 * sinf(t / 5));
+  int ent = haus + dose - solar; if (ent < 0) ent = 0;
+  static char j[1100];
+  snprintf(j, sizeof j,
+    "{\"sn\":\"DEMO\",\"product\":\"solarFlow800Pro2\",\"properties\":{"
+    "\"solarInputPower\":%d,\"solarPower1\":%d,\"solarPower2\":%d,\"solarPower3\":%d,\"solarPower4\":%d,"
+    "\"outputHomePower\":%d,\"packInputPower\":%d,\"outputPackPower\":0,\"gridInputPower\":0,\"electricLevel\":64,"
+    "\"remainOutTime\":320,\"hyperTmp\":3121,\"BatVolt\":5120,\"acMode\":2,\"inputLimit\":0,\"outputLimit\":800,"
+    "\"socSet\":900,\"minSoc\":150,\"inverseMaxPower\":800,\"chargeMaxLimit\":1200,\"rssi\":-58,\"packNum\":2,"
+    "\"packState\":2,\"faultLevel\":1,\"is_error\":0,\"heatState\":1,\"derateFlag\":0,\"gridOffMode\":1,"
+    "\"gridOffPower\":%d,\"Fanmode\":1,\"Fanspeed\":2},"
+    "\"packData\":[{\"maxTemp\":2891,\"maxVol\":331,\"minVol\":329,\"totalVol\":4965,\"batcur\":65509,\"power\":%d,\"socLevel\":64},"
+    "{\"maxTemp\":2884,\"maxVol\":331,\"minVol\":329,\"totalVol\":4962,\"batcur\":65512,\"power\":%d,\"socLevel\":64}]}",
+    solar, p1, p2, p3, p4, haus, ent, dose, ent / 2, ent - ent / 2);
+  return leseBericht(j, w);
+}
+static bool ip0() { bool b; sperren(); b = ein.ip[0] != 0; freigeben(); return b; }
 static void netzTask(void *) {
   WiFi.mode(WIFI_STA);
   WiFi.persistent(false);
@@ -588,7 +619,7 @@ static void netzTask(void *) {
     }
     bool verbunden = WiFi.status() == WL_CONNECTED;
     if (verbunden && !warVerbunden) {
-      Serial.println("WLAN: verbunden");
+      Serial.printf("WLAN: verbunden nach %lu ms\n", (unsigned long)millis());
       mdnsStart();
       a |= A_ZEIT;
     }
@@ -602,7 +633,12 @@ static void netzTask(void *) {
     // erreichbar, nach 2 Minuten wieder (bisher erst nach 6 Stunden).
     static uint32_t letztePruefung = 0; static bool erstePruefung = true, pruefOk = false;
     uint32_t abstand = pruefOk ? 3600UL * 1000 : 120UL * 1000;
-    if (verbunden && (erstePruefung ? zeitGestellt() : millis() - letztePruefung > abstand)) a |= A_UPD_PRUEFEN;
+    // Die erste Prüfung erst nach dem ersten Bericht (oder 60 s nach dem
+    // Verbinden): Sie dauert bis zu 20 s und hielt sonst die erste Anzeige auf.
+    static uint32_t verbundenSeit = 0;
+    if (!verbunden) verbundenSeit = 0; else if (!verbundenSeit) verbundenSeit = millis();
+    bool ersteFrei = zeitGestellt() && (!ersteAntwort || !ip0() || millis() - verbundenSeit > 60000);
+    if (verbunden && (erstePruefung ? ersteFrei : millis() - letztePruefung > abstand)) a |= A_UPD_PRUEFEN;
     if (verbunden && (a & A_UPD_PRUEFEN)) {
       erstePruefung = false; letztePruefung = millis(); updatePruefen();
       sperren(); pruefOk = lage.updGeprueft; freigeben();
@@ -622,11 +658,17 @@ static void netzTask(void *) {
 
     // Abfrage alle 3 s
     char ip[16]; sperren(); snprintf(ip, sizeof ip, "%s", ein.ip); freigeben();
-    if (verbunden && ip[0] && millis() - letzteAbfrage >= ZENDURE_ABSTAND_S * 1000UL) {
+    if (demoAn) {
+      if (millis() - letzteAbfrage >= ZENDURE_ABSTAND_S * 1000UL) {
+        letzteAbfrage = millis();
+        static Werte dw;
+        if (demoBericht(dw)) { sperren(); lage.w = dw; freigeben(); letzteOk = millis(); datenNeu = true; }
+      }
+    } else if (verbunden && ip[0] && millis() - letzteAbfrage >= ZENDURE_ABSTAND_S * 1000UL) {
       letzteAbfrage = millis();
       static Werte w;
       if (holeBericht(ip, w, 2500)) {
-        if (ersteAntwort || fehler >= 5) Serial.println("Speicher: Antwort ok");
+        if (ersteAntwort || fehler >= 5) Serial.printf("Speicher: Antwort ok nach %lu ms\n", (unsigned long)millis());
         ersteAntwort = false; fehler = 0;
         sperren(); lage.w = w; freigeben();
         letzteOk = millis(); datenNeu = true;
@@ -711,7 +753,7 @@ static void lichtStellen() {
 static void allesZeigen() {
   const int Z = 16;
   for (int r = 0; r < 480; r += Z) {
-    uint16_t *q = basisBuf + r * 480, *d = fb + r * 480;
+    uint16_t *q = basis.buf + r * 480, *d = fb + r * 480;
     memcpy(d, q, Z * 480 * 2);
     Cache_WriteBack_Addr((uint32_t)d, Z * 480 * 2);
     delayMicroseconds(300);
@@ -726,17 +768,20 @@ static void teilZeigen(Leinwand &q, int x, int y, int w, int h) {
 // Zug kopieren - so fehlen sie auch beim Neuzeichnen der Seite nie sichtbar.
 struct Teil { Leinwand L; int x, y, w, h; };
 static Teil teile[8]; static int teilAnz = 0;
+// Abzug der Drähte zum Zeitpunkt des Seitenwechsels - der Striche-Task liest
+// nur diesen, nie ui direkt (ui gehört der Hauptschleife).
+static Draht strDraht[8]; static volatile int strAnz = 0; static bool strTabs = false;
 static void stricheRechnen(uint32_t ms) {
   teilAnz = 0; int belegt = 0;
-  for (int i = 0; i < ui.drahtAnz; i++) {
+  for (int i = 0; i < strAnz; i++) {
     Teil &t = teile[teilAnz];
-    Oberflaeche::drahtRahmen(ui.draht[i], t.x, t.y, t.w, t.h);
+    Oberflaeche::drahtRahmen(strDraht[i], t.x, t.y, t.w, t.h);
     if (belegt + t.w * t.h > TEIL_PX) break;
     t.L.init(teilBuf + belegt, t.x, t.y, t.w, t.h);
     belegt += t.w * t.h;
     for (int xx = t.x; xx < t.x + t.w; xx++) memcpy(t.L.an(xx, t.y), basis.an(xx, t.y), t.h * 2);
-    if (ui.tabs) t.L.beschnitt(t.x, t.y, t.x + t.w, 400);   // nicht über die Reiterleiste
-    Oberflaeche::striche(t.L, ui.draht[i], ms);
+    if (strTabs) t.L.beschnitt(t.x, t.y, t.x + t.w, 400);   // nicht über die Reiterleiste
+    Oberflaeche::striche(t.L, strDraht[i], ms);
     teilAnz++;
   }
 }
@@ -758,6 +803,7 @@ static void lageHolen() {
     zeichenLage.okHH = u.tm_hour; zeichenLage.okMM = u.tm_min; zeichenLage.okSS = u.tm_sec;
   }
   zeichenLage.build = FW_BUILD;
+  zeichenLage.demo = demoAn;
   zeichenLage.sonneF = -1;
   float lat, lon;
   if (zeichenLage.uhr && plzOrt(ein.plz, lat, lon)) {
@@ -789,11 +835,29 @@ static void lageHolen() {
 }
 static void seiteZeichnen() {
   lageHolen();
-  basis.volleFlaeche();
-  ui.zeichne(basis, zeichenLage);
+  arbeit.volleFlaeche();
+  ui.zeichne(arbeit, zeichenLage);            // dauert - die Striche laufen derweil weiter
+  xSemaphoreTake(bildSperre, portMAX_DELAY);
+  Leinwand z = basis; basis = arbeit; arbeit = z;
+  int n = ui.seite == S_FLUSS ? ui.drahtAnz : 0;
+  for (int i = 0; i < n; i++) strDraht[i] = ui.draht[i];
+  strAnz = n; strTabs = ui.tabs;
   stricheRechnen(millis());
   allesZeigen();
   stricheZeigen();
+  xSemaphoreGive(bildSperre);
+}
+
+static void stricheTask(void *) {
+  TickType_t takt = xTaskGetTickCount();
+  for (;;) {
+    vTaskDelayUntil(&takt, pdMS_TO_TICKS(33));
+    if (!strAnz) continue;
+    xSemaphoreTake(bildSperre, portMAX_DELAY);
+    stricheRechnen(millis());
+    stricheZeigen();
+    xSemaphoreGive(bildSperre);
+  }
 }
 
 // =====================================================================
@@ -820,9 +884,12 @@ void setup() {
   gfx->invertDisplay(true);
   fb = gfx->getFramebuffer();
   basisBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
+  arbeitBuf = (uint16_t *)ps_malloc(480 * 480 * 2);
   teilBuf = (uint16_t *)heap_caps_malloc(TEIL_PX * 2, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-  if (!basisBuf || !teilBuf || !fb) { Serial.println("Speicher fuer Bild fehlt"); }
+  if (!basisBuf || !arbeitBuf || !teilBuf || !fb) { Serial.println("Speicher fuer Bild fehlt"); }
   basis.init(basisBuf, 0, 0, 480, 480);
+  arbeit.init(arbeitBuf, 0, 0, 480, 480);
+  bildSperre = xSemaphoreCreateMutex();
 
   Wire.begin(PIN_SDA, PIN_SCL, 400000);
   touchAdr = sucheTouch();
@@ -843,6 +910,9 @@ void setup() {
   seiteZeichnen();
   ledcWrite(0, 255); lichtJetzt = 100;
   xTaskCreatePinnedToCore(netzTask, "netz", 12288, nullptr, 1, nullptr, 0);
+  // Striche: eigener Task auf Kern 1, Vorrang vor der Hauptschleife (Priorität 1),
+  // damit er sie auch mitten im Zeichnen einer Seite unterbricht.
+  xTaskCreatePinnedToCore(stricheTask, "striche", 6144, nullptr, 2, nullptr, 1);
 }
 
 static bool unten = false, schlucken = false, gedrueckt = false;
@@ -875,9 +945,11 @@ void loop() {
             int kx = max(0, (int)k.x), ky = max(0, (int)k.y);
             int kw = min(480, k.x + k.w) - kx, kh = min(480, k.y + k.h) - ky;
             if (kw > 0 && kh > 0) {
+              xSemaphoreTake(bildSperre, portMAX_DELAY);
               basis.volleFlaeche();
               basis.hauch(kx, ky, kw, kh, 11, C_TEXT, 70);
               teilZeigen(basis, kx, ky, kw, kh);
+              xSemaphoreGive(bildSperre);
               gedrueckt = true;
             }
           }
@@ -915,6 +987,18 @@ void loop() {
     if (w & W_HELL) lichtJetzt = -1;
     if (w & W_UPD_PRUEFEN) anfrage(A_UPD_PRUEFEN);
     if (w & W_UPD_LADEN) anfrage(A_UPD_LADEN);
+    if (w & W_LOGO) {
+      // dreimal innerhalb von 2 s: Demomodus umschalten
+      static uint32_t erstes = 0; static int zahl = 0;
+      if (millis() - erstes > 2000) { erstes = millis(); zahl = 0; }
+      if (++zahl >= 3) {
+        zahl = 0; erstes = 0;
+        demoAn = !demoAn;
+        Serial.printf("Demo: %s\n", demoAn ? "an" : "aus");
+        sperren(); lage.w.leeren(); freigeben(); letzteOk = 0;
+        ui.gehe(S_FLUSS);
+      }
+    }
   }
   // ---- Ergebnisse des Netz-Tasks ----
   if (verbindErgebnis) {
@@ -956,11 +1040,7 @@ void loop() {
     if (offline != warOffline || (ui.hauptseite() && tt.tm_sec == 0)) { warOffline = offline; seiteZeichnen(); }
     lichtStellen();
   }
-  if (ui.seite == S_FLUSS && ui.drahtAnz && jetzt - letzteAnim >= 33) {
-    letzteAnim = jetzt;
-    stricheRechnen(jetzt);
-    stricheZeigen();
-  }
+  // Striche zeichnet stricheTask
   if (jetzt - letztesLaufen > 60000) {
     if (!letztesLaufen) startBestaetigen();       // eine Minute ohne Absturz: neue Fassung gilt
     letztesLaufen = jetzt; Serial.println("laeuft");
