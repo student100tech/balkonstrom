@@ -67,7 +67,9 @@ struct Lage {
   int verbinden = 0;                     // 0 nichts, 1 läuft, 2 ok, 3 Fehler
   int build = 0;
   bool demo = false;                     // Demomodus: feste Werte mit allem gleichzeitig
+  float zaehler = NAN;                   // Smart Meter total_power (+ Bezug, − Einspeisung), NAN = keiner
   Verlauf *verlauf = nullptr;
+  int verlTage = 1;                      // gespeicherte Tage (mit heute), höchstens 7
   // Update über WLAN
   int updBuild = 0;                      // neuestes Build auf GitHub, 0 = unbekannt
   int updStatus = 0;                     // 0 nichts, 1 prüft, 2 lädt, 3 fertig, 4 Fehler
@@ -81,7 +83,7 @@ struct Lage {
 enum KnopfId {
   K_PILLE = 1, K_PUNKT, K_NETZ, K_WEITERE, K_NAME, K_TASTE, K_ZEIGEN, K_VERBINDEN, K_ZURUECK,
   K_GERAET, K_NEU_SUCHEN, K_IP, K_SP_AENDERN, K_WLAN_AENDERN, K_FELD, K_SPRACHE, K_ZONE,
-  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL, K_TAB, K_LOGO
+  K_REGLER, K_ZAHL, K_OK, K_NOCHMAL, K_NEU_NETZE, K_UPDATE, K_UPD_PRUEFEN, K_UPD_INSTALL, K_TAB, K_LOGO, K_VERL_TAG
 };
 struct Knopf { int16_t x, y, w, h; uint8_t id; int16_t arg; };
 
@@ -89,12 +91,13 @@ enum Seite { S_FLUSS, S_ZUSTAND, S_VERLAUF, S_EINST, S_NETZE, S_TASTATUR, S_SPEI
 
 // Wünsche an die Hardware
 enum { W_SCAN = 1, W_VERBINDEN = 2, W_SUCHE = 4, W_SICHERN = 8, W_GERAET = 16, W_HELL = 32, W_ZONE = 64,
-       W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256, W_LOGO = 512 };
+       W_UPD_PRUEFEN = 128, W_UPD_LADEN = 256, W_LOGO = 512, W_VERL_TAG = 1024 };
 
 // Eine Leitung im Flussdiagramm mit ihren laufenden Strichen
 struct Draht { float x0, y0, x1, y1; uint16_t farbe[3]; int anz; bool rueck; bool an; float dicke; };
 
 static const float K = 480.0f / 350.0f;
+static const float OFFGRID_MAX_W = 1000;   // Dauerleistung der Off-Grid-Dose
 static inline float AX(float x) { return x * K; }
 static inline float AY(float y) { return (y + 60) * K; }
 
@@ -122,6 +125,7 @@ static void ikone(Leinwand &L, const float *ik, float dx, float dy, float s, flo
 
 struct Oberflaeche {
   Seite seite = S_FLUSS;
+  int verlTag = 0;                       // Verlauf: 0 = heute, 1 = gestern … 6
   Knopf kn[96]; int knAnz = 0;
   uint32_t wuensche = 0;
   Einst *e = nullptr;
@@ -141,7 +145,7 @@ struct Oberflaeche {
   void knopf(float x, float y, float w, float h, uint8_t id, int arg = 0) {
     if (knAnz < 96) kn[knAnz++] = {(int16_t)x, (int16_t)y, (int16_t)w, (int16_t)h, id, (int16_t)arg};
   }
-  void gehe(Seite s) { seite = s; neu = true; }
+  void gehe(Seite s) { if (s == S_VERLAUF && seite != S_VERLAUF) verlTag = 0; seite = s; neu = true; }
 
   // ===================== gemeinsame Teile =====================
   bool tabs = false;                  // Reiterleiste eingeblendet (setzt die Hardware)
@@ -247,7 +251,11 @@ struct Oberflaeche {
       reiter(L);
       return;
     }
-    float hausW = f.home, netzW = f.grid, bezug = f.grid;
+    // Mit Zähler wie in der App: Haus = Abgabe + Zähler − Netzladen
+    bool zl = !isnan(g.zaehler);
+    float bezug = zl ? fmaxf(0, g.zaehler) : f.grid, einsp = zl ? fmaxf(0, -g.zaehler) : 0;
+    float hausW = zl ? fmaxf(0, f.home + g.zaehler - f.grid) : f.home;
+    float netzW = zl ? fmaxf(bezug, einsp) : f.grid;
     // Leitungen (Grund)
     // Leitungen nur leicht nach Leistung: 2,5 in Ruhe bis 4 ab 800 W (wie die App)
     auto dicke = [](float watt) { return (2.5f + 1.5f * klemm(watt / 800, 0, 1)) * K; };
@@ -315,7 +323,7 @@ struct Oberflaeche {
     };
     knoten(46, 142, 26, C_GRIDBG, C_GRIDLN, C_GRID, 0);   // kein Füllstand: das Netz hat keine Obergrenze (27.11.)
     ikone(L, IK_MAST, 0, 60 * K, K, 2 * K, C_GRID);
-    L.text(AX(46), AY(102), T(f.grid > 2 ? T_NETZ_AKKU : T_NETZ), R165, C_MUTED, 1);
+    L.text(AX(46), AY(102), T(zl ? (einsp > 2 ? T_EINSPEISUNG : bezug > 2 ? T_NETZBEZUG : T_NETZ) : f.grid > 2 ? T_NETZ_AKKU : T_NETZ), R165, C_MUTED, 1);
     fmtW(b, sizeof b, netzW);
     L.text(AX(46), AY(192), b, ziffern(b) > 3 ? S199 : S233, netzW > 2 ? C_TEXT : C_MUTED, 1, true);
 
@@ -329,6 +337,8 @@ struct Oberflaeche {
     if (f.hatOff) {
       L.scheibe(AX(40), AY(248), 22 * K, C_HOMEBG);
       L.ring(AX(40), AY(248), 22 * K, 5 * K, C_HOMELN);
+      // Füllstand: die Dose hat eine echte Grenze, 1000 W Dauerleistung (Datenblatt 800 Pro)
+      { float q = klemm(f.offW / OFFGRID_MAX_W, 0, 1); if (q > 0.004f) L.bogen(AX(40), AY(248), 22 * K, 5 * K, 0, q * 360, C_HOME); }
       ikone(L, IK_DOSE, AX(29), AY(237), K, 2 * K, C_HOME);
       L.text(AX(70), AY(234), T(T_OFFGRID), R165, C_MUTED);
       if (f.offW > 0) fmtW(b, sizeof b, f.offW); else snprintf(b, sizeof b, "%s", T(f.offBereit ? T_BEREIT : T_AUS));
@@ -372,7 +382,8 @@ struct Oberflaeche {
       d = {AX(x0), AY(y0), AX(x1), AY(y1), {c[0], n > 1 ? c[1] : c[0], n > 2 ? c[2] : c[0]}, n, rueck, watt > FLUSS_MINWATT, dicke(watt)};
     };
     if (!f.ohnePv) neuerDraht(175, 70, 175, 122, f.solar, false, &C_SOLAR, 1);
-    neuerDraht(72, 142, 125, 142, netzW, false, &C_GRID, 1);
+    if (einsp > 2) neuerDraht(72, 142, 125, 142, netzW, true, &C_SOLAR, 1);   // Einspeisung: rückwärts in Quellfarbe
+    else neuerDraht(72, 142, 125, 142, netzW, false, &C_GRID, 1);
     if (f.hatOff) neuerDraht(144, 248, 66, 248, f.offW, false, &C_BAT, 1);
     if (f.entladen > 0) neuerDraht(175, 162, 175, 220, f.batW, true, &C_BAT, 1);
     else if (on) neuerDraht(175, 162, 175, 220, f.batW, false, ohneAkku, on);
@@ -523,7 +534,28 @@ struct Oberflaeche {
       lx += 15 + L.text(lx + 15, 55, T(leg[i].t), R125, C_MUTED2) + 16;
     }
     const Verlauf *v = g.verlauf;
-    int jetzt = g.uhr ? (g.hh * 60 + g.mm) / 5 : -1;
+    if (verlTag > g.verlTage - 1) verlTag = g.verlTage - 1 < 0 ? 0 : g.verlTage - 1;
+    bool heute = verlTag == 0;
+    int jetzt = !heute ? SLOTS : g.uhr ? (g.hh * 60 + g.mm) / 5 : -1;   // Vortage: ganzer Tag
+    // Tag wählen: ‹ älter · Datum · neuer ›  (eine Woche wird gespeichert)
+    {
+      char t[32];
+      if (heute) snprintf(t, sizeof t, "%s", T(T_HEUTE));
+      else if (verlTag == 1) snprintf(t, sizeof t, "%s", T(T_GESTERN));
+      else if (v && v->tag) {
+        int j = v->tag / 10000, m = v->tag / 100 % 100, d = v->tag % 100;
+        // Wochentag nach Sakamoto, 0 = Sonntag
+        static const int TT[] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+        int y = j - (m < 3), wt = (y + y / 4 - y / 100 + y / 400 + TT[m - 1] + d) % 7;
+        snprintf(t, sizeof t, "%s %02d.%02d.", T(T_WT_MO + (wt + 6) % 7), d, m);
+      } else snprintf(t, sizeof t, "–");
+      L.text(240, 92, t, S150, C_TEXT, 1);
+      bool aelter = verlTag < g.verlTage - 1, neuer = verlTag > 0;
+      { float p[6] = {58, 78, 50, 86, 58, 94}; L.polylinie(p, 3, 2.5f, aelter ? C_MUTED2 : C_LINE, false); }
+      { float p[6] = {422, 78, 430, 86, 422, 94}; L.polylinie(p, 3, 2.5f, neuer ? C_MUTED2 : C_LINE, false); }
+      if (aelter) knopf(20, 64, 90, 44, K_VERL_TAG, 1);
+      if (neuer) knopf(370, 64, 90, 44, K_VERL_TAG, -1);
+    }
     // Massstab: vier Abschnitte, runde Schritte
     int maxW = 0;
     if (v && v->tag) for (int i = 0; i < SLOTS; i++) {
@@ -565,7 +597,7 @@ struct Oberflaeche {
       kurve(L, v->solar, sx, sy, C_SOLAR);
       kurve(L, v->haus, sx, sy, C_HOME);
       kurve(L, v->netz, sx, sy, C_GRID);
-      if (jetzt >= 0) {
+      if (heute && jetzt >= 0) {
         float xj = sx(jetzt + 0.5f);
         for (float yy = Y0; yy < Y1; yy += 7) L.flaeche((int)xj, (int)yy, 1, 3, C_MUTED);
         int hz = v->haus[jetzt] >= 0 ? v->haus[jetzt] : (jetzt > 0 ? v->haus[jetzt - 1] : -1);
@@ -996,6 +1028,7 @@ struct Oberflaeche {
         case K_UPD_PRUEFEN: wuensche |= W_UPD_PRUEFEN; neu = true; break;
         case K_UPD_INSTALL: wuensche |= W_UPD_LADEN; neu = true; break;
         case K_LOGO: wuensche |= W_LOGO; break;
+        case K_VERL_TAG: verlTag += k.arg; if (verlTag < 0) verlTag = 0; if (verlTag > 6) verlTag = 6; wuensche |= W_VERL_TAG; neu = true; break;
         case K_NETZ:
           snprintf(zielSsid, sizeof zielSsid, "%s", g.netze[k.arg].ssid);
           eingabe[0] = 0; tastZweck = 0; tastModus = 0;

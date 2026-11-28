@@ -25,7 +25,7 @@ enum Txt {
   T_STAND, T_WARTE_KURZ, T_TAB_FLUSS, T_TAB_VERLAUF, T_DEV_ERR, T_DEV_COLD, T_DEV_HEAT, T_DEV_DERATE,
   T_PLZ, T_PLZ_KURZ, T_AKKU_WH, T_GRENZEN, T_LADEN_BIS, T_MAX_LADEN, T_MAX_ABGABE,
   T_HAUS, T_AKKU_KURZ, T_PV_ERTRAG, T_EIGENVERBRAUCH, T_EINSPEISUNG,
-  T_GEPRUEFT,
+  T_GEPRUEFT, T_NETZBEZUG, T_GESTERN, T_WT_MO, T_WT_DI, T_WT_MI, T_WT_DO, T_WT_FR, T_WT_SA, T_WT_SO,
   T_ANZ
 };
 
@@ -61,7 +61,7 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Stand", "warte …", "Fluss", "Verlauf", "Störung", "Akku kalt", "Akku heizt", "gedrosselt",
     "Postleitzahl", "PLZ", "Akku (Wh)", "Grenzen", "Laden bis", "Max. Laden", "Max. Abgabe",
     "Haus", "Akku", "PV-Ertrag", "Eigenverbrauch", "Einspeisung",
-    "Geprüft %02d:%02d:%02d"
+    "Geprüft %02d:%02d:%02d", "Netzbezug", "Gestern", "Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"
   },
   { // Русский
     "Поток энергии", "Солнце", "Сеть", "Сеть \xE2\x86\x92 АКБ", "В дом", "Аккумулятор",
@@ -95,7 +95,7 @@ static const char *const TEXTE[2][T_ANZ] = {
     "Обновлено", "ожидание …", "Поток", "Журнал", "Неисправность", "АКБ холодный", "Подогрев АКБ", "Мощность снижена",
     "Почтовый индекс", "Индекс", "АКБ (Вт·ч)", "Пределы", "Заряжать до", "Макс. заряд", "Макс. выдача",
     "Дом", "АКБ", "Выработка", "Потребление", "В сеть",
-    "Проверено %02d:%02d:%02d"
+    "Проверено %02d:%02d:%02d", "Из сети", "Вчера", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"
   }
 };
 

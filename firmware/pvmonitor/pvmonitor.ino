@@ -22,6 +22,7 @@
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <Preferences.h>
+#include <LittleFS.h>
 #include <time.h>
 #include <WiFiClientSecure.h>
 #include <Update.h>
@@ -203,7 +204,8 @@ static uint16_t *fb = nullptr, *basisBuf = nullptr, *arbeitBuf = nullptr, *teilB
 // Striche weiter, während neu gezeichnet wird - vorher stockten sie bei jedem
 // Bericht (alle 3 s) für die Dauer des Neuzeichnens.
 static Leinwand basis, arbeit;
-static SemaphoreHandle_t bildSperre;   // fb und basis: Striche-Task gegen Seitenwechsel
+static SemaphoreHandle_t bildSperre;
+static bool ersterAufbau = true;      // beim ersten Bild alles kopieren   // fb und basis: Striche-Task gegen Seitenwechsel
 static const int TEIL_PX = 8192;
 
 static void sperren() { xSemaphoreTake(sperre, portMAX_DELAY); }
@@ -265,19 +267,98 @@ static void sonneLernen(const Verlauf &v) {
 }
 static uint32_t letzteBuchung = 0, letzteSicherung = 0;
 
+// Verlauf einer Woche im Dateibereich (Partition "spiffs" ab 0x810000, LittleFS).
+// Der liegt hinter dem Programm: weder das Update über WLAN noch das Flashen
+// über USB aus der App schreibt dorthin - die Statistik bleibt also erhalten.
+// Je Tag eine Datei /vJJJJMMTT.bin (2,3 KB), die sieben neuesten bleiben.
+// Bis Firmware 20 lag nur ein Tag im NVS; der wird beim ersten Start übernommen.
+static bool fsOk = false;
+static const int TAGE = 7;
+static void tagPfad(char *b, int n, uint32_t tag) { snprintf(b, n, "/v%08lu.bin", (unsigned long)tag); }
+// Gespeicherte Tage, neuester zuerst
+static int tageListe(uint32_t *t, int max) {
+  int n = 0;
+  if (!fsOk) return 0;
+  File d = LittleFS.open("/");
+  for (File f = d.openNextFile(); f; f = d.openNextFile()) {
+    const char *nm = f.name(); if (*nm == '/') nm++;
+    if (nm[0] == 'v' && f.size() == sizeof(Verlauf)) {
+      uint32_t tg = strtoul(nm + 1, nullptr, 10);
+      if (tg > 20000000 && n < 32) t[n++] = tg;
+    }
+    f.close();
+  }
+  d.close();
+  for (int i = 1; i < n; i++) for (int j = i; j > 0 && t[j] > t[j - 1]; j--) { uint32_t x = t[j]; t[j] = t[j - 1]; t[j - 1] = x; }
+  return n < max ? n : max;
+}
+static bool tagLesen(uint32_t tag, Verlauf &v) {
+  char p[24]; tagPfad(p, sizeof p, tag);
+  File f = LittleFS.open(p, "r");
+  if (!f) return false;
+  bool ok = f.size() == sizeof(Verlauf) && f.read((uint8_t *)&v, sizeof(Verlauf)) == sizeof(Verlauf);
+  f.close();
+  return ok && v.tag == tag;
+}
+// Aufräumen bei jedem Start: Im Dateibereich bleibt nur, was die Firmware
+// kennt - die sieben neuesten Tagesdateien in der aktuellen Größe. Alles
+// andere (Reste abgebrochener Schreibvorgänge, Dateien eines älteren
+// Formats, Versuche) wird gelöscht. So sammelt sich über die Jahre nichts an.
+static void verlaufSichern();
+static void aufraeumen() {
+  if (!fsOk) return;
+  uint32_t t[32]; int n = tageListe(t, 32);     // nur gültige, neueste zuerst
+  char weg[16][32]; int w = 0;
+  File d = LittleFS.open("/");
+  for (File f = d.openNextFile(); f; f = d.openNextFile()) {
+    const char *nm = f.name(); if (*nm == '/') nm++;
+    bool behalten = false;
+    if (nm[0] == 'v' && f.size() == sizeof(Verlauf) && !f.isDirectory()) {
+      uint32_t tg = strtoul(nm + 1, nullptr, 10);
+      for (int i = 0; i < n && i < TAGE; i++) if (t[i] == tg) behalten = true;
+    }
+    if (!behalten && w < 16) snprintf(weg[w++], 32, "/%s", nm);
+    f.close();
+  }
+  d.close();
+  for (int i = 0; i < w; i++) { Serial.printf("Aufräumen: %s\n", weg[i]); LittleFS.remove(weg[i]) || LittleFS.rmdir(weg[i]); }
+  Serial.printf("Dateibereich: %u von %u KB belegt\n", (unsigned)(LittleFS.usedBytes() / 1024), (unsigned)(LittleFS.totalBytes() / 1024));
+}
 static void verlaufLaden() {
-  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
-  prefs.begin("verlauf", true);
-  if (prefs.getBytesLength("tag") == sizeof(Verlauf)) prefs.getBytes("tag", &verl, sizeof(Verlauf));
-  else verl.leeren(0);
+  verl.leeren(0);
+  uint32_t t[32];
+  bool ausDatei = fsOk && tageListe(t, 32) > 0 && tagLesen(t[0], verl);
+  Preferences prefs;   // Übernahme aus dem NVS (bis Firmware 20), danach dort löschen
+  prefs.begin("verlauf", false);
+  if (!ausDatei && prefs.getBytesLength("tag") == sizeof(Verlauf)) prefs.getBytes("tag", &verl, sizeof(Verlauf));
+  if (fsOk) prefs.clear();
   prefs.end();
+  if (fsOk && !ausDatei && verl.tag) verlaufSichern();
 }
 static void verlaufSichern() {
-  Preferences prefs;   // je Aufruf eigenes Objekt - beide Kerne sichern
-  prefs.begin("verlauf", false);
-  prefs.putBytes("tag", &verl, sizeof(Verlauf));
-  prefs.end();
+  if (!verl.tag) return;
+  if (!fsOk) {                                   // Notlösung ohne Dateibereich
+    Preferences prefs; prefs.begin("verlauf", false);
+    prefs.putBytes("tag", &verl, sizeof(Verlauf)); prefs.end();
+    return;
+  }
+  // erst in eine Hilfsdatei, dann umbenennen - ein Stromausfall mitten im
+  // Schreiben lässt so den alten Stand stehen
+  char p[24]; tagPfad(p, sizeof p, verl.tag);
+  File f = LittleFS.open("/neu.tmp", "w");
+  if (!f) return;
+  bool ok = f.write((const uint8_t *)&verl, sizeof(Verlauf)) == sizeof(Verlauf);
+  f.close();
+  if (!ok) return;
+  // LittleFS ersetzt beim Umbenennen eine vorhandene Datei in einem Schritt -
+  // nicht vorher löschen, sonst gäbe es einen Moment ganz ohne den Tag
+  LittleFS.rename("/neu.tmp", p);
+  // Ältere als die sieben neuesten löschen
+  uint32_t t[32]; int n = tageListe(t, 32);
+  for (int i = TAGE; i < n; i++) { tagPfad(p, sizeof p, t[i]); LittleFS.remove(p); }
 }
+static Verlauf verlAlt;                  // ein Vortag für die Anzeige
+static uint32_t verlAltTag = 0;
 static void verlaufBuchen(const Werte &w) {
   time_t jetzt = time(nullptr); struct tm t; localtime_r(&jetzt, &t);
   if (t.tm_year < 124) return;                       // Uhr noch nicht gestellt
@@ -750,13 +831,19 @@ static void lichtStellen() {
 // Eine neue Seite in Häppchen von 16 Zeilen übertragen, mit kurzer Pause
 // dazwischen: Ein Kopieren von 460 KB am Stück nimmt dem Panel den Zugriff auf
 // den PSRAM, und das Bild zittert.
-static void allesZeigen() {
-  const int Z = 16;
+// Nur die Häppchen kopieren, die sich gegenüber dem bisher gezeigten Bild
+// (alt) geändert haben. Bei einem Bericht sind das wenige Zahlen - vorher
+// wurde jedes Mal der ganze Bildspeicher (460 KB) neu beschrieben. Das
+// Schreiben ins PSRAM konkurriert mit dem Panel, das von dort liest; zu viel
+// davon auf einmal und das Panel bekommt kurz keine Daten (schwarzes Blitzen).
+static void allesZeigen(const uint16_t *alt) {
+  const int Z = 8;
   for (int r = 0; r < 480; r += Z) {
     uint16_t *q = basis.buf + r * 480, *d = fb + r * 480;
+    if (alt && memcmp(q, alt + r * 480, Z * 480 * 2) == 0) continue;
     memcpy(d, q, Z * 480 * 2);
     Cache_WriteBack_Addr((uint32_t)d, Z * 480 * 2);
-    delayMicroseconds(300);
+    delayMicroseconds(400);
   }
 }
 static void teilZeigen(Leinwand &q, int x, int y, int w, int h) {
@@ -791,8 +878,22 @@ static Lage zeichenLage;
 static void lageHolen() {
   sperren();
   zeichenLage = lage;
-  if (ui.seite == S_VERLAUF) verlUI = verl;
+  bool vorTag = ui.seite == S_VERLAUF && ui.verlTag > 0;
+  if (ui.seite == S_VERLAUF && !vorTag) verlUI = verl;
+  uint32_t heuteTag = verl.tag;
   freigeben();
+  if (ui.seite == S_VERLAUF) {
+    // Tage zählen: Dateien plus heute (heute liegt evtl. noch nicht als Datei vor)
+    uint32_t t[32]; int n = tageListe(t, 32), k = 0; uint32_t liste[TAGE]; 
+    if (heuteTag) liste[k++] = heuteTag;
+    for (int i = 0; i < n && k < TAGE; i++) if (t[i] != heuteTag) liste[k++] = t[i];
+    zeichenLage.verlTage = k ? k : 1;
+    if (vorTag && ui.verlTag < k) {
+      uint32_t w = liste[ui.verlTag];
+      if (w != verlAltTag) { if (tagLesen(w, verlAlt)) verlAltTag = w; else { verlAlt.leeren(0); verlAltTag = 0; } }
+      verlUI = verlAlt;
+    } else if (vorTag) verlUI.leeren(0);
+  }
   uint32_t ok = letzteOk;
   zeichenLage.alterS = ok ? (int)((millis() - ok) / 1000) : -1;
   time_t j = time(nullptr); struct tm t; localtime_r(&j, &t);
@@ -804,6 +905,7 @@ static void lageHolen() {
   }
   zeichenLage.build = FW_BUILD;
   zeichenLage.demo = demoAn;
+  zeichenLage.zaehler = demoAn ? 340 + 25 * sinf(millis() / 6000.0f) : NAN;   // Smart Meter am Monitor: noch nicht, nur Demo
   zeichenLage.sonneF = -1;
   float lat, lon;
   if (zeichenLage.uhr && plzOrt(ein.plz, lat, lon)) {
@@ -838,12 +940,13 @@ static void seiteZeichnen() {
   arbeit.volleFlaeche();
   ui.zeichne(arbeit, zeichenLage);            // dauert - die Striche laufen derweil weiter
   xSemaphoreTake(bildSperre, portMAX_DELAY);
-  Leinwand z = basis; basis = arbeit; arbeit = z;
+  Leinwand z = basis; basis = arbeit; arbeit = z;   // arbeit = bisher gezeigtes Bild
   int n = ui.seite == S_FLUSS ? ui.drahtAnz : 0;
   for (int i = 0; i < n; i++) strDraht[i] = ui.draht[i];
   strAnz = n; strTabs = ui.tabs;
   stricheRechnen(millis());
-  allesZeigen();
+  allesZeigen(ersterAufbau ? nullptr : arbeit.buf);
+  ersterAufbau = false;
   stricheZeigen();
   xSemaphoreGive(bildSperre);
 }
@@ -896,6 +999,9 @@ void setup() {
   Serial.println(touchAdr ? "Touch: gefunden" : "Touch: nicht gefunden");
 
   einstLaden();
+  fsOk = LittleFS.begin(true, "/lfs", 10, "spiffs");   // beim allerersten Start wird formatiert
+  Serial.printf("Dateibereich: %s\n", fsOk ? "ok" : "FEHLER");
+  aufraeumen();
   verlaufLaden();
   { Preferences p; p.begin("sonne", true); sonneAuf = p.getInt("auf", -1); sonneUnter = p.getInt("unter", -1); p.end(); }
   ui.e = &ein;
@@ -938,7 +1044,11 @@ void loop() {
         schlucken = lichtJetzt < 100;          // nachts weckt die erste Berührung nur das Licht
         letzteBeruehrung = jetzt; lichtStellen();
         // Rückmeldung: Knopf unter dem Finger sofort aufhellen
-        if (!schlucken && !(ui.hauptseite() && !ui.tabs)) {
+        // Auf Hauptseiten ohne Reiter wirkt ein Tipp auf einen Knopf sofort
+        // (Regler, Felder, Logo); nur ein Tipp ins Leere blendet die Reiter ein.
+        // Vorher schluckte der erste Tipp alles - und danach lag die Reiterleiste
+        // genau über dem Helligkeitsregler, der so nie erreichbar war.
+        if (!schlucken) {
           int i = ui.treffer(x, y);
           if (i >= 0) {
             const Knopf &k = ui.kn[i];
@@ -961,13 +1071,15 @@ void loop() {
       unten = false;
       int dx = txl - tx0, dy = tyl - ty0;
       if (!schlucken && abs(dx) < 30 && abs(dy) < 30) {
-        if (ui.hauptseite() && !ui.tabs) { ui.tabs = true; ui.neu = true; }
+        bool direkt = !(ui.hauptseite() && !ui.tabs) || ui.treffer(tx0, ty0) >= 0;
+        if (!direkt) { ui.tabs = true; ui.neu = true; tabsBis = jetzt + 3000; }
         else {
           // Aufhellung mindestens 120 ms stehen lassen, sonst sieht man sie nicht
           if (gedrueckt && millis() - t0 < 120) delay(120 - (millis() - t0));
+          bool warenDa = ui.tabs;
           ui.tippe(tx0, ty0, zeichenLage);
+          if (warenDa && ui.hauptseite()) tabsBis = jetzt + 3000;
         }
-        if (ui.hauptseite()) tabsBis = jetzt + 3000;
       }
       if (gedrueckt) { gedrueckt = false; ui.neu = true; }   // Aufhellung wieder weg
     }
